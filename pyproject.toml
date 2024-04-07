@@ -16,6 +16,9 @@ classifiers = [
 ]
 
 
+[tool.setuptools.package-dir]
+distributed_learning_simulation= "simulation_lib"
+
 [project.urls]
 Repository = "https://github.com/cyyever/distributed_learning_simulation_lib"
 
