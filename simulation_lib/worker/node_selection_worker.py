@@ -56,10 +56,12 @@ class NodeSelectionMixin(GraphWorkerProtocol):
 
     def _sample_nodes(self) -> list[int]:
         self.trainer.update_dataloader_kwargs(pyg_input_nodes={})
-        sample_percent: float = self.config.algorithm_kwargs.get("sample_percent", 1.0)
+        sample_percent: float = self.config.algorithm_kwargs.get(
+            "node_sample_percent", 1.0
+        )
         if sample_percent >= 1.0:
             return list(self.training_node_indices)
-        if self.config.algorithm_kwargs.get("random_selection", False):
+        if self.config.algorithm_kwargs.get("node_random_selection", False):
             sample_prob = torch.ones(size=(self.trainer.dataset_size,))
             sample_res = torch.multinomial(
                 sample_prob,
