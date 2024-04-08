@@ -1,1 +1,1 @@
-from .aggregation_server import AggregationServer
+from .aggregation_server import AggregationServer  # noqa: F401
