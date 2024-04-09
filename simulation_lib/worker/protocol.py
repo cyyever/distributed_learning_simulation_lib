@@ -8,6 +8,10 @@ from ..util import ModelCache
 
 class AggregationWorkerProtocol(Protocol):
     @property
+    def hold_log_lock(self) -> bool:
+        ...
+
+    @property
     def trainer(self) -> Trainer:
         ...
 
