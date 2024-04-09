@@ -2,14 +2,13 @@ import os
 from typing import Any
 
 from cyy_naive_lib.log import get_logger
+from cyy_torch_toolbox import (ExecutorHookPoint, MachineLearningPhase,
+                               StopExecutingException)
 from cyy_torch_toolbox.hook.keep_model import KeepModelHook
-from cyy_torch_toolbox.ml_type import (ExecutorHookPoint, MachineLearningPhase,
-                                       StopExecutingException)
 
 from ..message import (DeltaParameterMessage, Message, ParameterMessage,
                        ParameterMessageBase)
-from ..util.model import load_parameters
-from ..util.model_cache import ModelCache
+from ..util import ModelCache, load_parameters
 from .client import Client
 
 
@@ -23,6 +22,10 @@ class AggregationWorker(Client):
         self._keep_model_cache: bool = False
         self._send_loss: bool = False
         self._model_cache: ModelCache = ModelCache()
+
+    @property
+    def model_cache(self) -> ModelCache:
+        return self._model_cache
 
     @property
     def distribute_init_parameters(self) -> bool:

@@ -3,6 +3,7 @@ from typing import Iterable, Protocol
 from cyy_torch_toolbox import Trainer
 
 from ..config import DistributedTrainingConfig
+from ..util import ModelCache
 
 
 class AggregationWorkerProtocol(Protocol):
@@ -12,6 +13,10 @@ class AggregationWorkerProtocol(Protocol):
 
     @property
     def round_index(self) -> int:
+        ...
+
+    @property
+    def model_cache(self) -> ModelCache:
         ...
 
     @property
