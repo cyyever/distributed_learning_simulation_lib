@@ -16,6 +16,11 @@ class AggregationAlgorithm:
     def set_old_parameter(self, old_parameter: TensorDict) -> None:
         self._old_parameter = old_parameter
 
+    @property
+    def config(self) -> DistributedTrainingConfig:
+        assert self._config is not None
+        return self._config
+
     def set_config(self, config: DistributedTrainingConfig) -> None:
         self._config = config
 
