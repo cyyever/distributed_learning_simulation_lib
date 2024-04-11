@@ -1,4 +1,3 @@
-import json
 import os
 import pickle
 from typing import Any
@@ -11,12 +10,14 @@ from ..algorithm.aggregation_algorithm import AggregationAlgorithm
 from ..message import (DeltaParameterMessage, Message, ParameterMessage,
                        ParameterMessageBase)
 from ..util.model_cache import ModelCache
+from .performance_mixin import PerformanceMixin
 from .server import Server
 
 
-class AggregationServer(Server):
+class AggregationServer(Server, PerformanceMixin):
     def __init__(self, algorithm: AggregationAlgorithm, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
+        Server.__init__(self, **kwargs)
+        PerformanceMixin.__init__(self)
         self._round_index: int = 1
         self._compute_stat: bool = True
         self._stop = False
@@ -24,9 +25,6 @@ class AggregationServer(Server):
         self.__worker_flag: set = set()
         algorithm.set_config(self.config)
         self.__algorithm: AggregationAlgorithm = algorithm
-        self.__stat: dict = {}
-        self.__plateau = 0
-        self.__max_acc = 0
         self._need_init_performance = False
 
     @property
@@ -38,7 +36,7 @@ class AggregationServer(Server):
         return self.__algorithm
 
     @property
-    def round_index(self):
+    def round_index(self) -> int:
         return self._round_index
 
     def __get_init_model(self) -> TensorDict:
@@ -111,16 +109,15 @@ class AggregationServer(Server):
         if self._need_init_performance:
             assert self.distribute_init_parameters
         if self._need_init_performance and result.is_initial:
-            self.__record_compute_stat(result.parameter, log_performance_metric=False)
-            self.__stat[0] = self.__stat.pop(1)
+            self.record_compute_stat(result)
         elif self._compute_stat and not result.is_initial and not result.in_round:
-            self.__record_compute_stat(result.parameter)
-            if not result.end_training and self.early_stop and self._convergent():
+            self.record_compute_stat(result)
+            if not result.end_training and self.early_stop and self.convergent():
                 get_logger().warning("stop early")
                 self._stop = True
                 result.end_training = True
         elif result.end_training:
-            self.__record_compute_stat(result.parameter)
+            self.record_compute_stat(result)
         model_path = os.path.join(
             self.config.save_dir,
             "aggregated_model",
@@ -137,66 +134,4 @@ class AggregationServer(Server):
             self.__model_cache.save()
 
     def _stopped(self) -> bool:
-        return self._round_index > self.config.round or self._stop
-
-    @property
-    def performance_stat(self) -> dict:
-        return self.__stat
-
-    def _get_stat_key(self):
-        return self._round_index
-
-    def _set_stat(self, key: str, value: Any) -> None:
-        stat_key = self._get_stat_key()
-        if stat_key == 1:
-            if 0 in self.__stat and 1 not in self.__stat:
-                stat_key = 0
-        self.__stat[stat_key][key] = value
-
-    def __record_compute_stat(
-        self, parameter_dict: TensorDict, log_performance_metric: bool = True
-    ) -> None:
-        metric = self.get_metric(
-            parameter_dict, log_performance_metric=log_performance_metric
-        )
-        round_stat = {f"test_{k}": v for k, v in metric.items()}
-
-        key = self._get_stat_key()
-        assert key not in self.__stat
-
-        self.__stat[key] = round_stat
-        with open(
-            os.path.join(self.save_dir, "round_record.json"),
-            "wt",
-            encoding="utf8",
-        ) as f:
-            json.dump(self.__stat, f)
-
-        max_acc = max(t["test_accuracy"] for t in self.__stat.values())
-        if max_acc > self.__max_acc:
-            self.__max_acc = max_acc
-            # with open(os.path.join(self.save_dir, "best_global_model.pk"), "wb") as f:
-            #     pickle.dump(
-            #         parameter_dict,
-            #         f,
-            #     )
-
-    def _convergent(self) -> bool:
-        max_acc = max(t["test_accuracy"] for t in self.performance_stat.values())
-        diff = 0.001
-        if max_acc > self.__max_acc + diff:
-            self.__max_acc = max_acc
-            self.__plateau = 0
-            return False
-        del max_acc
-        get_logger().error(
-            "max acc is %s diff is %s",
-            self.__max_acc,
-            self.__max_acc
-            - self.performance_stat[self._get_stat_key()]["test_accuracy"],
-        )
-        self.__plateau += 1
-        get_logger().error("plateau is %s", self.__plateau)
-        if self.__plateau >= 5:
-            return True
-        return False
+        return self.round_index > self.config.round or self._stop
