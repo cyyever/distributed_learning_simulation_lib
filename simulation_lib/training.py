@@ -91,13 +91,13 @@ def train(
     config.reset_session()
     config.apply_global_config()
     timer = TimeCounter()
-    if hasattr(os, "sysconf"):
-        name = "SC_OPEN_MAX"
-        value = os.sysconf(name)
-        if isinstance(value, int) and value <= 1024:
-            raise RuntimeError(
-                f"Your open file limit {value} is too small, the training will open lots of files."
-            )
+    # if hasattr(os, "sysconf"):
+    #     name = "SC_OPEN_MAX"
+    #     value = os.sysconf(name)
+    #     if isinstance(value, int) and value <= 1024:
+    #         raise RuntimeError(
+    #             f"Your open file limit {value} is too small, the training will open lots of files."
+    #         )
     task_id = None
     if practitioners is None:
         add_file_handler(config.log_file)
