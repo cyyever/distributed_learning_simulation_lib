@@ -20,6 +20,7 @@ class GraphWorker(AggregationWorker):
         super().__init__(**kwargs)
         assert not self.config.trainer_config.hook_config.use_amp
         self._share_feature = self.config.algorithm_kwargs.get("share_feature", True)
+        self._remove_cross_edge: bool = True
         self._other_training_node_indices: set = set()
         self.__old_edge_index: None | torch.Tensor = None
         self.__n_id: None | torch.Tensor = None
@@ -63,11 +64,8 @@ class GraphWorker(AggregationWorker):
             & self.__local_node_mask[edge_index[1]]
         )
 
-    def __get_local_edge_index(
-        self, edge_index: torch.Tensor | None = None
-    ) -> torch.Tensor:
-        if edge_index is None:
-            edge_index = self.edge_index
+    def __get_local_edge_index(self) -> torch.Tensor:
+        edge_index = self.edge_index
         edge_mask = self.__get_local_edge_mask(edge_index=edge_index)
         return torch_geometric.utils.coalesce(edge_index[:, edge_mask])
 
@@ -105,7 +103,8 @@ class GraphWorker(AggregationWorker):
                 prepend=False,
             )
         if not self._share_feature:
-            self._clear_cross_client_edges()
+            if self._remove_cross_edge:
+                self._clear_cross_client_edges()
             return
 
         for module in self.trainer.model.modules():
