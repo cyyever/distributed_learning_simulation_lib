@@ -181,7 +181,7 @@ class GraphWorker(AggregationWorker):
         return (self.training_node_mask[edge_index[0]]) & (
             torch_geometric.utils.index_to_mask(
                 torch.tensor(list(self._other_training_node_indices)),
-                size=edge_index.shape[1],
+                size=self.training_node_mask.shape[1],
             )
         )[edge_index[1]]
 
