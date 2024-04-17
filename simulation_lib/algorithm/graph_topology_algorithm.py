@@ -5,7 +5,7 @@ from .aggregation_algorithm import AggregationAlgorithm
 class GraphTopologyAlgorithm(AggregationAlgorithm):
     def __init__(self) -> None:
         super().__init__()
-        self._training_node_indices: dict = {}
+        self._training_node_indices: dict[int, set] = {}
 
     def process_worker_data(self, worker_id: int, worker_data: Message | None) -> bool:
         if (
