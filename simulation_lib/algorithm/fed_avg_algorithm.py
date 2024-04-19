@@ -1,7 +1,7 @@
 from typing import Any
 
 import torch
-from cyy_naive_lib.log import get_logger
+from cyy_naive_lib.log import log_error
 from cyy_torch_toolbox.typing import TensorDict
 
 from ..message import Message, ParameterMessage
@@ -126,6 +126,6 @@ class FedAVGAlgorithm(AggregationAlgorithm):
                     result[k] = v
                     continue
                 if v != result[k]:
-                    get_logger().error("different values on key %s", k)
+                    log_error("different values on key %s", k)
                     raise RuntimeError(f"different values on key {k}")
         return result

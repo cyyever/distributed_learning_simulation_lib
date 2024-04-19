@@ -4,7 +4,7 @@ from functools import cached_property
 from typing import Any
 
 import dill
-from cyy_naive_lib.log import get_logger
+from cyy_naive_lib.log import log_debug
 from cyy_naive_lib.topology.cs_endpoint import ClientEndpoint
 from cyy_torch_toolbox.ml_type import ExecutorHookPoint
 from cyy_torch_toolbox.trainer import Trainer
@@ -99,8 +99,8 @@ class Worker(Executor):
                 )
                 self._round_index += 1
         with self._get_execution_context():
-            get_logger().debug("finish worker")
+            log_debug("finish worker")
             self._endpoint.close()
-            get_logger().debug("close endpoint")
+            log_debug("close endpoint")
             self._after_training()
-            get_logger().debug("end worker")
+            log_debug("end worker")

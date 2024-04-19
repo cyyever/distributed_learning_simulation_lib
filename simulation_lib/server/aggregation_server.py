@@ -2,7 +2,7 @@ import os
 import pickle
 from typing import Any
 
-from cyy_naive_lib.log import get_logger
+from cyy_naive_lib.log import log_debug, log_info
 from cyy_torch_toolbox.tensor import tensor_to
 from cyy_torch_toolbox.typing import TensorDict
 
@@ -68,7 +68,7 @@ class AggregationServer(Server, PerformanceMixin):
 
     def _process_worker_data(self, worker_id: int, data: Message | None) -> None:
         assert 0 <= worker_id < self.worker_number
-        get_logger().debug("get data %s from worker %s", type(data), worker_id)
+        log_debug("get data %s from worker %s", type(data), worker_id)
         if data is not None:
             if data.end_training:
                 self._stop = True
@@ -92,7 +92,7 @@ class AggregationServer(Server, PerformanceMixin):
             self._send_result(result)
             self.__worker_flag.clear()
         else:
-            get_logger().debug(
+            log_debug(
                 "we have %s committed, and we need %s workers,skip",
                 len(self.__worker_flag),
                 self.worker_number,
@@ -113,7 +113,7 @@ class AggregationServer(Server, PerformanceMixin):
         elif self._compute_stat and not result.is_initial and not result.in_round:
             self.record_compute_stat(result)
             if not result.end_training and self.early_stop and self.convergent():
-                get_logger().warning("stop early")
+                log_info("stop early")
                 self._stop = True
                 result.end_training = True
         elif result.end_training:

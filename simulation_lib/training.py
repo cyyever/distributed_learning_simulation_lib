@@ -7,7 +7,7 @@ import uuid
 import gevent
 from cyy_naive_lib.data_structure.process_initialization import \
     get_process_data
-from cyy_naive_lib.log import add_file_handler, get_logger
+from cyy_naive_lib.log import add_file_handler, log_debug, log_info
 from cyy_naive_lib.time_counter import TimeCounter
 from cyy_torch_toolbox.data_structure.torch_process_pool import \
     TorchProcessPool
@@ -22,7 +22,7 @@ os.environ["USE_THREAD_DATALOADER"] = "1"
 def start_server(task_id: int | None, server_config: dict) -> dict:
     device_lock = get_process_data()["device_lock"]
     topology = get_process_data()["topology"]
-    get_logger().debug("task_id %s topology id %d", task_id, id(topology))
+    log_debug("task_id %s topology id %d", task_id, id(topology))
 
     server = server_config["constructor"](
         extra_kwargs={
@@ -35,7 +35,7 @@ def start_server(task_id: int | None, server_config: dict) -> dict:
     )
 
     server.start()
-    get_logger().info("stop server")
+    log_info("stop server")
 
     res: dict = {}
     if hasattr(server.algorithm, "shapley_values"):
@@ -67,14 +67,14 @@ def start_workers(
                 },
             )
         )
-    get_logger().debug(
+    log_debug(
         "run workers %s in the same process for task %s",
         [worker.worker_id for worker in workers],
         task_id,
     )
 
     gevent.joinall([gevent.spawn(worker.start) for worker in workers], raise_error=True)
-    get_logger().debug("stop workers")
+    log_debug("stop workers")
 
 
 tasks: dict = {}
@@ -140,7 +140,7 @@ def train(
         return task_id
     process_pool.wait_results(timeout=None)
     process_pool.shutdown(wait=True)
-    get_logger().info("training took %s seconds", timer.elapsed_milliseconds() / 1000)
+    log_info("training took %s seconds", timer.elapsed_milliseconds() / 1000)
     return None
 
 
@@ -155,7 +155,7 @@ def get_training_result(task_id: int, timeout: None | float = None) -> None | di
         return None
     process_pool.shutdown()
     tasks.pop(task_id)
-    get_logger().info("finish task %s", task_id)
+    log_info("finish task %s", task_id)
     stats: dict = {}
     practitioner_ids = task["practitioner_ids"]
     config = task["config"]

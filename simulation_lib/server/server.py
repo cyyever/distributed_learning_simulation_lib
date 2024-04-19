@@ -7,7 +7,7 @@ from typing import Any
 import gevent
 import gevent.lock
 import torch
-from cyy_naive_lib.log import get_logger
+from cyy_naive_lib.log import log_debug
 from cyy_naive_lib.topology.cs_endpoint import ServerEndpoint
 from cyy_torch_toolbox.inferencer import Inferencer
 from cyy_torch_toolbox.ml_type import MachineLearningPhase
@@ -57,7 +57,7 @@ class Server(Executor):
                 int(tester.dataset_size / tester.dataloader_kwargs["batch_number"]),
                 100,
             )
-            get_logger().debug("batch_size %s", batch_size)
+            log_debug("batch_size %s", batch_size)
             tester.remove_dataloader_kwargs("batch_number")
             tester.update_dataloader_kwargs(batch_size=batch_size)
         if "num_neighbor" in tester.dataloader_kwargs:
@@ -84,7 +84,7 @@ class Server(Executor):
                 for worker_id in copy.copy(worker_set):
                     has_data: bool = self._endpoint.has_data(worker_id)
                     if has_data:
-                        get_logger().debug(
+                        log_debug(
                             "get result from %s worker_num %s",
                             worker_id,
                             self._endpoint.worker_num,
@@ -94,7 +94,7 @@ class Server(Executor):
                         )
                         worker_set.remove(worker_id)
                 if worker_set:
-                    get_logger().debug("wait workers %s", worker_set)
+                    log_debug("wait workers %s", worker_set)
 
             if worker_set and not self._stopped():
                 gevent.sleep(1)
@@ -102,7 +102,7 @@ class Server(Executor):
         with self._get_execution_context():
             self._endpoint.close()
             self._server_exit()
-            get_logger().debug("end server")
+            log_debug("end server")
 
     def _before_start(self) -> None:
         pass
@@ -126,7 +126,7 @@ class Server(Executor):
                 self._endpoint.send(worker_id=worker_id, data=data)
         else:
             selected_workers = self._select_workers()
-            get_logger().debug("choose workers %s", selected_workers)
+            log_debug("choose workers %s", selected_workers)
             if selected_workers:
                 self._endpoint.broadcast(data=result, worker_ids=selected_workers)
             unselected_workers = set(range(self.worker_number)) - selected_workers

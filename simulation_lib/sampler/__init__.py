@@ -4,7 +4,7 @@ from typing import Any
 import torch
 from cyy_naive_lib.algorithm.mapping_op import (
     get_mapping_items_by_key_order, get_mapping_values_by_key_order)
-from cyy_naive_lib.log import get_logger
+from cyy_naive_lib.log import log_info
 from cyy_torch_toolbox import (ClassificationDatasetCollection,
                                DatasetCollection, DatasetCollectionSplit,
                                MachineLearningPhase, SplitBase)
@@ -44,13 +44,11 @@ class RandomLabelIIDSplit(SplitBase):
                 )
             )
         for worker_id, labels in enumerate(assigned_labels):
-            get_logger().info("worker %s has assigned labels %s", worker_id, labels)
+            log_info("worker %s has assigned labels %s", worker_id, labels)
             training_set_size = len(
                 self._dataset_indices[MachineLearningPhase.Training][worker_id]
             )
-            get_logger().info(
-                "worker %s has training set size %s", worker_id, training_set_size
-            )
+            log_info("worker %s has training set size %s", worker_id, training_set_size)
 
 
 class DirichletSplit(DatasetCollectionSplit):

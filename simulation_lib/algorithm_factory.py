@@ -1,8 +1,8 @@
 import functools
 from typing import Callable
 
-from cyy_naive_lib.log import get_logger
-from cyy_naive_lib.system_info import (OSType, get_operating_system_type)
+from cyy_naive_lib.log import log_warning
+from cyy_naive_lib.system_info import OSType, get_operating_system_type
 from cyy_naive_lib.topology.central_topology import (
     ProcessPipeCentralTopology, ProcessQueueCentralTopology)
 from cyy_naive_lib.topology.cs_endpoint import ClientEndpoint, ServerEndpoint
@@ -117,7 +117,7 @@ def get_worker_config(
         kwargs={"config": config},
     )
     worker_number_per_process = config.get_worker_number_per_process()
-    get_logger().warning(
+    log_warning(
         "There are %s workers in total, and %s workers form a group",
         len(practitioners),
         worker_number_per_process,

@@ -2,7 +2,7 @@ import json
 import os
 from typing import Any
 
-from cyy_naive_lib.log import get_logger
+from cyy_naive_lib.log import log_error
 
 from ..message import ParameterMessage
 from .protocol import AggregationServerProtocol
@@ -62,14 +62,14 @@ class PerformanceMixin(AggregationServerProtocol):
             self.__plateau = 0
             return False
         del max_acc
-        get_logger().error(
+        log_error(
             "max acc is %s diff is %s",
             self.__max_acc,
             self.__max_acc
             - self.performance_stat[self._get_stat_key()]["test_accuracy"],
         )
         self.__plateau += 1
-        get_logger().error("plateau is %s", self.__plateau)
+        log_error("plateau is %s", self.__plateau)
         if self.__plateau >= 5:
             return True
         return False

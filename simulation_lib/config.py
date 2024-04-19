@@ -4,7 +4,7 @@ import uuid
 from typing import Any
 
 import omegaconf
-from cyy_naive_lib.log import get_logger
+from cyy_naive_lib.log import log_debug, log_warning
 from cyy_torch_toolbox import Config
 from cyy_torch_toolbox.dataset import ClassificationDatasetCollection
 from cyy_torch_toolbox.device import get_device_memory_info
@@ -52,7 +52,7 @@ class DistributedTrainingConfig(Config):
                 continue
             refined_memory_info[device] = info.free
         assert refined_memory_info
-        get_logger().warning("Use devices %s", list(refined_memory_info.keys()))
+        log_warning("Use devices %s", list(refined_memory_info.keys()))
         if self.worker_number <= len(refined_memory_info):
             return 1
         # small scale training
@@ -60,7 +60,7 @@ class DistributedTrainingConfig(Config):
             return int(self.worker_number / len(refined_memory_info))
         total_bytes = sum(refined_memory_info.values())
         MB_per_worker = min(total_bytes / MB / self.worker_number, 10 * GB)
-        get_logger().debug(
+        log_debug(
             "MB_per_worker %s other %s",
             MB_per_worker,
             min(refined_memory_info.values()) / MB,

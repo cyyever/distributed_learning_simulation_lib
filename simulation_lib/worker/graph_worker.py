@@ -6,7 +6,7 @@ from typing import Any, Callable
 import torch
 import torch_geometric.nn
 import torch_geometric.utils
-from cyy_naive_lib.log import get_logger
+from cyy_naive_lib.log import log_info
 from cyy_torch_graph import GraphDatasetUtil
 from cyy_torch_toolbox import MachineLearningPhase
 
@@ -91,9 +91,9 @@ class GraphWorker(AggregationWorker):
         super()._before_training()
         if self.hold_log_lock:
             if self._share_feature:
-                get_logger().info("share feature")
+                log_info("share feature")
             else:
-                get_logger().info("not share feature")
+                log_info("not share feature")
         self.__exchange_training_node_indices()
         self.__clear_unrelated_edges()
         for module in self._get_message_passing_modules():
@@ -202,14 +202,14 @@ class GraphWorker(AggregationWorker):
         )
         if edge_drop_rate is not None and edge_drop_rate != 0:
             if self.hold_log_lock:
-                get_logger().info("drop in client edge with rate: %s", edge_drop_rate)
+                log_info("drop in client edge with rate: %s", edge_drop_rate)
             dropout_mask = torch.bernoulli(
                 torch.full(training_edge_mask.size(), 1 - edge_drop_rate)
             ).to(dtype=torch.bool)
             training_edge_mask &= dropout_mask
 
         if training_edge_mask.sum().item() != 0:
-            get_logger().info(
+            log_info(
                 "cross_client_edge/in_client_edge %s",
                 self.cross_client_edge_mask.sum().item()
                 / training_edge_mask.sum().item(),

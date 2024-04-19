@@ -1,6 +1,6 @@
 from typing import Any, Callable
 
-from cyy_naive_lib.log import get_logger
+from cyy_naive_lib.log import log_debug
 from cyy_naive_lib.topology.cs_endpoint import ClientEndpoint, ServerEndpoint
 from cyy_torch_algorithm.quantization.deterministic import (
     NNADQ, NeuralNetworkAdaptiveDeterministicDequant,
@@ -30,7 +30,7 @@ class QuantClientEndpoint(ClientEndpoint):
         if isinstance(data, ParameterMessage):
             data.parameter = self._quant(data.parameter)
             self._after_quant(data=data)
-            get_logger().debug("after client quantization")
+            log_debug("after client quantization")
         super().send(data=data)
 
     def _after_quant(self, data: Any) -> None:
@@ -64,16 +64,14 @@ class QuantServerEndpoint(ServerEndpoint):
                     assert self._quant is not None
                     data.parameter = self._quant(data.parameter)
                     data.other_data["quantized"] = True
-                    get_logger().debug("call after_quant for worker %s", worker_id)
+                    log_debug("call after_quant for worker %s", worker_id)
                     self._after_quant(data=data)
-                    get_logger().debug(
-                        "after_quant quantization for worker %s", worker_id
-                    )
+                    log_debug("after_quant quantization for worker %s", worker_id)
                 else:
-                    get_logger().debug("server not use quantization")
-        get_logger().debug("before send quantized data to worker %s", worker_id)
+                    log_debug("server not use quantization")
+        log_debug("before send quantized data to worker %s", worker_id)
         super().send(worker_id=worker_id, data=data)
-        get_logger().debug("after send quantized data to worker %s", worker_id)
+        log_debug("after send quantized data to worker %s", worker_id)
 
     def _after_quant(self, data: Any) -> None:
         pass
@@ -93,7 +91,7 @@ class StochasticQuantServerEndpoint(QuantServerEndpoint):
 
 class NNADQClientEndpoint(QuantClientEndpoint):
     def __init__(self, weight: float, **kwargs: Any) -> None:
-        get_logger().debug("use weight %s", weight)
+        log_debug("use weight %s", weight)
         quant, dequant = NNADQ(weight=weight)
         super().__init__(quant=quant, dequant=dequant, **kwargs)
 

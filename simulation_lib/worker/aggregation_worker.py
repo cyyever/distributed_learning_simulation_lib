@@ -1,7 +1,7 @@
 import os
 from typing import Any
 
-from cyy_naive_lib.log import get_logger
+from cyy_naive_lib.log import log_debug, log_info
 from cyy_torch_toolbox import (ExecutorHookPoint, MachineLearningPhase,
                                StopExecutingException)
 from cyy_torch_toolbox.hook.keep_model import KeepModelHook
@@ -56,7 +56,7 @@ class AggregationWorker(Client):
         self._register_aggregation()
 
     def _register_aggregation(self) -> None:
-        get_logger().debug("use aggregation_time %s", self._aggregation_time)
+        log_debug("use aggregation_time %s", self._aggregation_time)
         self.trainer.remove_named_hook(name="aggregation")
 
         def __aggregation_impl(**kwargs) -> None:
@@ -98,7 +98,7 @@ class AggregationWorker(Client):
 
     def _get_sent_data(self) -> ParameterMessageBase:
         if self.__choose_model_by_validation:
-            get_logger().debug("use best model")
+            log_debug("use best model")
             assert self.best_model_hook is not None
             parameter = self.best_model_hook.best_model["parameter"]
             best_epoch = self.best_model_hook.best_model["epoch"]
@@ -107,9 +107,9 @@ class AggregationWorker(Client):
             best_epoch = self.trainer.hyper_parameter.epoch
         other_data = {}
         if self._send_loss:
-            other_data[
-                "training_loss"
-            ] = self.trainer.performance_metric.get_epoch_metric(best_epoch, "loss")
+            other_data["training_loss"] = (
+                self.trainer.performance_metric.get_epoch_metric(best_epoch, "loss")
+            )
             assert other_data["training_loss"] is not None
 
         message: ParameterMessageBase = ParameterMessage(
@@ -171,9 +171,9 @@ class AggregationWorker(Client):
     def __get_result_from_server(self) -> None:
         while True:
             result = super()._get_data_from_server()
-            get_logger().debug("get result from server %s", type(result))
+            log_debug("get result from server %s", type(result))
             if result is None:
-                get_logger().info("skip round %s", self.round_index)
+                log_info("skip round %s", self.round_index)
                 self.send_data_to_server(None)
                 self._round_index += 1
                 if self._stopped():

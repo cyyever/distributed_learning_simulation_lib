@@ -1,4 +1,4 @@
-from cyy_naive_lib.log import get_logger
+from cyy_naive_lib.log import log_debug
 from cyy_torch_toolbox.trainer import Trainer
 from cyy_torch_toolbox.typing import TensorDict
 
@@ -17,7 +17,7 @@ def load_parameters(
         for k, v in old_param_group.items():
             if k not in "params":
                 optimizer.param_groups[0][k] = v
-                get_logger().debug("reuse parameter property %s", k)
+                log_debug("reuse parameter property %s", k)
     else:
         trainer.load_parameter_dict(parameter_dict)
     trainer.model_util.disable_running_stats()
