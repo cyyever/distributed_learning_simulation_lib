@@ -42,7 +42,7 @@ class AggregationWorker(Client):
                 self.enable_choose_model_by_validation()
             else:
                 self.disable_choose_model_by_validation()
-        if not self.__choose_model_by_validation:
+        if not self.__choose_model_by_validation and not self.config.use_validation:
             # Skip Validation to speed up training
             self.trainer.dataset_collection.remove_dataset(
                 phase=MachineLearningPhase.Validation
