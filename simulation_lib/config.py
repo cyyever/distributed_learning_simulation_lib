@@ -24,9 +24,9 @@ class DistributedTrainingConfig(Config):
         self.dataset_sampling_kwargs: dict[str, Any] = {}
         self.endpoint_kwargs: dict = {}
         self.exp_name: str = ""
-        self.merge_validation_to_training_set = False
         self.log_file: str = ""
         self.enable_training_log: bool = False
+        self.use_validation: bool = False
         self.worker_number_per_process: int = 0
 
     def load_config_and_process(self, conf: Any) -> None:
