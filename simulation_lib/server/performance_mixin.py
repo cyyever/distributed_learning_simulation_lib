@@ -2,7 +2,7 @@ import json
 import os
 from typing import Any
 
-from cyy_naive_lib.log import log_debug
+from cyy_naive_lib.log import log_info
 
 from ..message import ParameterMessage
 from .protocol import AggregationServerProtocol
@@ -14,10 +14,14 @@ class PerformanceMixin(AggregationServerProtocol):
         self.__stat: dict = {}
         self.__keys: list = []
         self.__plateau = 0
+        self.__max_plateau = 5
 
     @property
     def performance_stat(self) -> dict:
         return self.__stat
+
+    def _set_plateau_limit(self, max_plateau) -> None:
+        self.__max_plateau = max_plateau
 
     def _get_stat_key(self) -> Any:
         return self.round_index
@@ -52,26 +56,27 @@ class PerformanceMixin(AggregationServerProtocol):
         ) as f:
             json.dump(self.__stat, f)
 
+    def get_test_accuracies(self) -> list[float]:
+        return [self.performance_stat[k]["test_accuracy"] for k in self.__keys]
+
     def convergent(self) -> bool:
         if len(self.performance_stat) < 2:
             return False
-        test_accuracies = [
-            self.performance_stat[k]["test_accuracy"] for k in self.__keys
-        ]
+        test_accuracies = self.get_test_accuracies()
 
         diff = 0.001
         historical_max_acc = max(test_accuracies[0:-1])
-        if test_accuracies[-1] > historical_max_acc + diff:
-            self.__plateau = 0
-            return False
-        log_debug(
+        log_info(
             "historical_max_acc is %s diff is %s",
             historical_max_acc,
             historical_max_acc
             - self.performance_stat[self._get_stat_key()]["test_accuracy"],
         )
+        if test_accuracies[-1] > historical_max_acc + diff:
+            self.__plateau = 0
+            return False
         self.__plateau += 1
-        log_debug("plateau is %s", self.__plateau)
-        if self.__plateau >= 5:
+        log_info("plateau is %s", self.__plateau)
+        if self.__plateau >= self.__max_plateau:
             return True
         return False
