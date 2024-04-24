@@ -2,7 +2,7 @@ import json
 import os
 from typing import Any
 
-from cyy_naive_lib.log import log_error
+from cyy_naive_lib.log import log_debug
 
 from ..message import ParameterMessage
 from .protocol import AggregationServerProtocol
@@ -12,8 +12,8 @@ class PerformanceMixin(AggregationServerProtocol):
     def __init__(self) -> None:
         super().__init__()
         self.__stat: dict = {}
+        self.__keys: list = []
         self.__plateau = 0
-        self.__max_acc = 0
 
     @property
     def performance_stat(self) -> dict:
@@ -27,6 +27,8 @@ class PerformanceMixin(AggregationServerProtocol):
         if stat_key == 1:
             if 0 in self.__stat and 1 not in self.__stat:
                 stat_key = 0
+        if stat_key not in self.__keys:
+            self.__keys.append(stat_key)
         self.__stat[stat_key][key] = value
 
     def record_compute_stat(
@@ -41,7 +43,7 @@ class PerformanceMixin(AggregationServerProtocol):
         if not message.is_initial:
             key = self._get_stat_key()
         assert key not in self.__stat
-
+        self.__keys.append(key)
         self.__stat[key] = round_stat
         with open(
             os.path.join(self.save_dir, "round_record.json"),
@@ -50,26 +52,26 @@ class PerformanceMixin(AggregationServerProtocol):
         ) as f:
             json.dump(self.__stat, f)
 
-        max_acc = max(t["test_accuracy"] for t in self.__stat.values())
-        if max_acc > self.__max_acc:
-            self.__max_acc = max_acc
-
     def convergent(self) -> bool:
-        max_acc = max(t["test_accuracy"] for t in self.performance_stat.values())
+        if len(self.performance_stat) < 2:
+            return False
+        test_accuracies = [
+            self.performance_stat[k]["test_accuracy"] for k in self.__keys
+        ]
+
         diff = 0.001
-        if max_acc > self.__max_acc + diff:
-            self.__max_acc = max_acc
+        historical_max_acc = max(test_accuracies[0:-1])
+        if test_accuracies[-1] > historical_max_acc + diff:
             self.__plateau = 0
             return False
-        del max_acc
-        log_error(
-            "max acc is %s diff is %s",
-            self.__max_acc,
-            self.__max_acc
+        log_debug(
+            "historical_max_acc is %s diff is %s",
+            historical_max_acc,
+            historical_max_acc
             - self.performance_stat[self._get_stat_key()]["test_accuracy"],
         )
         self.__plateau += 1
-        log_error("plateau is %s", self.__plateau)
+        log_debug("plateau is %s", self.__plateau)
         if self.__plateau >= 5:
             return True
         return False
