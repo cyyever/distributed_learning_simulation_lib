@@ -63,10 +63,10 @@ class Server(Executor):
         if "num_neighbor" in tester.dataloader_kwargs:
             tester.update_dataloader_kwargs(num_neighbor=10)
         tester.inference()
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
         metric: dict = tester.performance_metric.get_epoch_metrics(1)
         self._release_device_lock()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
         return metric
 
     def start(self) -> None:
