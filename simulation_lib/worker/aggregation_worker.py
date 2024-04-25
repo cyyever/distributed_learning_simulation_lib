@@ -39,9 +39,9 @@ class AggregationWorker(Client):
                 self.config.hyper_parameter_config.epoch > 1
                 and self.config.dataset_sampling == "iid"
             ):
-                self.enable_choose_model_by_validation()
+                self.enable_choosing_model_by_validation()
             else:
-                self.disable_choose_model_by_validation()
+                self.disable_choosing_model_by_validation()
         if not self.__choose_model_by_validation and not self.config.use_validation:
             # Skip Validation to speed up training
             self.trainer.dataset_collection.remove_dataset(
@@ -74,7 +74,7 @@ class AggregationWorker(Client):
         self._offload_from_device()
         self.__get_result_from_server()
 
-    def enable_choose_model_by_validation(self) -> None:
+    def enable_choosing_model_by_validation(self) -> None:
         self.__choose_model_by_validation = True
         hook = KeepModelHook()
         hook.keep_best_model = True
@@ -83,7 +83,7 @@ class AggregationWorker(Client):
         )
         self.trainer.append_hook(hook, "keep_model_hook")
 
-    def disable_choose_model_by_validation(self) -> None:
+    def disable_choosing_model_by_validation(self) -> None:
         self.__choose_model_by_validation = False
         if self.best_model_hook is not None:
             self.trainer.remove_hook("keep_model_hook")

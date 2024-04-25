@@ -109,15 +109,15 @@ class AggregationServer(Server, PerformanceMixin):
         if self._need_init_performance:
             assert self.distribute_init_parameters
         if self._need_init_performance and result.is_initial:
-            self.record_compute_stat(result)
+            self.record_performance_statistics(result)
         elif self._compute_stat and not result.is_initial and not result.in_round:
-            self.record_compute_stat(result)
+            self.record_performance_statistics(result)
             if not result.end_training and self.early_stop and self.convergent():
                 log_info("stop early")
                 self._stop = True
                 result.end_training = True
         elif result.end_training:
-            self.record_compute_stat(result)
+            self.record_performance_statistics(result)
         model_path = os.path.join(
             self.config.save_dir,
             "aggregated_model",
