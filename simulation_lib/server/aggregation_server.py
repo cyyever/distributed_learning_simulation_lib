@@ -3,6 +3,7 @@ import pickle
 from typing import Any
 
 from cyy_naive_lib.log import log_debug, log_info
+from cyy_torch_toolbox import Inferencer
 from cyy_torch_toolbox.tensor import tensor_to
 from cyy_torch_toolbox.typing import TensorDict
 
@@ -38,6 +39,11 @@ class AggregationServer(Server, PerformanceMixin):
     @property
     def round_index(self) -> int:
         return self._round_index
+
+    def get_tester(self) -> Inferencer:
+        tester = super().get_tester()
+        tester.set_visualizer_prefix(f"round: {self.round_index},")
+        return tester
 
     def __get_init_model(self) -> TensorDict:
         parameter_dict: TensorDict = {}

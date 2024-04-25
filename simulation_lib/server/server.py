@@ -9,8 +9,7 @@ import gevent.lock
 import torch
 from cyy_naive_lib.log import log_debug
 from cyy_naive_lib.topology.cs_endpoint import ServerEndpoint
-from cyy_torch_toolbox.inferencer import Inferencer
-from cyy_torch_toolbox.ml_type import MachineLearningPhase
+from cyy_torch_toolbox import Inferencer, MachineLearningPhase
 from cyy_torch_toolbox.typing import TensorDict
 
 from ..executor import Executor
@@ -38,6 +37,9 @@ class Server(Executor):
         tester.hook_config.summarize_executor = False
         return tester
 
+    def load_parameter(self, tester: Inferencer, parameter_dict: TensorDict):
+        tester.model_util.load_parameter_dict(parameter_dict)
+
     def get_metric(
         self,
         parameter_dict: TensorDict | ParameterMessage,
@@ -46,9 +48,7 @@ class Server(Executor):
         if isinstance(parameter_dict, ParameterMessage):
             parameter_dict = parameter_dict.parameter
         tester = self.get_tester()
-        if hasattr(self, "_round_index"):
-            tester.set_visualizer_prefix(f"round: {self._round_index},")
-        tester.model_util.load_parameter_dict(parameter_dict)
+        self.load_parameter(tester=tester, parameter_dict=parameter_dict)
         tester.model_util.disable_running_stats()
         tester.set_device_fun(self._get_device)
         tester.hook_config.log_performance_metric = log_performance_metric
