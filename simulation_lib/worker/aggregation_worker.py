@@ -22,6 +22,7 @@ class AggregationWorker(Client):
         self._keep_model_cache: bool = False
         self._send_loss: bool = False
         self._model_cache: ModelCache = ModelCache()
+        self._model_loading_fun = None
 
     @property
     def model_cache(self) -> ModelCache:
@@ -152,6 +153,7 @@ class AggregationWorker(Client):
             trainer=self.trainer,
             parameter_dict=parameter_dict,
             reuse_learning_rate=self._reuse_learning_rate,
+            loading_fun=self._model_loading_fun,
         )
         if result.end_training:
             self._force_stop = True

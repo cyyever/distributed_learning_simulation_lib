@@ -1,4 +1,4 @@
-from typing import Iterable
+from typing import Callable, Iterable
 
 import torch.nn
 from cyy_naive_lib.log import log_debug
@@ -25,11 +25,20 @@ def reset_optimizer_parameters(
 
 
 def load_parameters(
-    trainer: Trainer, parameter_dict: TensorDict, reuse_learning_rate: bool
+    trainer: Trainer,
+    parameter_dict: TensorDict,
+    reuse_learning_rate: bool,
+    loading_fun: Callable | None = None,
 ) -> None:
     if reuse_learning_rate:
-        trainer.model_util.load_parameter_dict(parameter_dict)
+        if loading_fun is not None:
+            loading_fun(parameter_dict)
+        else:
+            trainer.model_util.load_parameter_dict(parameter_dict)
         reset_optimizer_parameters(trainer=trainer)
     else:
-        trainer.load_parameter_dict(parameter_dict)
+        if loading_fun is not None:
+            loading_fun(parameter_dict)
+        else:
+            trainer.load_parameter_dict(parameter_dict)
     trainer.model_util.disable_running_stats()

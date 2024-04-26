@@ -1,15 +1,12 @@
-from typing import Iterable, Protocol
+from typing import Iterable
 
 from cyy_torch_toolbox import Trainer
 
-from ..config import DistributedTrainingConfig
 from ..util import ModelCache
+from ..protocol import ExecutorProtocol
 
 
-class AggregationWorkerProtocol(Protocol):
-    @property
-    def hold_log_lock(self) -> bool:
-        ...
+class AggregationWorkerProtocol(ExecutorProtocol):
 
     @property
     def trainer(self) -> Trainer:
@@ -21,10 +18,6 @@ class AggregationWorkerProtocol(Protocol):
 
     @property
     def model_cache(self) -> ModelCache:
-        ...
-
-    @property
-    def config(self) -> DistributedTrainingConfig:
         ...
 
 
