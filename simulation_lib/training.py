@@ -109,15 +109,13 @@ def train(
     log_lock = multiprocessing.Manager().Semaphore()
     assert topology.worker_num == config.worker_number
     process_pool: TorchProcessPool = TorchProcessPool(
-        initargs=[
-            {
-                "fun_kwargs": {
-                    "device_lock": device_lock,
-                    "log_lock": log_lock,
-                    "topology": topology,
-                }
+        initargs={
+            "process_data": {
+                "device_lock": device_lock,
+                "log_lock": log_lock,
+                "topology": topology,
             }
-        ],
+        }
     )
     for worker_configs in worker_config["worker"]:
         process_pool.submit(
