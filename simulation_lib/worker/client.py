@@ -14,9 +14,7 @@ class Client(Worker):
             torch.cuda.empty_cache()
 
     async def _get_data_from_server(self) -> Any:
-        while True:
-            if self._endpoint.has_data():
-                break
+        while not self._endpoint.has_data():
             self._release_device_lock()
             ExecutorContext.release()
             await asyncio.sleep(0.1)

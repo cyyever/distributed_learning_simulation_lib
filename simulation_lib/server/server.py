@@ -7,12 +7,12 @@ from typing import Any
 
 import torch
 from cyy_naive_lib.concurrency import ThreadPool
-from cyy_naive_lib.log import log_debug
+from cyy_naive_lib.log import log_debug, log_info
 from cyy_naive_lib.topology.cs_endpoint import ServerEndpoint
 from cyy_torch_toolbox import Inferencer, MachineLearningPhase
 from cyy_torch_toolbox.typing import TensorDict
 
-from ..executor import Executor
+from ..executor import Executor, ExecutorContext
 from ..message import Message, MultipleWorkerMessage, ParameterMessage
 
 
@@ -50,7 +50,6 @@ class Server(Executor):
         tester = self.get_tester()
         self.load_parameter(tester=tester, parameter_dict=parameter_dict)
         tester.model_util.disable_running_stats()
-        tester.set_device_fun(self._get_device)
         tester.hook_config.log_performance_metric = log_performance_metric
         if "batch_number" in tester.dataloader_kwargs:
             batch_size = min(
@@ -64,15 +63,16 @@ class Server(Executor):
             tester.update_dataloader_kwargs(num_neighbor=10)
         thread_pool = ThreadPool()
         thread_pool.submit(tester.inference)
-        thread_pool.wait_results()
-        thread_pool.shutdown()
+        done, _ = thread_pool.wait_results()
+        assert done
+        thread_pool.shutdown(wait=False)
         metric: dict = tester.performance_metric.get_epoch_metrics(1)
-        self._release_device_lock()
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
         return metric
 
     async def start(self) -> None:
+        await ExecutorContext.acquire(self.name)
         with open(os.path.join(self.save_dir, "config.pkl"), "wb") as f:
             pickle.dump(self.config, f)
         self._before_start()
@@ -102,7 +102,7 @@ class Server(Executor):
 
         self._endpoint.close()
         self._server_exit()
-        log_debug("end server")
+        log_info("end server")
 
     def _before_start(self) -> None:
         pass
