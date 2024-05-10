@@ -8,7 +8,7 @@ import gevent
 from cyy_naive_lib.concurrency.process_initialization import get_process_data
 from cyy_naive_lib.log import add_file_handler, log_debug, log_info
 from cyy_naive_lib.time_counter import TimeCounter
-from cyy_torch_toolbox.data_structure import TorchProcessPool
+from cyy_torch_toolbox.concurrency import TorchProcessPool
 
 from .algorithm_factory import get_worker_config
 from .config import DistributedTrainingConfig
