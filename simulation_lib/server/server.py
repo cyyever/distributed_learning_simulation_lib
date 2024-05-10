@@ -6,6 +6,7 @@ import random
 from typing import Any
 
 import torch
+from cyy_naive_lib.concurrency import ThreadPool
 from cyy_naive_lib.log import log_debug
 from cyy_naive_lib.topology.cs_endpoint import ServerEndpoint
 from cyy_torch_toolbox import Inferencer, MachineLearningPhase
@@ -39,7 +40,7 @@ class Server(Executor):
     def load_parameter(self, tester: Inferencer, parameter_dict: TensorDict):
         tester.model_util.load_parameter_dict(parameter_dict)
 
-    async def get_metric(
+    def get_metric(
         self,
         parameter_dict: TensorDict | ParameterMessage,
         log_performance_metric: bool = True,
@@ -61,7 +62,10 @@ class Server(Executor):
             tester.update_dataloader_kwargs(batch_size=batch_size)
         if "num_neighbor" in tester.dataloader_kwargs:
             tester.update_dataloader_kwargs(num_neighbor=10)
-        await tester.async_inference()
+        thread_pool = ThreadPool()
+        thread_pool.submit(tester.inference)
+        thread_pool.wait_results()
+        thread_pool.shutdown()
         metric: dict = tester.performance_metric.get_epoch_metrics(1)
         self._release_device_lock()
         if torch.cuda.is_available():
@@ -100,23 +104,23 @@ class Server(Executor):
         self._server_exit()
         log_debug("end server")
 
-    async def _before_start(self) -> None:
+    def _before_start(self) -> None:
         pass
 
     def _server_exit(self) -> None:
         pass
 
-    async def _process_worker_data(self, worker_id: int, data: Message) -> None:
+    def _process_worker_data(self, worker_id: int, data: Message) -> None:
         raise NotImplementedError()
 
-    async def _before_send_result(self, result: Message) -> None:
+    def _before_send_result(self, result: Message) -> None:
         pass
 
     def _after_send_result(self, result: Message) -> None:
         pass
 
-    async def _send_result(self, result: Message) -> None:
-        await self._before_send_result(result=result)
+    def _send_result(self, result: Message) -> None:
+        self._before_send_result(result=result)
         if isinstance(result, MultipleWorkerMessage):
             for worker_id, data in result.worker_data.items():
                 self._endpoint.send(worker_id=worker_id, data=data)

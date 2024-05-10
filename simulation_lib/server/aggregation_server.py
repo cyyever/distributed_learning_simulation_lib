@@ -61,9 +61,9 @@ class AggregationServer(Server, PerformanceMixin):
     def distribute_init_parameters(self) -> bool:
         return self.config.algorithm_kwargs.get("distribute_init_parameters", True)
 
-    async def _before_start(self) -> None:
+    def _before_start(self) -> None:
         if self.distribute_init_parameters:
-            await self._send_result(
+            self._send_result(
                 ParameterMessage(
                     in_round=True, parameter=self.__get_init_model(), is_initial=True
                 )
@@ -72,7 +72,7 @@ class AggregationServer(Server, PerformanceMixin):
     def _server_exit(self) -> None:
         self.__algorithm.exit()
 
-    async def _process_worker_data(self, worker_id: int, data: Message | None) -> None:
+    def _process_worker_data(self, worker_id: int, data: Message | None) -> None:
         assert 0 <= worker_id < self.worker_number
         log_debug("get data %s from worker %s", type(data), worker_id)
         if data is not None:
@@ -95,7 +95,7 @@ class AggregationServer(Server, PerformanceMixin):
         self.__worker_flag.add(worker_id)
         if len(self.__worker_flag) == self.worker_number:
             result = self._aggregate_worker_data()
-            await self._send_result(result)
+            self._send_result(result)
             self.__worker_flag.clear()
         else:
             log_debug(
@@ -108,22 +108,22 @@ class AggregationServer(Server, PerformanceMixin):
         self.__algorithm.set_old_parameter(self.__model_cache.parameter_dict)
         return self.__algorithm.aggregate_worker_data()
 
-    async def _before_send_result(self, result: Message) -> None:
+    def _before_send_result(self, result: Message) -> None:
         if not isinstance(result, ParameterMessageBase):
             return
         assert isinstance(result, ParameterMessage)
         if self._need_init_performance:
             assert self.distribute_init_parameters
         if self._need_init_performance and result.is_initial:
-            await self.record_performance_statistics(result)
+            self.record_performance_statistics(result)
         elif self._compute_stat and not result.is_initial and not result.in_round:
-            await self.record_performance_statistics(result)
+            self.record_performance_statistics(result)
             if not result.end_training and self.early_stop and self.convergent():
                 log_info("stop early")
                 self._stop = True
                 result.end_training = True
         elif result.end_training:
-            await self.record_performance_statistics(result)
+            self.record_performance_statistics(result)
         model_path = os.path.join(
             self.config.save_dir,
             "aggregated_model",

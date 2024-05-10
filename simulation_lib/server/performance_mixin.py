@@ -38,11 +38,11 @@ class PerformanceMixin(AggregationServerProtocol):
             self.__keys.append(stat_key)
         self.__stat[stat_key][key] = value
 
-    async def record_performance_statistics(
+    def record_performance_statistics(
         self,
         message: ParameterMessage,
     ) -> None:
-        metric = await self.get_metric(
+        metric = self.get_metric(
             message.parameter, log_performance_metric=(not message.is_initial)
         )
         round_stat = {f"test_{k}": v for k, v in metric.items()}
