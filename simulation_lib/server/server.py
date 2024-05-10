@@ -75,7 +75,7 @@ class Server(Executor):
     async def start(self) -> None:
         with open(os.path.join(self.save_dir, "config.pkl"), "wb") as f:
             pickle.dump(self.config, f)
-        await self._before_start()
+        self._before_start()
 
         worker_set: set = set()
         while not self._stopped():
@@ -90,7 +90,7 @@ class Server(Executor):
                         worker_id,
                         self._endpoint.worker_num,
                     )
-                    await self._process_worker_data(
+                    self._process_worker_data(
                         worker_id, self._endpoint.get(worker_id=worker_id)
                     )
                     worker_set.remove(worker_id)
