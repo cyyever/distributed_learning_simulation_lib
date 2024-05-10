@@ -69,7 +69,7 @@ class GraphWorker(AggregationWorker):
         edge_mask = self.__get_local_edge_mask(edge_index=edge_index)
         return torch_geometric.utils.coalesce(edge_index[:, edge_mask])
 
-    def __exchange_training_node_indices(self) -> None:
+    async def __exchange_training_node_indices(self) -> None:
         sent_data = Message(
             other_data={
                 "training_node_indices": self.training_node_indices,
@@ -77,7 +77,7 @@ class GraphWorker(AggregationWorker):
             in_round=True,
         )
         self.send_data_to_server(sent_data)
-        res = self._get_data_from_server()
+        res = await self._get_data_from_server()
         assert isinstance(res, Message)
         for worker_id, node_indices in res.other_data["training_node_indices"].items():
             if worker_id != self.worker_id:
@@ -87,14 +87,14 @@ class GraphWorker(AggregationWorker):
             self.training_node_indices
         )
 
-    def _before_training(self) -> None:
-        super()._before_training()
+    async def _before_training(self) -> None:
+        await super()._before_training()
         if self.hold_log_lock:
             if self._share_feature:
                 log_info("share feature")
             else:
                 log_info("not share feature")
-        self.__exchange_training_node_indices()
+        await self.__exchange_training_node_indices()
         self.__clear_unrelated_edges()
         for module in self._get_message_passing_modules():
             module.register_forward_pre_hook(
@@ -332,7 +332,7 @@ class GraphWorker(AggregationWorker):
             )
         return None
 
-    def _pass_node_feature(self, module, args, kwargs) -> tuple | None:
+    async def _pass_node_feature(self, module, args, kwargs) -> tuple | None:
         if not module.training:
             return None
 
@@ -367,7 +367,7 @@ class GraphWorker(AggregationWorker):
             )
         self._comunicated_batch_cnt += 1
         self.send_data_to_server(sent_data)
-        res = self._get_data_from_server()
+        res = await self._get_data_from_server()
         assert isinstance(res, FeatureMessage)
 
         new_x = self._get_cross_deivce_embedding(

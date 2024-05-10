@@ -9,7 +9,7 @@ from cyy_naive_lib.topology.cs_endpoint import ClientEndpoint
 from cyy_torch_toolbox.ml_type import ExecutorHookPoint
 from cyy_torch_toolbox.trainer import Trainer
 
-from ..executor import Executor
+from ..executor import Executor, ExecutorContext
 from ..practitioner import Practitioner
 
 
@@ -49,7 +49,7 @@ class Worker(Executor):
     def _offload_from_device(self) -> None:
         self.trainer.offload_from_device()
 
-    def _before_training(self) -> None:
+    async def _before_training(self) -> None:
         pass
 
     def _after_training(self) -> None:
@@ -62,45 +62,46 @@ class Worker(Executor):
     def _stopped(self) -> bool:
         return self._round_index > self.config.round or self._force_stop
 
-    def start(self, **kwargs: Any) -> None:
+    async def start(self, **kwargs: Any) -> None:
         first_training: bool = True
         self._round_index = 1
         self._force_stop = False
         while not self._stopped():
             # in case worker changes round number
-            with self._get_execution_context():
-                if first_training:
-                    self._before_training()
-                    first_training = False
-                    # in case worker changes round number
-                    if self._stopped():
-                        break
-                    self.trainer.set_device_fun(
-                        functools.partial(
-                            self._get_device,
-                            lock_callback=lambda: self.trainer.append_named_hook(
-                                ExecutorHookPoint.AFTER_BATCH,
-                                "release_device_lock",
-                                self._release_device_lock,
-                            ),
-                        )
+            await ExecutorContext.acquire(self.name)
+            if first_training:
+                await self._before_training()
+                first_training = False
+                # in case worker changes round number
+                if self._stopped():
+                    ExecutorContext.release()
+                    break
+                self.trainer.set_device_fun(
+                    functools.partial(
+                        self._get_device,
+                        lock_callback=lambda: self.trainer.append_named_hook(
+                            ExecutorHookPoint.AFTER_BATCH,
+                            "release_device_lock",
+                            self._release_device_lock,
+                        ),
                     )
-                else:
-                    self.trainer.hook_config.summarize_executor = False
-                self.trainer.hook_config.log_performance_metric = (
-                    self.config.enable_training_log
                 )
-                self.trainer.disable_hook("batch_loss_logger")
-                self.trainer.set_visualizer_prefix(
-                    prefix=f"round: {self._round_index},"
-                )
-                self.trainer.train(
-                    **kwargs,
-                )
-                self._round_index += 1
-        with self._get_execution_context():
-            log_debug("finish worker")
-            self._endpoint.close()
-            log_debug("close endpoint")
-            self._after_training()
-            log_debug("end worker")
+            else:
+                self.trainer.hook_config.summarize_executor = False
+            self.trainer.hook_config.log_performance_metric = (
+                self.config.enable_training_log
+            )
+            self.trainer.disable_hook("batch_loss_logger")
+            self.trainer.set_visualizer_prefix(prefix=f"round: {self._round_index},")
+            await self.trainer.async_train(
+                **kwargs,
+            )
+            self._round_index += 1
+            ExecutorContext.release()
+        await ExecutorContext.acquire(self.name)
+        log_debug("finish worker")
+        self._endpoint.close()
+        log_debug("close endpoint")
+        self._after_training()
+        log_debug("end worker")
+        ExecutorContext.release()

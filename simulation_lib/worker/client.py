@@ -1,6 +1,6 @@
+import asyncio
 from typing import Any
 
-import gevent
 import torch
 
 from ..executor import ExecutorContext
@@ -13,13 +13,12 @@ class Client(Worker):
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
 
-    def _get_data_from_server(self) -> Any:
-        ExecutorContext.local_data.ctx.release()
-        self._release_device_lock()
+    async def _get_data_from_server(self) -> Any:
         while True:
-            ExecutorContext.local_data.ctx.acquire()
             if self._endpoint.has_data():
                 break
-            ExecutorContext.local_data.ctx.release()
-            gevent.sleep(0.1)
+            self._release_device_lock()
+            ExecutorContext.release()
+            await asyncio.sleep(0.1)
+            await ExecutorContext.acquire(self.name)
         return self._endpoint.get()

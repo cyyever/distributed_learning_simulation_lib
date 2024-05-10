@@ -12,7 +12,7 @@ class AggregationServerProtocol(Protocol):
     def config(self) -> DistributedTrainingConfig:
         ...
 
-    def get_metric(
+    async def get_metric(
         self,
         parameter_dict: TensorDict | ParameterMessage,
         log_performance_metric: bool = True,

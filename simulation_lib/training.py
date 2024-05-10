@@ -1,10 +1,10 @@
+import asyncio
 import copy
 import multiprocessing
 import os
 # we use these env variables to save memory in large-scale training
 import uuid
 
-import gevent
 from cyy_naive_lib.concurrency.process_initialization import get_process_data
 from cyy_naive_lib.log import add_file_handler, log_debug, log_info
 from cyy_naive_lib.time_counter import TimeCounter
@@ -12,6 +12,7 @@ from cyy_torch_toolbox.concurrency import TorchProcessPool
 
 from .algorithm_factory import get_worker_config
 from .config import DistributedTrainingConfig
+from .worker.worker import Worker
 
 os.environ["CUDA_MODULE_LOADING"] = "LAZY"
 os.environ["USE_THREAD_DATALOADER"] = "1"
@@ -32,7 +33,7 @@ def start_server(task_id: int | None, server_config: dict) -> dict:
         },
     )
 
-    server.start()
+    asyncio.run(server.start())
     log_info("stop server")
 
     res: dict = {}
@@ -49,7 +50,7 @@ def start_workers(
     device_lock = get_process_data()["device_lock"]
     log_lock = get_process_data()["log_lock"]
     topology = get_process_data()["topology"]
-    workers: list = []
+    workers: list[Worker] = []
     assert worker_configs
 
     for worker_config in worker_configs:
@@ -71,7 +72,13 @@ def start_workers(
         task_id,
     )
 
-    gevent.joinall([gevent.spawn(worker.start) for worker in workers], raise_error=True)
+    async def main():
+        return await asyncio.gather(
+            *(asyncio.create_task(worker.start()) for worker in workers),
+            return_exceptions=True,
+        )
+
+    asyncio.run(main())
     log_debug("stop workers")
 
 

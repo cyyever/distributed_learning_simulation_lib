@@ -1,3 +1,4 @@
+import asyncio
 import copy
 import multiprocessing
 import os
@@ -5,8 +6,6 @@ import threading
 from functools import cached_property
 from typing import Any, Callable
 
-import gevent.local
-import gevent.lock
 import torch
 from cyy_naive_lib.log import log_debug
 from cyy_torch_toolbox.device import get_device
@@ -15,30 +14,21 @@ from .config import DistributedTrainingConfig
 
 
 class ExecutorContext:
-    semaphore = gevent.lock.BoundedSemaphore(value=1)
-    local_data = gevent.local.local()
+    semaphore = asyncio.BoundedSemaphore(value=1)
 
-    def __init__(self, name: str) -> None:
-        self.__name: str = name
+    @classmethod
+    async def acquire(cls, name: str) -> None:
+        await cls.semaphore.acquire()
+        multiprocessing.current_process().name = name
+        threading.current_thread().name = name
+        log_debug("get lock %s", cls.semaphore)
 
-    def acquire(self) -> None:
-        self.semaphore.acquire()
-        multiprocessing.current_process().name = self.__name
-        threading.current_thread().name = self.__name
-        ExecutorContext.local_data.ctx = self
-        log_debug("get lock")
-
-    def __enter__(self) -> None:
-        self.acquire()
-
-    def __exit__(self, *args: Any, **kwargs: Any) -> None:
-        self.release()
-
-    def release(self) -> None:
-        log_debug("release lock")
+    @classmethod
+    def release(cls) -> None:
+        log_debug("release lock %s", cls.semaphore)
         multiprocessing.current_process().name = "unknown executor"
         threading.current_thread().name = "unknown executor"
-        self.semaphore.release()
+        cls.semaphore.release()
 
 
 class Executor:
@@ -60,6 +50,10 @@ class Executor:
         self.__hold_log_lock: bool | None = None
 
     @property
+    def name(self) -> str:
+        return self.__name
+
+    @property
     def hold_log_lock(self) -> bool:
         if self.__hold_log_lock is not None:
             return self.__hold_log_lock
@@ -77,7 +71,7 @@ class Executor:
     def save_dir(self) -> str:
         assert self.config.get_save_dir()
         executor_save_dir = os.path.abspath(
-            os.path.join(self.config.get_save_dir(), self.__name.replace(" ", "_"))
+            os.path.join(self.config.get_save_dir(), self.name.replace(" ", "_"))
         )
         os.makedirs(executor_save_dir, exist_ok=True)
         return executor_save_dir
@@ -96,9 +90,6 @@ class Executor:
                 torch.cuda.set_device(self.__thread_data.device)
         return self.__thread_data.device
 
-    def _get_execution_context(self) -> ExecutorContext:
-        return ExecutorContext(name=self.__name)
-
     def _release_device_lock(self, **kwargs: Any) -> None:
         if self.__hold_device_lock:
             if "cuda" in self.__thread_data.device.type.lower():
@@ -108,5 +99,5 @@ class Executor:
             self.__device_lock.release()
             self.__hold_device_lock = False
 
-    def start(self) -> None:
+    async def start(self) -> None:
         raise NotImplementedError()

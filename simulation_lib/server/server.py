@@ -1,11 +1,10 @@
+import asyncio
 import copy
 import os
 import pickle
 import random
 from typing import Any
 
-import gevent
-import gevent.lock
 import torch
 from cyy_naive_lib.log import log_debug
 from cyy_naive_lib.topology.cs_endpoint import ServerEndpoint
@@ -40,7 +39,7 @@ class Server(Executor):
     def load_parameter(self, tester: Inferencer, parameter_dict: TensorDict):
         tester.model_util.load_parameter_dict(parameter_dict)
 
-    def get_metric(
+    async def get_metric(
         self,
         parameter_dict: TensorDict | ParameterMessage,
         log_performance_metric: bool = True,
@@ -62,65 +61,62 @@ class Server(Executor):
             tester.update_dataloader_kwargs(batch_size=batch_size)
         if "num_neighbor" in tester.dataloader_kwargs:
             tester.update_dataloader_kwargs(num_neighbor=10)
-        tester.inference()
+        await tester.async_inference()
         metric: dict = tester.performance_metric.get_epoch_metrics(1)
         self._release_device_lock()
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
         return metric
 
-    def start(self) -> None:
-        with self._get_execution_context():
-            with open(os.path.join(self.save_dir, "config.pkl"), "wb") as f:
-                pickle.dump(self.config, f)
-            self._before_start()
+    async def start(self) -> None:
+        with open(os.path.join(self.save_dir, "config.pkl"), "wb") as f:
+            pickle.dump(self.config, f)
+        await self._before_start()
 
         worker_set: set = set()
         while not self._stopped():
             if not worker_set:
                 worker_set = set(range(self._endpoint.worker_num))
-            with self._get_execution_context():
-                assert self._endpoint.worker_num == self.config.worker_number
-                for worker_id in copy.copy(worker_set):
-                    has_data: bool = self._endpoint.has_data(worker_id)
-                    if has_data:
-                        log_debug(
-                            "get result from %s worker_num %s",
-                            worker_id,
-                            self._endpoint.worker_num,
-                        )
-                        self._process_worker_data(
-                            worker_id, self._endpoint.get(worker_id=worker_id)
-                        )
-                        worker_set.remove(worker_id)
-                if worker_set:
-                    log_debug("wait workers %s", worker_set)
+            assert self._endpoint.worker_num == self.config.worker_number
+            for worker_id in copy.copy(worker_set):
+                has_data: bool = self._endpoint.has_data(worker_id)
+                if has_data:
+                    log_debug(
+                        "get result from %s worker_num %s",
+                        worker_id,
+                        self._endpoint.worker_num,
+                    )
+                    await self._process_worker_data(
+                        worker_id, self._endpoint.get(worker_id=worker_id)
+                    )
+                    worker_set.remove(worker_id)
+            if worker_set:
+                log_debug("wait workers %s", worker_set)
 
             if worker_set and not self._stopped():
-                gevent.sleep(1)
+                await asyncio.sleep(1)
 
-        with self._get_execution_context():
-            self._endpoint.close()
-            self._server_exit()
-            log_debug("end server")
+        self._endpoint.close()
+        self._server_exit()
+        log_debug("end server")
 
-    def _before_start(self) -> None:
+    async def _before_start(self) -> None:
         pass
 
     def _server_exit(self) -> None:
         pass
 
-    def _process_worker_data(self, worker_id: int, data: Message) -> None:
+    async def _process_worker_data(self, worker_id: int, data: Message) -> None:
         raise NotImplementedError()
 
-    def _before_send_result(self, result: Message) -> None:
+    async def _before_send_result(self, result: Message) -> None:
         pass
 
     def _after_send_result(self, result: Message) -> None:
         pass
 
-    def _send_result(self, result: Message) -> None:
-        self._before_send_result(result=result)
+    async def _send_result(self, result: Message) -> None:
+        await self._before_send_result(result=result)
         if isinstance(result, MultipleWorkerMessage):
             for worker_id, data in result.worker_data.items():
                 self._endpoint.send(worker_id=worker_id, data=data)
