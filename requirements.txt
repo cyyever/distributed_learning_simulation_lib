@@ -2,7 +2,6 @@ hydra-core
 huggingface-hub
 spacy
 dill
-gevent
 colorlog
 psutil
 FileLock-git
