@@ -6,7 +6,6 @@ import random
 from typing import Any
 
 import torch
-from cyy_naive_lib.concurrency import ThreadPool
 from cyy_naive_lib.log import log_debug, log_info
 from cyy_naive_lib.topology.cs_endpoint import ServerEndpoint
 from cyy_torch_toolbox import Inferencer, MachineLearningPhase
@@ -61,11 +60,7 @@ class Server(Executor):
             tester.update_dataloader_kwargs(batch_size=batch_size)
         if "num_neighbor" in tester.dataloader_kwargs:
             tester.update_dataloader_kwargs(num_neighbor=10)
-        thread_pool = ThreadPool()
-        thread_pool.submit(tester.inference)
-        done, _ = thread_pool.wait_results()
-        assert done
-        thread_pool.shutdown(wait=False)
+        tester.inference()
         metric: dict = tester.performance_metric.get_epoch_metrics(1)
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
