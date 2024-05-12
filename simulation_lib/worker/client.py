@@ -15,6 +15,7 @@ class Client(Worker):
 
     async def _get_data_from_server(self) -> Any:
         while not self._endpoint.has_data():
+            self.trainer.wait_stream()
             self._release_device_lock()
             ExecutorContext.release()
             await asyncio.sleep(0.1)
