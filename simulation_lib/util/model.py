@@ -2,8 +2,7 @@ from typing import Callable, Iterable
 
 import torch.nn
 from cyy_naive_lib.log import log_debug
-from cyy_torch_toolbox.trainer import Trainer
-from cyy_torch_toolbox.typing import TensorDict
+from cyy_torch_toolbox import TensorDict, Trainer
 
 
 def reset_optimizer_parameters(

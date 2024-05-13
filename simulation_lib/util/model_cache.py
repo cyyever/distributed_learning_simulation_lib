@@ -1,6 +1,5 @@
 from cyy_naive_lib.storage import DataStorage
-from cyy_torch_toolbox.tensor import tensor_to
-from cyy_torch_toolbox.typing import TensorDict
+from cyy_torch_toolbox import TensorDict, tensor_to
 
 
 class ModelCache:

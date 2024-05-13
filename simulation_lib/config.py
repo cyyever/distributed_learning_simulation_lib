@@ -5,8 +5,7 @@ from typing import Any
 
 import omegaconf
 from cyy_naive_lib.log import log_debug, log_warning
-from cyy_torch_toolbox import Config
-from cyy_torch_toolbox.dataset import ClassificationDatasetCollection
+from cyy_torch_toolbox import ClassificationDatasetCollection, Config
 from cyy_torch_toolbox.device import get_device_memory_info
 
 from .practitioner import Practitioner
