@@ -4,7 +4,7 @@ import multiprocessing
 import os
 import threading
 from functools import cached_property
-from typing import Any, Callable
+from typing import Any, Callable, Self
 
 import torch
 from cyy_naive_lib.log import log_debug
@@ -15,6 +15,16 @@ from .config import DistributedTrainingConfig
 
 class ExecutorContext:
     semaphore = asyncio.BoundedSemaphore(value=1)
+
+    def __init__(self, name: str) -> None:
+        self.__name = name
+
+    async def __aenter__(self) -> Self:
+        await self.acquire(name=self.__name)
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb) -> None:
+        self.release()
 
     @classmethod
     async def acquire(cls, name: str) -> None:
