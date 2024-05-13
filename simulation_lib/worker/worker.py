@@ -65,45 +65,49 @@ class Worker(Executor):
     def _stopped(self) -> bool:
         return self._round_index > self.config.round or self._force_stop
 
+    def pause(self) -> None:
+        self.trainer.wait_stream()
+        self._release_device_lock()
+
     async def start(self, **kwargs: Any) -> None:
         first_training: bool = True
         self._round_index = 1
         self._force_stop = False
         while not self._stopped():
             # in case worker changes round number
-            await ExecutorContext.acquire(self.name)
-            if first_training:
-                await self._before_training()
-                first_training = False
-                # in case worker changes round number
-                if self._stopped():
-                    ExecutorContext.release()
-                    break
-                self.trainer.set_device_fun(
-                    functools.partial(
-                        self._get_device,
-                        lock_callback=lambda: self.trainer.append_named_hook(
-                            ExecutorHookPoint.AFTER_BATCH,
-                            "release_device_lock",
-                            self.release_device_lock,
-                        ),
+            async with ExecutorContext(self.name):
+                if first_training:
+                    await self._before_training()
+                    first_training = False
+                    # in case worker changes round number
+                    if self._stopped():
+                        break
+                    self.trainer.set_device_fun(
+                        functools.partial(
+                            self._get_device,
+                            lock_callback=lambda: self.trainer.append_named_hook(
+                                ExecutorHookPoint.AFTER_BATCH,
+                                "_release_device_lock",
+                                self._release_device_lock,
+                            ),
+                        )
                     )
+                else:
+                    self.trainer.hook_config.summarize_executor = False
+                self.trainer.hook_config.log_performance_metric = (
+                    self.config.enable_training_log
                 )
-            else:
-                self.trainer.hook_config.summarize_executor = False
-            self.trainer.hook_config.log_performance_metric = (
-                self.config.enable_training_log
-            )
-            self.trainer.disable_hook("batch_loss_logger")
-            self.trainer.set_visualizer_prefix(prefix=f"round: {self._round_index},")
-            await self.trainer.async_train(
-                **kwargs,
-            )
-            self._round_index += 1
-            ExecutorContext.release()
+                self.trainer.disable_hook("batch_loss_logger")
+                self.trainer.set_visualizer_prefix(
+                    prefix=f"round: {self._round_index},"
+                )
+                await self.trainer.async_train(
+                    **kwargs,
+                )
+                self._round_index += 1
         async with ExecutorContext(self.name):
             log_debug("finish worker")
-            self._endpoint.close()
+            self.endpoint.close()
             log_debug("close endpoint")
             self._after_training()
             log_debug("end worker")

@@ -18,8 +18,7 @@ class ClientMixin(WorkerProtocol):
     async def _get_data_from_server(self) -> Any:
         assert isinstance(self.endpoint, ClientEndpoint)
         while not self.endpoint.has_data():
-            self.trainer.wait_stream()
-            self.release_device_lock()
+            self.pause()
             ExecutorContext.release()
             await asyncio.sleep(0.1)
             await ExecutorContext.acquire(self.name)

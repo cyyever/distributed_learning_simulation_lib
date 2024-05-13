@@ -17,6 +17,9 @@ class WorkerProtocol(ExecutorProtocol):
     def trainer(self) -> Trainer:
         ...
 
+    def pause(self)->None:
+        ...
+
 class AggregationWorkerProtocol(WorkerProtocol):
 
 
