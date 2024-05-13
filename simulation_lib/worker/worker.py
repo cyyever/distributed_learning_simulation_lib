@@ -98,10 +98,9 @@ class Worker(Executor):
             )
             self._round_index += 1
             ExecutorContext.release()
-        await ExecutorContext.acquire(self.name)
-        log_debug("finish worker")
-        self._endpoint.close()
-        log_debug("close endpoint")
-        self._after_training()
-        log_debug("end worker")
-        ExecutorContext.release()
+        async with ExecutorContext(self.name):
+            log_debug("finish worker")
+            self._endpoint.close()
+            log_debug("close endpoint")
+            self._after_training()
+            log_debug("end worker")
