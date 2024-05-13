@@ -11,3 +11,7 @@ class ExecutorProtocol(Protocol):
     @property
     def config(self) -> DistributedTrainingConfig:
         ...
+
+    @property
+    def name(self) -> str:
+        ...

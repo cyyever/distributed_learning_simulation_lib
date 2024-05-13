@@ -9,12 +9,14 @@ from cyy_torch_toolbox.hook.keep_model import KeepModelHook
 from ..message import (DeltaParameterMessage, Message, ParameterMessage,
                        ParameterMessageBase)
 from ..util import ModelCache, load_parameters
-from .client import Client
+from .client import ClientMixin
+from .worker import Worker
 
 
-class AggregationWorker(Client):
+class AggregationWorker(Worker, ClientMixin):
     def __init__(self, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
+        Worker.__init__(self, **kwargs)
+        ClientMixin.__init__(self)
         self._aggregation_time: ExecutorHookPoint = ExecutorHookPoint.AFTER_EXECUTE
         self._reuse_learning_rate: bool = False
         self.__choose_model_by_validation: bool | None = None

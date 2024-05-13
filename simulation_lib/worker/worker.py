@@ -5,9 +5,8 @@ from typing import Any
 
 import dill
 from cyy_naive_lib.log import log_debug
-from cyy_naive_lib.topology.cs_endpoint import ClientEndpoint
-from cyy_torch_toolbox.ml_type import ExecutorHookPoint
-from cyy_torch_toolbox.trainer import Trainer
+from cyy_naive_lib.topology.endpoint import Endpoint
+from cyy_torch_toolbox import ExecutorHookPoint, Trainer
 
 from ..executor import Executor, ExecutorContext
 from ..practitioner import Practitioner
@@ -17,7 +16,7 @@ class Worker(Executor):
     def __init__(
         self,
         task_id: int | None,
-        endpoint: ClientEndpoint,
+        endpoint: Endpoint,
         practitioner: Practitioner,
         **kwargs: Any,
     ) -> None:
@@ -30,6 +29,10 @@ class Worker(Executor):
         self._endpoint = endpoint
         self._round_index = 0
         self._force_stop = False
+
+    @property
+    def endpoint(self):
+        return self._endpoint
 
     @property
     def round_index(self):

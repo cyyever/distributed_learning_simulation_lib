@@ -2,22 +2,25 @@ import asyncio
 from typing import Any
 
 import torch
+from cyy_naive_lib.topology import ClientEndpoint
 
 from ..executor import ExecutorContext
-from .worker import Worker
+from .protocol import WorkerProtocol
 
 
-class Client(Worker):
+class ClientMixin(WorkerProtocol):
     def send_data_to_server(self, data: Any) -> None:
-        self._endpoint.send(data)
+        assert isinstance(self.endpoint, ClientEndpoint)
+        self.endpoint.send(data)
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
 
     async def _get_data_from_server(self) -> Any:
-        while not self._endpoint.has_data():
+        assert isinstance(self.endpoint, ClientEndpoint)
+        while not self.endpoint.has_data():
             self.trainer.wait_stream()
             self._release_device_lock()
             ExecutorContext.release()
             await asyncio.sleep(0.1)
             await ExecutorContext.acquire(self.name)
-        return self._endpoint.get()
+        return self.endpoint.get()

@@ -7,7 +7,8 @@ from cyy_torch_toolbox.tensor import tensor_to
 from cyy_torch_toolbox.typing import TensorDict
 
 from ..message import Message, ParameterMessage
-from .client import Client
+from .client import ClientMixin
+from .worker import Worker
 
 
 class GradientModelEvaluator:
@@ -56,9 +57,10 @@ class GradientModelEvaluator:
         )
 
 
-class GradientWorker(Client):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+class GradientWorker(Worker, ClientMixin):
+    def __init__(self, **kwargs) -> None:
+        Worker.__init__(self, **kwargs)
+        ClientMixin.__init__(self, **kwargs)
         self.__cnt = 0
         self.__aggregation_interval = self.config.algorithm_kwargs.get("interval", 1)
         self.trainer.replace_model_evaluator(
