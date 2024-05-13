@@ -90,7 +90,7 @@ class Executor:
                 torch.cuda.set_device(self.__thread_data.device)
         return self.__thread_data.device
 
-    def _release_device_lock(self, **kwargs: Any) -> None:
+    def release_device_lock(self, **kwargs: Any) -> None:
         if self.__hold_device_lock:
             if "cuda" in self.__thread_data.device.type.lower():
                 stats = torch.cuda.memory_stats(device=self.__thread_data.device)
