@@ -20,6 +20,6 @@ class ClientMixin(WorkerProtocol):
         while not self.endpoint.has_data():
             self.pause()
             ExecutorContext.release()
-            await asyncio.sleep(5)
+            await asyncio.sleep(0.1)
             await ExecutorContext.acquire(self.name)
         return self.endpoint.get()
