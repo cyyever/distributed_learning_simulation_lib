@@ -5,7 +5,7 @@ from cyy_torch_toolbox.tensor import cat_tensors_to_vector
 
 
 class RandomDropoutAlgorithm:
-    def __init__(self, dropout_rate):
+    def __init__(self, dropout_rate) -> None:
         self.__dropout_rate = dropout_rate
         log_info("use dropout rate %s", self.__dropout_rate)
 

@@ -7,7 +7,7 @@ from functools import cached_property
 from typing import Any, Callable, Self
 
 import torch
-from cyy_naive_lib.log import log_debug
+from cyy_naive_lib.log import log_debug, log_error
 from cyy_torch_toolbox.device import get_device
 
 from .config import DistributedTrainingConfig
@@ -24,6 +24,8 @@ class ExecutorContext:
         return self
 
     async def __aexit__(self, exc_type, exc, tb) -> None:
+        if exc_type is not None:
+            log_error("Found exception: %s %s %s", exc_type, exc, tb)
         self.release()
 
     @classmethod

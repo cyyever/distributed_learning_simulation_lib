@@ -45,10 +45,10 @@ class PersonalizedFedAVGAlgorithm(AggregationAlgorithm):
             worker_id: algorithm.aggregate_worker_data()
             for worker_id, algorithm in self._worker_aggregation_algorithms.items()
         }
-        centralized_parameter_dict = AggregationAlgorithm.weighted_avg(
+        centralized_parameter = AggregationAlgorithm.weighted_avg(
             worker_data, 1 / len(worker_data)
         )
         return MultipleWorkerMessage(
             worker_data=worker_data,
-            other_data={"centralized_parameter": centralized_parameter_dict},
+            other_data={"centralized_parameter": centralized_parameter},
         )

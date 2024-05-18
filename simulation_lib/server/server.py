@@ -9,7 +9,7 @@ import torch
 from cyy_naive_lib.log import log_debug, log_info
 from cyy_naive_lib.topology.cs_endpoint import ServerEndpoint
 from cyy_torch_toolbox import Inferencer, MachineLearningPhase
-from cyy_torch_toolbox.typing import TensorDict
+from cyy_torch_toolbox.typing import ModelParameter
 
 from ..executor import Executor, ExecutorContext
 from ..message import Message, MultipleWorkerMessage, ParameterMessage
@@ -36,18 +36,18 @@ class Server(Executor):
         tester.hook_config.summarize_executor = False
         return tester
 
-    def load_parameter(self, tester: Inferencer, parameter_dict: TensorDict):
-        tester.model_util.load_parameter_dict(parameter_dict)
+    def load_parameter(self, tester: Inferencer, parameter: ModelParameter) -> None:
+        tester.model_util.load_parameters(parameter)
 
     def get_metric(
         self,
-        parameter_dict: TensorDict | ParameterMessage,
+        parameter: ModelParameter | ParameterMessage,
         log_performance_metric: bool = True,
     ) -> dict:
-        if isinstance(parameter_dict, ParameterMessage):
-            parameter_dict = parameter_dict.parameter
+        if isinstance(parameter, ParameterMessage):
+            parameter = parameter.parameter
         tester = self.get_tester()
-        self.load_parameter(tester=tester, parameter_dict=parameter_dict)
+        self.load_parameter(tester=tester, parameter=parameter)
         tester.model_util.disable_running_stats()
         tester.hook_config.log_performance_metric = log_performance_metric
         if "batch_number" in tester.dataloader_kwargs:

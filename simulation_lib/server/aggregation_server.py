@@ -128,7 +128,7 @@ class AggregationServer(Server, PerformanceMixin):
             "aggregated_model",
             f"round_{self.round_index}.pk",
         )
-        self.__model_cache.cache_parameter_dict(result.parameter, model_path)
+        self.__model_cache.cache_parameter(result.parameter, model_path)
 
     def _after_send_result(self, result: Any) -> None:
         if not result.in_round:

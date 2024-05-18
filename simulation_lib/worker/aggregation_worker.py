@@ -140,9 +140,7 @@ class AggregationWorker(Worker, ClientMixin):
             case ParameterMessage():
                 parameter = result.parameter
                 if self._keep_model_cache or self._send_parameter_diff:
-                    self._model_cache.cache_parameter_dict(
-                        result.parameter, path=model_path
-                    )
+                    self._model_cache.cache_parameter(result.parameter, path=model_path)
             case DeltaParameterMessage():
                 assert self._model_cache.has_data
                 self._model_cache.add_parameter_diff(

@@ -39,5 +39,5 @@ def load_parameters(
         if loading_fun is not None:
             loading_fun(parameter)
         else:
-            trainer.load_parameter(parameter)
+            trainer.load_parameters(parameter)
     trainer.model_util.disable_running_stats()
