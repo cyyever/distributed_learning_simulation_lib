@@ -3,9 +3,8 @@ import pickle
 from typing import Any
 
 from cyy_naive_lib.log import log_debug, log_info
-from cyy_torch_toolbox import Inferencer
+from cyy_torch_toolbox import Inferencer, ModelParameter
 from cyy_torch_toolbox.tensor import tensor_to
-from cyy_torch_toolbox.typing import TensorDict
 
 from ..algorithm.aggregation_algorithm import AggregationAlgorithm
 from ..message import (DeltaParameterMessage, Message, ParameterMessage,
@@ -45,17 +44,17 @@ class AggregationServer(Server, PerformanceMixin):
         tester.set_visualizer_prefix(f"round: {self.round_index},")
         return tester
 
-    def __get_init_model(self) -> TensorDict:
-        parameter_dict: TensorDict = {}
+    def __get_init_model(self) -> ModelParameter:
+        parameter: ModelParameter = {}
         init_global_model_path = self.config.algorithm_kwargs.get(
             "global_model_path", None
         )
         if init_global_model_path is not None:
             with open(os.path.join(init_global_model_path), "rb") as f:
-                parameter_dict = pickle.load(f)
+                parameter = pickle.load(f)
         else:
-            parameter_dict = self.get_tester().model_util.get_parameter_dict()
-        return parameter_dict
+            parameter = self.get_tester().model_util.get_parameters()
+        return parameter
 
     @property
     def distribute_init_parameters(self) -> bool:
@@ -81,15 +80,15 @@ class AggregationServer(Server, PerformanceMixin):
                 if not isinstance(data, ParameterMessageBase):
                     return
 
-            old_parameter_dict = self.__model_cache.parameter_dict
+            old_parameter = self.__model_cache.parameter
             match data:
                 case DeltaParameterMessage():
-                    assert old_parameter_dict is not None
+                    assert old_parameter is not None
                     data.delta_parameter = tensor_to(data.delta_parameter, device="cpu")
-                    data = data.restore(old_parameter_dict)
+                    data = data.restore(old_parameter)
                 case ParameterMessage():
-                    if old_parameter_dict is not None:
-                        data.complete(old_parameter_dict)
+                    if old_parameter is not None:
+                        data.complete(old_parameter)
                     data.parameter = tensor_to(data.parameter, device="cpu")
         self.__algorithm.process_worker_data(worker_id=worker_id, worker_data=data)
         self.__worker_flag.add(worker_id)
@@ -105,7 +104,7 @@ class AggregationServer(Server, PerformanceMixin):
             )
 
     def _aggregate_worker_data(self) -> Any:
-        self.__algorithm.set_old_parameter(self.__model_cache.parameter_dict)
+        self.__algorithm.set_old_parameter(self.__model_cache.parameter)
         return self.__algorithm.aggregate_worker_data()
 
     def _before_send_result(self, result: Message) -> None:

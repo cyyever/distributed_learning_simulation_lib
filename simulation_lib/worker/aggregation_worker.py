@@ -3,7 +3,7 @@ from typing import Any
 
 from cyy_naive_lib.log import log_debug, log_info
 from cyy_torch_toolbox import (ExecutorHookPoint, MachineLearningPhase,
-                               StopExecutingException)
+                               ModelParameter, StopExecutingException)
 from cyy_torch_toolbox.hook.keep_model import KeepModelHook
 
 from ..message import (DeltaParameterMessage, Message, ParameterMessage,
@@ -106,7 +106,7 @@ class AggregationWorker(Worker, ClientMixin):
             parameter = self.best_model_hook.best_model["parameter"]
             best_epoch = self.best_model_hook.best_model["epoch"]
         else:
-            parameter = self.trainer.model_util.get_parameter_dict()
+            parameter = self.trainer.model_util.get_parameters()
             best_epoch = self.trainer.hyper_parameter.epoch
         other_data = {}
         if self._send_loss:
@@ -135,10 +135,10 @@ class AggregationWorker(Worker, ClientMixin):
         model_path = os.path.join(
             self.save_dir, "aggregated_model", f"round_{self.round_index}.pk"
         )
-        parameter_dict = {}
+        parameter: ModelParameter = {}
         match result:
             case ParameterMessage():
-                parameter_dict = result.parameter
+                parameter = result.parameter
                 if self._keep_model_cache or self._send_parameter_diff:
                     self._model_cache.cache_parameter_dict(
                         result.parameter, path=model_path
@@ -148,12 +148,12 @@ class AggregationWorker(Worker, ClientMixin):
                 self._model_cache.add_parameter_diff(
                     result.delta_parameter, path=model_path
                 )
-                parameter_dict = self._model_cache.parameter_dict
+                parameter = self._model_cache.parameter
             case _:
                 raise NotImplementedError()
         load_parameters(
             trainer=self.trainer,
-            parameter_dict=parameter_dict,
+            parameter=parameter,
             reuse_learning_rate=self._reuse_learning_rate,
             loading_fun=self._model_loading_fun,
         )

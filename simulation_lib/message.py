@@ -3,8 +3,8 @@ from dataclasses import dataclass, field, fields
 from typing import Any, Mapping
 
 import torch
+from cyy_torch_toolbox import ModelParameter
 from cyy_torch_toolbox.tensor import recursive_tensor_op
-from cyy_torch_toolbox.typing import TensorDict
 
 
 @dataclass(kw_only=True)
@@ -22,9 +22,9 @@ class ParameterMessageBase(Message):
 
 @dataclass(kw_only=True)
 class ParameterMessage(ParameterMessageBase):
-    parameter: TensorDict
+    parameter: ModelParameter
 
-    def complete(self, other_parameter: TensorDict) -> None:
+    def complete(self, other_parameter: ModelParameter) -> None:
         for k, v in other_parameter.items():
             if k not in self.parameter:
                 self.parameter[k] = v
@@ -32,9 +32,9 @@ class ParameterMessage(ParameterMessageBase):
 
 @dataclass(kw_only=True)
 class DeltaParameterMessage(ParameterMessageBase):
-    delta_parameter: TensorDict
+    delta_parameter: ModelParameter
 
-    def restore(self, parameter: TensorDict) -> ParameterMessage:
+    def restore(self, parameter: ModelParameter) -> ParameterMessage:
         new_parameter = copy.deepcopy(parameter)
         for k, v in self.delta_parameter.items():
             new_parameter[k] += v
