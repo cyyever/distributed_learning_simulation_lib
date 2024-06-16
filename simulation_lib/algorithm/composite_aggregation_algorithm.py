@@ -1,6 +1,6 @@
 from typing import Any
 
-from cyy_torch_toolbox.typing import TensorDict
+from cyy_torch_toolbox import ModelParameter
 
 from ..config import DistributedTrainingConfig
 from ..message import Message
@@ -16,7 +16,7 @@ class CompositeAggregationAlgorithm(AggregationAlgorithm):
     def append_algorithm(self, algorithm: AggregationAlgorithm) -> None:
         self.__algorithms.append(algorithm)
 
-    def set_old_parameter(self, old_parameter: TensorDict) -> None:
+    def set_old_parameter(self, old_parameter: ModelParameter) -> None:
         for algorithm in self.__algorithms:
             algorithm.set_old_parameter(old_parameter=old_parameter)
 

@@ -1,6 +1,6 @@
 from typing import Any
 
-from cyy_torch_toolbox.typing import TensorDict
+from cyy_torch_toolbox import ModelParameter
 
 from ..config import DistributedTrainingConfig
 from ..message import Message, ParameterMessage
@@ -10,10 +10,10 @@ class AggregationAlgorithm:
     def __init__(self) -> None:
         self._all_worker_data: dict[int, Message] = {}
         self.__skipped_workers: set[int] = set()
-        self._old_parameter: TensorDict | None = None
+        self._old_parameter: ModelParameter | None = None
         self._config: DistributedTrainingConfig | None = None
 
-    def set_old_parameter(self, old_parameter: TensorDict) -> None:
+    def set_old_parameter(self, old_parameter: ModelParameter) -> None:
         self._old_parameter = old_parameter
 
     @property
@@ -46,9 +46,9 @@ class AggregationAlgorithm:
         cls,
         data_dict: dict[int, Message],
         weights: dict[int, float] | float,
-    ) -> TensorDict:
+    ) -> ModelParameter:
         assert data_dict
-        avg_data: TensorDict = {}
+        avg_data: ModelParameter = {}
         for worker_id, v in data_dict.items():
             if isinstance(weights, dict):
                 weight = weights[worker_id]

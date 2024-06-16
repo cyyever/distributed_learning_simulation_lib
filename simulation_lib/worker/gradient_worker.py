@@ -1,10 +1,8 @@
 from typing import Any, Callable
 
 import torch
-from cyy_torch_toolbox.ml_type import ExecutorHookPoint
-from cyy_torch_toolbox.model.evaluator import ModelEvaluator
+from cyy_torch_toolbox import ExecutorHookPoint, ModelEvaluator, ModelGradient
 from cyy_torch_toolbox.tensor import tensor_to
-from cyy_torch_toolbox.typing import TensorDict
 
 from ..message import Message, ParameterMessage
 from .client import ClientMixin
@@ -49,7 +47,7 @@ class GradientModelEvaluator:
         self.evaluator.backward(loss=loss, optimizer=optimizer, **backward_kwargs)
         if not self.__aggregation_indicator_fun():
             return
-        gradient_dict: TensorDict = self.__gradient_fun(
+        gradient_dict: ModelGradient = self.__gradient_fun(
             self.evaluator.model_util.get_gradient_dict()
         )
         self.evaluator.model_util.load_gradient_dict(
@@ -82,7 +80,7 @@ class GradientWorker(Worker, ClientMixin):
         self.__cnt += 1
         return res
 
-    def _process_gradient(self, gradient_dict: TensorDict) -> TensorDict:
+    def _process_gradient(self, gradient_dict: ModelGradient) -> ModelGradient:
         self.send_data_to_server(
             ParameterMessage(
                 parameter=gradient_dict,

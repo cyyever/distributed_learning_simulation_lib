@@ -7,9 +7,8 @@ from typing import Any
 
 import torch
 from cyy_naive_lib.log import log_debug, log_info
-from cyy_naive_lib.topology.cs_endpoint import ServerEndpoint
-from cyy_torch_toolbox import Inferencer, MachineLearningPhase
-from cyy_torch_toolbox.typing import ModelParameter
+from cyy_naive_lib.topology import ServerEndpoint
+from cyy_torch_toolbox import Inferencer, MachineLearningPhase, ModelParameter
 
 from ..executor import Executor, ExecutorContext
 from ..message import Message, MultipleWorkerMessage, ParameterMessage

@@ -2,7 +2,7 @@ from typing import Any
 
 import torch
 from cyy_naive_lib.log import log_error
-from cyy_torch_toolbox.typing import TensorDict
+from cyy_torch_toolbox import ModelParameter
 
 from ..message import Message, ParameterMessage
 from .aggregation_algorithm import AggregationAlgorithm
@@ -15,7 +15,7 @@ class FedAVGAlgorithm(AggregationAlgorithm):
         self.aggregate_loss: bool = False
         self.__dtypes: dict[str, Any] = {}
         self.__total_weights: dict[str, float] = {}
-        self.__parameter: TensorDict = {}
+        self.__parameter: ModelParameter = {}
 
     def process_worker_data(
         self,
@@ -85,7 +85,7 @@ class FedAVGAlgorithm(AggregationAlgorithm):
         )
 
     @classmethod
-    def aggregate_parameter(cls, all_worker_data: dict[int, Message]) -> TensorDict:
+    def aggregate_parameter(cls, all_worker_data: dict[int, Message]) -> ModelParameter:
         assert all_worker_data
         assert all(
             isinstance(parameter, ParameterMessage)

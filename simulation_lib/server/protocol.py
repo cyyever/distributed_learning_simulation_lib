@@ -1,7 +1,7 @@
 from functools import cached_property
 from typing import Protocol
 
-from cyy_torch_toolbox.typing import ModelParameter
+from cyy_torch_toolbox import ModelParameter
 
 from ..config import DistributedTrainingConfig
 from ..message import ParameterMessage
@@ -14,7 +14,7 @@ class AggregationServerProtocol(Protocol):
 
     def get_metric(
         self,
-        parameter: ModelParameter| ParameterMessage,
+        parameter: ModelParameter | ParameterMessage,
         log_performance_metric: bool = True,
     ) -> dict:
         ...

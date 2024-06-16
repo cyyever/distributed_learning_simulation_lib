@@ -1,7 +1,7 @@
 from typing import Any
 
 import torch
-from cyy_torch_toolbox.typing import TensorDict
+from cyy_torch_toolbox import TensorDict
 
 from ..message import ParameterMessageBase
 from .aggregation_worker import AggregationWorker
