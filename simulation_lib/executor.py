@@ -1,4 +1,3 @@
-import asyncio
 import copy
 import multiprocessing
 import os
@@ -6,6 +5,7 @@ import threading
 from functools import cached_property
 from typing import Any, Callable, Self
 
+import gevent.lock
 import torch
 from cyy_naive_lib.log import log_debug, log_error
 from cyy_torch_toolbox.device import get_device
@@ -14,23 +14,23 @@ from .config import DistributedTrainingConfig
 
 
 class ExecutorContext:
-    semaphore = asyncio.BoundedSemaphore(value=1)
+    semaphore = gevent.lock.BoundedSemaphore(value=1)
 
     def __init__(self, name: str) -> None:
         self.__name = name
 
-    async def __aenter__(self) -> Self:
-        await self.acquire(name=self.__name)
+    def __enter__(self) -> Self:
+        self.acquire(name=self.__name)
         return self
 
-    async def __aexit__(self, exc_type, exc, tb) -> None:
+    def __exit__(self, exc_type, exc, tb) -> None:
         if exc_type is not None:
             log_error("Found exception: %s %s %s", exc_type, exc, tb)
         self.release()
 
     @classmethod
-    async def acquire(cls, name: str) -> None:
-        await cls.semaphore.acquire()
+    def acquire(cls, name: str) -> None:
+        cls.semaphore.acquire()
         multiprocessing.current_process().name = name
         threading.current_thread().name = name
         log_debug("get lock %s", cls.semaphore)
@@ -111,5 +111,5 @@ class Executor:
             self.__device_lock.release()
             self.__hold_device_lock = False
 
-    async def start(self) -> None:
+    def start(self) -> None:
         raise NotImplementedError()

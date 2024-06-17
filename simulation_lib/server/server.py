@@ -1,8 +1,8 @@
-import asyncio
 import copy
 import os
 import pickle
 import random
+import time
 from typing import Any
 
 import torch
@@ -65,8 +65,8 @@ class Server(Executor):
             torch.cuda.empty_cache()
         return metric
 
-    async def start(self) -> None:
-        await ExecutorContext.acquire(self.name)
+    def start(self) -> None:
+        ExecutorContext.acquire(self.name)
         with open(os.path.join(self.save_dir, "config.pkl"), "wb") as f:
             pickle.dump(self.config, f)
         self._before_start()
@@ -92,7 +92,7 @@ class Server(Executor):
                 log_debug("wait workers %s", worker_set)
 
             if worker_set and not self._stopped():
-                await asyncio.sleep(1)
+                time.sleep(1)
 
         self._endpoint.close()
         self._server_exit()

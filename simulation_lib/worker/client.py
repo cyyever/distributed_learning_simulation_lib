@@ -1,6 +1,6 @@
-import asyncio
 from typing import Any
 
+import gevent
 import torch
 from cyy_naive_lib.topology import ClientEndpoint
 
@@ -15,11 +15,11 @@ class ClientMixin(WorkerProtocol):
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
 
-    async def _get_data_from_server(self) -> Any:
+    def _get_data_from_server(self) -> Any:
         assert isinstance(self.endpoint, ClientEndpoint)
         while not self.endpoint.has_data():
             self.pause()
             ExecutorContext.release()
-            await asyncio.sleep(0.1)
-            await ExecutorContext.acquire(self.name)
+            gevent.sleep(0.1)
+            ExecutorContext.acquire(self.name)
         return self.endpoint.get()

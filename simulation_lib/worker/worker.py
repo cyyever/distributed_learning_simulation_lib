@@ -52,7 +52,7 @@ class Worker(Executor):
     def _offload_from_device(self) -> None:
         self.trainer.offload_from_device()
 
-    async def _before_training(self) -> None:
+    def _before_training(self) -> None:
         pass
 
     def _after_training(self) -> None:
@@ -69,15 +69,15 @@ class Worker(Executor):
         self.trainer.wait_stream()
         self._release_device_lock()
 
-    async def start(self, **kwargs: Any) -> None:
+    def start(self, **kwargs: Any) -> None:
         first_training: bool = True
         self._round_index = 1
         self._force_stop = False
         while not self._stopped():
             # in case worker changes round number
-            async with ExecutorContext(self.name):
+            with ExecutorContext(self.name):
                 if first_training:
-                    await self._before_training()
+                    self._before_training()
                     first_training = False
                     # in case worker changes round number
                     if self._stopped():
@@ -101,11 +101,11 @@ class Worker(Executor):
                 self.trainer.set_visualizer_prefix(
                     prefix=f"round: {self._round_index},"
                 )
-                await self.trainer.async_train(
+                self.trainer.train(
                     **kwargs,
                 )
                 self._round_index += 1
-        async with ExecutorContext(self.name):
+        with ExecutorContext(self.name):
             log_debug("finish worker")
             self.endpoint.close()
             log_debug("close endpoint")

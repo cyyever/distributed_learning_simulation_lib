@@ -34,8 +34,8 @@ class AggregationWorker(Worker, ClientMixin):
     def distribute_init_parameters(self) -> bool:
         return self.config.algorithm_kwargs.get("distribute_init_parameters", True)
 
-    async def _before_training(self) -> None:
-        await super()._before_training()
+    def _before_training(self) -> None:
+        super()._before_training()
         self.trainer.dataset_collection.remove_dataset(phase=MachineLearningPhase.Test)
         if self.__choose_model_by_validation is None:
             if (
@@ -53,7 +53,7 @@ class AggregationWorker(Worker, ClientMixin):
         self.trainer.offload_from_device()
         # load initial parameters
         if self.distribute_init_parameters:
-            await self.__get_result_from_server()
+            self.__get_result_from_server()
             if self._stopped():
                 return
         self._register_aggregation()
@@ -62,9 +62,9 @@ class AggregationWorker(Worker, ClientMixin):
         log_debug("use aggregation_time %s", self._aggregation_time)
         self.trainer.remove_named_hook(name="aggregation")
 
-        async def __aggregation_impl(**kwargs) -> None:
+        def __aggregation_impl(**kwargs) -> None:
             if not self._stopped():
-                await self._aggregation(sent_data=self._get_sent_data(), **kwargs)
+                self._aggregation(sent_data=self._get_sent_data(), **kwargs)
 
         self.trainer.append_named_hook(
             self._aggregation_time,
@@ -72,10 +72,10 @@ class AggregationWorker(Worker, ClientMixin):
             __aggregation_impl,
         )
 
-    async def _aggregation(self, sent_data: Message, **kwargs: Any) -> None:
+    def _aggregation(self, sent_data: Message, **kwargs: Any) -> None:
         self.send_data_to_server(sent_data)
         self._offload_from_device()
-        await self.__get_result_from_server()
+        self.__get_result_from_server()
 
     def enable_choosing_model_by_validation(self) -> None:
         self.__choose_model_by_validation = True
@@ -170,9 +170,9 @@ class AggregationWorker(Worker, ClientMixin):
             self.best_model_hook.clear()
         super()._offload_from_device()
 
-    async def __get_result_from_server(self) -> None:
+    def __get_result_from_server(self) -> None:
         while True:
-            result = await super()._get_data_from_server()
+            result = super()._get_data_from_server()
             log_debug("get result from server %s", type(result))
             if result is None:
                 log_info("skip round %s", self.round_index)
