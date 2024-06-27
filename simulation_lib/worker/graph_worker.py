@@ -69,7 +69,7 @@ class GraphWorker(AggregationWorker):
         edge_mask = self.__get_local_edge_mask(edge_index=edge_index)
         return torch_geometric.utils.coalesce(edge_index[:, edge_mask])
 
-    def __exchange_training_node_indices(self) -> None:
+    def _determine_topology(self) -> None:
         sent_data = Message(
             other_data={
                 "training_node_indices": self.training_node_indices,
@@ -87,6 +87,12 @@ class GraphWorker(AggregationWorker):
             self.training_node_indices
         )
 
+    def _refine_graph(self) -> None:
+        self._determine_topology()
+        self.__clear_unrelated_edges()
+        if not self._share_feature and self._remove_cross_edge:
+            self._clear_cross_client_edges()
+
     def _before_training(self) -> None:
         super()._before_training()
         if self.hold_log_lock:
@@ -94,8 +100,7 @@ class GraphWorker(AggregationWorker):
                 log_info("share feature")
             else:
                 log_info("not share feature")
-        self.__exchange_training_node_indices()
-        self.__clear_unrelated_edges()
+        self._refine_graph()
         for module in self._get_message_passing_modules():
             module.register_forward_pre_hook(
                 hook=self._record_embedding_size,
@@ -103,8 +108,6 @@ class GraphWorker(AggregationWorker):
                 prepend=False,
             )
         if not self._share_feature:
-            if self._remove_cross_edge:
-                self._clear_cross_client_edges()
             return
 
         for module in self.trainer.model.modules():

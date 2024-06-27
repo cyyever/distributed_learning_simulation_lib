@@ -13,6 +13,9 @@ class CompositeAggregationAlgorithm(AggregationAlgorithm):
         self.__algorithms: list[AggregationAlgorithm] = []
         self.__used_algorithm: AggregationAlgorithm | None = None
 
+    def prepend_algorithm(self, algorithm: AggregationAlgorithm) -> None:
+        self.__algorithms.insert(0, algorithm)
+
     def append_algorithm(self, algorithm: AggregationAlgorithm) -> None:
         self.__algorithms.append(algorithm)
 
@@ -42,6 +45,7 @@ class CompositeAggregationAlgorithm(AggregationAlgorithm):
             ):
                 self.__used_algorithm = algorithm
                 return True
+                # print("worker_data", worker_data, "algorithm", type(algorithm))
         raise NotImplementedError("Failed to process_worker_data")
 
     def aggregate_worker_data(self) -> Any:
