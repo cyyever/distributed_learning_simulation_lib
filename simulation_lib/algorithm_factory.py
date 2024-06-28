@@ -1,4 +1,5 @@
 import functools
+import os
 from typing import Callable
 
 from cyy_naive_lib.log import log_warning
@@ -102,8 +103,9 @@ def get_worker_config(
     assert practitioners
     assert CentralizedAlgorithmFactory.has_algorithm(config.distributed_algorithm)
     topology_class = ProcessPipeCentralTopology
-    if get_operating_system_type() == OSType.Windows:
+    if get_operating_system_type() == OSType.Windows or "no_pipe" in os.environ:
         topology_class = ProcessQueueCentralTopology
+        log_warning("use ProcessQueueCentralTopology")
     topology = topology_class(
         mp_context=TorchProcessContext(), worker_num=config.worker_number
     )
