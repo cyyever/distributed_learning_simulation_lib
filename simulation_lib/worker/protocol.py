@@ -33,6 +33,6 @@ class AggregationWorkerProtocol(WorkerProtocol):
 
 
 class GraphWorkerProtocol(AggregationWorkerProtocol):
-    @property
-    def training_node_indices(self) -> Iterable[int]:
+    @cached_property
+    def training_node_indices(self) -> set:
         ...
