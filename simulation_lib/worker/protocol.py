@@ -1,5 +1,3 @@
-from typing import Iterable
-
 from cyy_torch_toolbox import Trainer
 from cyy_naive_lib.topology.endpoint import Endpoint
 from functools import cached_property
@@ -17,7 +15,7 @@ class WorkerProtocol(ExecutorProtocol):
     def trainer(self) -> Trainer:
         ...
 
-    def pause(self)->None:
+    def pause(self) -> None:
         ...
 
 class AggregationWorkerProtocol(WorkerProtocol):

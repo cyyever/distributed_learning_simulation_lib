@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Mapping, MutableMapping
 
 from cyy_torch_toolbox import ModelParameter
 
@@ -8,7 +8,7 @@ from ..message import Message, ParameterMessage
 
 class AggregationAlgorithm:
     def __init__(self) -> None:
-        self._all_worker_data: dict[int, Message] = {}
+        self._all_worker_data: MutableMapping[int, Message] = {}
         self.__skipped_workers: set[int] = set()
         self._old_parameter: ModelParameter | None = None
         self._config: DistributedTrainingConfig | None = None
@@ -25,7 +25,7 @@ class AggregationAlgorithm:
         self._config = config
 
     @classmethod
-    def get_total_weight(cls, data_dict: dict[int, Message]) -> float:
+    def get_total_weight(cls, data_dict: Mapping[int, Message]) -> float:
         total_weight: float = 0
         for v in data_dict.values():
             assert v.aggregation_weight is not None
@@ -33,7 +33,7 @@ class AggregationAlgorithm:
         return total_weight
 
     @classmethod
-    def get_ratios(cls, data_dict: dict[int, Message]) -> dict[int, float]:
+    def get_ratios(cls, data_dict: Mapping[int, Message]) -> dict[int, float]:
         total_weight: float = float(cls.get_total_weight(data_dict=data_dict))
         ratios = {}
         for k, v in data_dict.items():
@@ -44,7 +44,7 @@ class AggregationAlgorithm:
     @classmethod
     def weighted_avg(
         cls,
-        data_dict: dict[int, Message],
+        data_dict: Mapping[int, ParameterMessage],
         weights: dict[int, float] | float,
     ) -> ModelParameter:
         assert data_dict
@@ -69,7 +69,7 @@ class AggregationAlgorithm:
     @classmethod
     def weighted_avg_for_scalar(
         cls,
-        data_dict: dict[int, Message],
+        data_dict: MutableMapping[int, Message],
         weights: dict[int, float] | float,
         scalar_key: str,
     ) -> float:

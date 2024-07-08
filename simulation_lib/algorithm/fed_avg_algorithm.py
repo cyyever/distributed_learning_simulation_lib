@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, MutableMapping
 
 import torch
 from cyy_naive_lib.log import log_error
@@ -85,7 +85,9 @@ class FedAVGAlgorithm(AggregationAlgorithm):
         )
 
     @classmethod
-    def aggregate_parameter(cls, all_worker_data: dict[int, Message]) -> ModelParameter:
+    def aggregate_parameter(
+        cls, all_worker_data: MutableMapping[int, ParameterMessage]
+    ) -> ModelParameter:
         assert all_worker_data
         assert all(
             isinstance(parameter, ParameterMessage)
@@ -99,7 +101,7 @@ class FedAVGAlgorithm(AggregationAlgorithm):
         return parameter
 
     @classmethod
-    def __aggregate_loss(cls, all_worker_data: dict[int, Message]) -> dict:
+    def __aggregate_loss(cls, all_worker_data: MutableMapping[int, Message]) -> dict:
         assert all_worker_data
         loss_dict = {}
         for worker_data in all_worker_data.values():
@@ -118,7 +120,9 @@ class FedAVGAlgorithm(AggregationAlgorithm):
         return loss_dict
 
     @classmethod
-    def __check_and_reduce_other_data(cls, all_worker_data: dict) -> dict:
+    def __check_and_reduce_other_data(
+        cls, all_worker_data: MutableMapping[int, Message]
+    ) -> dict:
         result: dict = {}
         for worker_data in all_worker_data.values():
             for k, v in worker_data.other_data.items():
