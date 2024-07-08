@@ -2,7 +2,7 @@ from typing import Iterable
 
 from cyy_torch_toolbox import Trainer
 from cyy_naive_lib.topology.endpoint import Endpoint
-
+from functools import cached_property
 from ..util import ModelCache
 from ..protocol import ExecutorProtocol
 
@@ -13,7 +13,7 @@ class WorkerProtocol(ExecutorProtocol):
     def endpoint(self) -> Endpoint:
         ...
 
-    @property
+    @cached_property
     def trainer(self) -> Trainer:
         ...
 
