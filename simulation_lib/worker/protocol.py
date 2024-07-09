@@ -1,5 +1,5 @@
 from cyy_torch_toolbox import Trainer
-from cyy_naive_lib.topology.endpoint import Endpoint
+from cyy_naive_lib.topology import Endpoint
 from functools import cached_property
 from ..util import ModelCache
 from ..protocol import ExecutorProtocol
@@ -18,8 +18,8 @@ class WorkerProtocol(ExecutorProtocol):
     def pause(self) -> None:
         ...
 
-class AggregationWorkerProtocol(WorkerProtocol):
 
+class AggregationWorkerProtocol(WorkerProtocol):
 
     @property
     def round_index(self) -> int:
@@ -31,6 +31,7 @@ class AggregationWorkerProtocol(WorkerProtocol):
 
 
 class GraphWorkerProtocol(AggregationWorkerProtocol):
+
     @cached_property
     def training_node_indices(self) -> set:
         ...

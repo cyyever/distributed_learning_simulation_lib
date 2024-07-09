@@ -86,7 +86,7 @@ class FedAVGAlgorithm(AggregationAlgorithm):
 
     @classmethod
     def aggregate_parameter(
-        cls, all_worker_data: MutableMapping[int, ParameterMessage]
+        cls, all_worker_data: MutableMapping[int, Any]
     ) -> ModelParameter:
         assert all_worker_data
         assert all(

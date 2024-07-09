@@ -333,6 +333,7 @@ class GraphWorker(AggregationWorker):
             self._recorded_model_size["embedding_bytes"].append(
                 x[0].numel() * x[0].element_size()
             )
+        return None
 
     def _pass_node_feature(self, module, args, kwargs) -> tuple | None:
         if not module.training:
