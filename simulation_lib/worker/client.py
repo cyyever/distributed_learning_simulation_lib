@@ -9,7 +9,7 @@ from .protocol import WorkerProtocol
 
 
 class ClientMixin(WorkerProtocol):
-    def send_data_to_server(self, data: Any) -> None:
+    def _send_data_to_server(self, data: Any) -> None:
         assert isinstance(self.endpoint, ClientEndpoint)
         self.endpoint.send(data)
         if torch.cuda.is_available():

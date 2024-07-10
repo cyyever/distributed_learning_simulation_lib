@@ -73,7 +73,7 @@ class GradientWorker(Worker, ClientMixin):
         )
 
     def __report_end(self, **kwargs: Any) -> None:
-        self.send_data_to_server(Message(end_training=True))
+        self._send_data_to_server(Message(end_training=True))
 
     def _should_aggregate(self) -> bool:
         res = self.__cnt % self.__aggregation_interval
@@ -81,7 +81,7 @@ class GradientWorker(Worker, ClientMixin):
         return res
 
     def _process_gradient(self, gradient_dict: ModelGradient) -> ModelGradient:
-        self.send_data_to_server(
+        self._send_data_to_server(
             ParameterMessage(
                 parameter=gradient_dict,
                 in_round=True,

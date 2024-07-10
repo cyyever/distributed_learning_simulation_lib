@@ -73,7 +73,7 @@ class AggregationWorker(Worker, ClientMixin):
         )
 
     def _aggregation(self, sent_data: Message, **kwargs: Any) -> None:
-        self.send_data_to_server(sent_data)
+        self._send_data_to_server(sent_data)
         self._offload_from_device()
         self.__get_result_from_server()
 
@@ -176,7 +176,7 @@ class AggregationWorker(Worker, ClientMixin):
             log_debug("get result from server %s", type(result))
             if result is None:
                 log_info("skip round %s", self.round_index)
-                self.send_data_to_server(None)
+                self._send_data_to_server(None)
                 self._round_index += 1
                 if self._stopped():
                     return

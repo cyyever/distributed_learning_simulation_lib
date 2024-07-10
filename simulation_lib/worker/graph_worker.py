@@ -76,7 +76,7 @@ class GraphWorker(AggregationWorker):
             },
             in_round=True,
         )
-        self.send_data_to_server(sent_data)
+        self._send_data_to_server(sent_data)
         res = self._get_data_from_server()
         assert isinstance(res, Message)
         for worker_id, node_indices in res.other_data["training_node_indices"].items():
@@ -369,7 +369,7 @@ class GraphWorker(AggregationWorker):
                 in_round=True,
             )
         self._comunicated_batch_cnt += 1
-        self.send_data_to_server(sent_data)
+        self._send_data_to_server(sent_data)
         res = self._get_data_from_server()
         assert isinstance(res, FeatureMessage)
 
