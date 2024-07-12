@@ -229,7 +229,7 @@ class GraphWorker(AggregationWorker):
             )
             edge_mask = edge_mask | validation_edge_mask
         edge_index = torch_geometric.utils.coalesce(edge_index[:, edge_mask])
-        self.trainer.dataset_collection.transform_dataset(
+        self.trainer.mutable_dataset_collection.transform_dataset(
             self.trainer.phase,
             lambda _, dataset_util, __: dataset_util.get_edge_subset(
                 graph_index=0, edge_index=edge_index
@@ -238,7 +238,7 @@ class GraphWorker(AggregationWorker):
 
     def _clear_cross_client_edges(self) -> None:
         edge_index = self.__get_local_edge_index()
-        self.trainer.dataset_collection.transform_dataset(
+        self.trainer.mutable_dataset_collection.transform_dataset(
             self.trainer.phase,
             lambda _, dataset_util, __: dataset_util.get_edge_subset(
                 graph_index=0, edge_index=edge_index
