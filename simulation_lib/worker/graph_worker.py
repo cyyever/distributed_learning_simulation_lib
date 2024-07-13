@@ -7,7 +7,7 @@ import torch
 import torch_geometric.nn
 import torch_geometric.utils
 from cyy_naive_lib.log import log_info
-from cyy_torch_graph import GraphDatasetUtil
+from cyy_torch_graph import GraphDatasetUtil, GraphModelEvaluator
 from cyy_torch_toolbox import MachineLearningPhase
 
 from ..message import (FeatureMessage, Message, ParameterMessageBase,
@@ -23,7 +23,6 @@ class GraphWorker(AggregationWorker):
         self._remove_cross_edge: bool = True
         self._other_training_node_indices: set = set()
         self.__old_edge_index: None | torch.Tensor = None
-        self.__n_id: None | torch.Tensor = None
         self.__local_node_mask: None | torch.Tensor = None
         self._hook_handles: dict = {}
         self._comunicated_batch_cnt: int = 0
@@ -38,16 +37,24 @@ class GraphWorker(AggregationWorker):
         self._recorded_model_size: dict = {}
         self._send_parameter_diff = False
 
-    def get_dataset_util(self, phase) -> GraphDatasetUtil:
+    def get_dataset_util(
+        self, phase: MachineLearningPhase | None = None
+    ) -> GraphDatasetUtil:
+        if phase is None:
+            phase = self.trainer.phase
         util = self.trainer.dataset_collection.get_dataset_util(phase=phase)
         assert isinstance(util, GraphDatasetUtil)
         return util
 
     @property
+    def model_evaluator(self) -> GraphModelEvaluator:
+        evaluator = self.trainer.model_evaluator
+        assert isinstance(evaluator, GraphModelEvaluator)
+        return evaluator
+
+    @property
     def edge_index(self) -> torch.Tensor:
-        return self.get_dataset_util(
-            phase=MachineLearningPhase.Training
-        ).get_edge_index(graph_index=0)
+        return self.get_dataset_util().get_edge_index(graph_index=0)
 
     def __get_local_edge_mask(self, edge_index: torch.Tensor) -> torch.Tensor:
         if self.__local_node_mask is None:
@@ -110,13 +117,6 @@ class GraphWorker(AggregationWorker):
         if not self._share_feature:
             return
 
-        for module in self.trainer.model.modules():
-            module.register_forward_pre_hook(
-                hook=self.__catch_n_id,
-                with_kwargs=True,
-                prepend=True,
-            )
-            break
         for idx, _ in enumerate(self.__get_message_passing_modules()):
             if idx == 0:
                 self._register_embedding_hook(
@@ -141,7 +141,7 @@ class GraphWorker(AggregationWorker):
 
     @functools.cached_property
     def training_node_mask(self) -> torch.Tensor:
-        mask = self.get_dataset_util(phase=MachineLearningPhase.Training).get_mask()
+        mask = self.get_dataset_util().get_mask()
         return mask[0]
 
     @functools.cached_property
@@ -175,8 +175,7 @@ class GraphWorker(AggregationWorker):
 
     @property
     def n_id(self) -> torch.Tensor:
-        assert self.__n_id is not None
-        return self.__n_id
+        return self.model_evaluator.n_id
 
     @property
     def cross_client_edge_mask(self) -> torch.Tensor:
@@ -192,11 +191,7 @@ class GraphWorker(AggregationWorker):
         assert self._other_training_node_indices
         # Keep in-device edges and cross-device edges
         edge_index = self.edge_index
-        training_edge_mask = (
-            self.get_dataset_util(phase=MachineLearningPhase.Training)
-            .get_edge_masks()[0]
-            .clone()
-        )
+        training_edge_mask = self.get_dataset_util().get_edge_masks()[0].clone()
         self._original_in_client_training_edge_cnt = int(
             training_edge_mask.sum().item()
         )
@@ -309,10 +304,6 @@ class GraphWorker(AggregationWorker):
         new_x = torch.where(mask, new_x, x)
         return new_x
 
-    def __catch_n_id(self, module, args, kwargs) -> tuple | None:
-        self.__n_id = kwargs["n_id"]
-        return args, kwargs
-
     def __record_embedding_size(
         self,
         module,
@@ -376,7 +367,6 @@ class GraphWorker(AggregationWorker):
         new_x = self._get_cross_deivce_embedding(
             res.other_data["node_indices"], res.feature, x
         )
-        self.__n_id = None
         return (new_x, self.__old_edge_index, *args[2:]), kwargs
 
     def __get_message_passing_modules(self) -> list:
