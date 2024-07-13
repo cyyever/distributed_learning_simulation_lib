@@ -101,9 +101,9 @@ class GraphWorker(AggregationWorker):
             else:
                 log_info("not share feature")
         self._refine_graph()
-        for module in self._get_message_passing_modules():
+        for module in self.__get_message_passing_modules():
             module.register_forward_pre_hook(
-                hook=self._record_embedding_size,
+                hook=self.__record_embedding_size,
                 with_kwargs=True,
                 prepend=False,
             )
@@ -112,12 +112,12 @@ class GraphWorker(AggregationWorker):
 
         for module in self.trainer.model.modules():
             module.register_forward_pre_hook(
-                hook=self._catch_n_id,
+                hook=self.__catch_n_id,
                 with_kwargs=True,
                 prepend=True,
             )
             break
-        for idx, _ in enumerate(self._get_message_passing_modules()):
+        for idx, _ in enumerate(self.__get_message_passing_modules()):
             if idx == 0:
                 self._register_embedding_hook(
                     module_index=idx, hook=self._clear_cross_client_edge_on_the_fly
@@ -131,7 +131,7 @@ class GraphWorker(AggregationWorker):
         old_hook = self._hook_handles.pop(module_index, None)
         if old_hook is not None:
             old_hook.remove()
-        self._hook_handles[module_index] = self._get_message_passing_modules()[
+        self._hook_handles[module_index] = self.__get_message_passing_modules()[
             module_index
         ].register_forward_pre_hook(
             hook=hook,
@@ -309,11 +309,11 @@ class GraphWorker(AggregationWorker):
         new_x = torch.where(mask, new_x, x)
         return new_x
 
-    def _catch_n_id(self, module, args, kwargs) -> tuple | None:
+    def __catch_n_id(self, module, args, kwargs) -> tuple | None:
         self.__n_id = kwargs["n_id"]
         return args, kwargs
 
-    def _record_embedding_size(
+    def __record_embedding_size(
         self,
         module,
         args,
@@ -327,7 +327,7 @@ class GraphWorker(AggregationWorker):
         if "embedding_bytes" not in self._recorded_model_size:
             self._recorded_model_size["embedding_bytes"] = []
         if len(self._recorded_model_size["embedding_bytes"]) < len(
-            self._get_message_passing_modules()
+            self.__get_message_passing_modules()
         ):
             x = args[0]
             self._recorded_model_size["embedding_bytes"].append(
@@ -379,7 +379,7 @@ class GraphWorker(AggregationWorker):
         self.__n_id = None
         return (new_x, self.__old_edge_index, *args[2:]), kwargs
 
-    def _get_message_passing_modules(self) -> list:
+    def __get_message_passing_modules(self) -> list:
         return [
             module
             for module in self.trainer.model.modules()
