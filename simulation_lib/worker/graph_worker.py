@@ -247,7 +247,6 @@ class GraphWorker(AggregationWorker):
             return None
         self.__old_edge_index = args[1]
         assert self.__old_edge_index is not None
-        # edge_index = self.n_id[self.__old_edge_index]
         edge_mask = self.__get_local_edge_mask(edge_index=self.__old_edge_index)
         args = list(args)
         args[1] = self.__old_edge_index[:, edge_mask]
