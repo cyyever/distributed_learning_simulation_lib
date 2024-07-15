@@ -52,12 +52,15 @@ class Server(Executor):
         if "batch_number" in tester.dataloader_kwargs:
             batch_size = min(
                 int(tester.dataset_size / tester.dataloader_kwargs["batch_number"]),
-                100,
+                1000,
             )
             log_debug("batch_size %s", batch_size)
             tester.remove_dataloader_kwargs("batch_number")
             tester.update_dataloader_kwargs(batch_size=batch_size)
-        if "num_neighbor" in tester.dataloader_kwargs:
+        if (
+            "num_neighbor" in tester.dataloader_kwargs
+            and tester.dataloader_kwargs["num_neighbor"] > 10
+        ):
             tester.update_dataloader_kwargs(num_neighbor=10)
         tester.inference()
         metric: dict = tester.performance_metric.get_epoch_metrics(1)
