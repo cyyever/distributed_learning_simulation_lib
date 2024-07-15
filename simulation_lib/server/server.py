@@ -52,7 +52,7 @@ class Server(Executor):
         if "batch_number" in tester.dataloader_kwargs:
             batch_size = min(
                 int(tester.dataset_size / tester.dataloader_kwargs["batch_number"]),
-                1000,
+                100,
             )
             log_debug("batch_size %s", batch_size)
             tester.remove_dataloader_kwargs("batch_number")
