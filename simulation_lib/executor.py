@@ -29,17 +29,20 @@ class ExecutorContext:
         self.release()
 
     @classmethod
-    def acquire(cls, name: str) -> None:
-        cls.semaphore.acquire()
+    def set_name(cls, name: str) -> None:
         multiprocessing.current_process().name = name
         threading.current_thread().name = name
+
+    @classmethod
+    def acquire(cls, name: str) -> None:
+        cls.semaphore.acquire()
+        cls.set_name(name)
         log_debug("get lock %s", cls.semaphore)
 
     @classmethod
     def release(cls) -> None:
         log_debug("release lock %s", cls.semaphore)
-        multiprocessing.current_process().name = "unknown executor"
-        threading.current_thread().name = "unknown executor"
+        cls.set_name("unknown executor")
         cls.semaphore.release()
 
 
