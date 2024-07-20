@@ -30,7 +30,6 @@ class Practitioner:
     def create_trainer(self, config: Config) -> Trainer:
         sampler = self._dataset_sampler[config.dc_config.dataset_name]
         assert sampler.dataset_collection is not None
-        dc = sampler.dataset_collection
         if isinstance(sampler, SplitBase):
             dc = sampler.sample(part_id=self.__worker_id)
         else:
