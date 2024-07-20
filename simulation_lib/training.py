@@ -104,8 +104,9 @@ def train(
         task_id = uuid.uuid4().int + os.getpid()
     worker_config = get_worker_config(config, practitioners=practitioners)
     topology = worker_config.pop("topology")
-    device_lock = multiprocessing.Manager().RLock()
-    log_lock = multiprocessing.Manager().Semaphore()
+    manager = multiprocessing.Manager()
+    device_lock = manager.RLock()
+    log_lock = manager.Semaphore()
     assert topology.worker_num == config.worker_number
     process_pool: TorchProcessPool = TorchProcessPool(
         initargs={
@@ -116,6 +117,7 @@ def train(
             }
         }
     )
+    process_pool.catch_exception()
     for worker_configs in worker_config["worker"]:
         process_pool.submit(
             start_workers, task_id=task_id, worker_configs=worker_configs
