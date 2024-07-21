@@ -12,7 +12,7 @@ from cyy_torch_toolbox.concurrency import TorchProcessPool
 
 from .algorithm_factory import get_worker_config
 from .config import DistributedTrainingConfig
-from .worker.worker import Worker
+from .worker import Worker
 
 os.environ["CUDA_MODULE_LOADING"] = "LAZY"
 os.environ["USE_THREAD_DATALOADER"] = "1"
