@@ -47,6 +47,8 @@ class Worker(Executor):
         return self.__new_trainer()
 
     def __new_trainer(self) -> Trainer:
+        if "server_batch_size" in self.config.trainer_config.dataloader_kwargs:
+            self.config.trainer_config.dataloader_kwargs.pop("server_batch_size")
         return self.__practitioner.create_trainer(self.config)
 
     def _offload_from_device(self) -> None:
