@@ -88,7 +88,6 @@ class GraphWorker(AggregationWorker):
         )
         self._send_data_to_server(sent_data)
         res = self._get_data_from_server()
-        assert isinstance(res, Message)
         for worker_id, node_indices in res.other_data["training_node_indices"].items():
             if worker_id != self.worker_id:
                 self._other_training_node_indices |= node_indices

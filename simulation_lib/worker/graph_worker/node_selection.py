@@ -1,5 +1,3 @@
-import os
-import sys
 from typing import Any
 
 import torch
@@ -7,8 +5,7 @@ from cyy_naive_lib.algorithm.mapping_op import get_mapping_values_by_key_order
 from cyy_torch_toolbox import (ExecutorHookPoint, MachineLearningPhase,
                                cat_tensors_to_vector)
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
-from protocol import GraphWorkerProtocol
+from ..protocol import GraphWorkerProtocol
 
 
 class NodeSelectionMixin(GraphWorkerProtocol):
