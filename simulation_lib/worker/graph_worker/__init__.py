@@ -1,6 +1,7 @@
 import functools
 import json
 import os
+import sys
 from typing import Any, Callable
 
 import torch
@@ -10,9 +11,11 @@ from cyy_naive_lib.log import log_info
 from cyy_torch_graph import GraphDatasetUtil, GraphModelEvaluator
 from cyy_torch_toolbox import MachineLearningPhase
 
-from ..message import (FeatureMessage, Message, ParameterMessageBase,
-                       get_message_size)
-from .aggregation_worker import AggregationWorker
+from ..aggregation_worker import AggregationWorker
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
+from message import (FeatureMessage, Message, ParameterMessageBase,
+                     get_message_size)
 
 
 class GraphWorker(AggregationWorker):
