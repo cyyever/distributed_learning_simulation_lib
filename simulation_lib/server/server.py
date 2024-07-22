@@ -52,6 +52,7 @@ class Server(Executor):
         batch_size: int | None = None
         if "server_batch_size" in tester.dataloader_kwargs:
             batch_size = tester.dataloader_kwargs["server_batch_size"]
+            tester.remove_dataloader_kwargs("server_batch_size")
         elif "batch_number" in tester.dataloader_kwargs:
             batch_size = min(
                 int(tester.dataset_size / tester.dataloader_kwargs["batch_number"]),
