@@ -32,7 +32,6 @@ class DistributedTrainingConfig(Config):
     def load_config_and_process(self, conf: Any) -> None:
         self.load_config(conf)
         self.reset_session()
-        import_dependencies(self)
 
     def get_worker_number_per_process(self) -> int:
         if self.worker_number_per_process != 0:
@@ -130,10 +129,9 @@ def load_config_from_file(
     return load_config(omegaconf.OmegaConf.load(config_file), global_conf_path)
 
 
-def import_dependencies(config: DistributedTrainingConfig) -> dict:
+def import_dependencies(dataset_type: str | None = None) -> dict:
     result = {}
     libs = ["cyy_torch_graph", "cyy_torch_text", "cyy_torch_vision"]
-    dataset_type: str | None = config.dc_config.dataset_kwargs.get("dataset_type", None)
     if dataset_type is not None:
         match dataset_type.lower():
             case "graph":
