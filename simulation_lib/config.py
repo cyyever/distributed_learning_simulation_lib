@@ -129,8 +129,13 @@ def load_config_from_file(
     return load_config(omegaconf.OmegaConf.load(config_file), global_conf_path)
 
 
+import_result = {}
+
+
 def import_dependencies(dataset_type: str | None = None) -> dict:
-    result = {}
+    global import_result
+    if import_result:
+        return import_result
     libs = ["cyy_torch_graph", "cyy_torch_text", "cyy_torch_vision"]
     if dataset_type is not None:
         match dataset_type.lower():
@@ -145,7 +150,7 @@ def import_dependencies(dataset_type: str | None = None) -> dict:
     for dependency in libs:
         try:
             importlib.import_module(dependency)
-            result[dependency] = True
+            import_result[dependency] = True
         except ModuleNotFoundError:
             pass
-    return result
+    return import_result
