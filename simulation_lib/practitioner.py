@@ -1,4 +1,5 @@
-from cyy_torch_toolbox import Config, MachineLearningPhase, Trainer
+from cyy_torch_toolbox import (Config, DatasetCollection, MachineLearningPhase,
+                               Trainer)
 from cyy_torch_toolbox.dataset import SamplerBase, SplitBase
 
 
@@ -27,14 +28,18 @@ class Practitioner:
     def has_dataset(self, name: str) -> bool:
         return name in self._dataset_sampler
 
-    def create_trainer(self, config: Config) -> Trainer:
+    def create_dataset_collection(self, config: Config) -> DatasetCollection:
         sampler = self._dataset_sampler[config.dc_config.dataset_name]
         assert sampler.dataset_collection is not None
         if isinstance(sampler, SplitBase):
-            dc = sampler.sample(part_id=self.__worker_id)
-        else:
-            dc = sampler.sample()
-        trainer = config.create_trainer(dc=dc)
+            return sampler.sample(part_id=self.__worker_id)
+        return sampler.sample()
+
+    def create_trainer(self, config: Config) -> Trainer:
+        trainer = config.create_trainer(
+            dc=self.create_dataset_collection(config=config)
+        )
         trainer.dataset_collection.remove_dataset(phase=MachineLearningPhase.Test)
+        sampler = self._dataset_sampler[config.dc_config.dataset_name]
         assert sampler.dataset_collection.has_dataset(MachineLearningPhase.Test)
         return trainer
