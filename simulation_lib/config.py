@@ -32,6 +32,9 @@ class DistributedTrainingConfig(Config):
     def load_config_and_process(self, conf: Any) -> None:
         self.load_config(conf)
         self.reset_session()
+        import_dependencies(
+            dataset_type=self.dc_config.dataset_kwargs.get("dataset_type", None)
+        )
 
     def get_worker_number_per_process(self) -> int:
         if self.worker_number_per_process != 0:
@@ -93,8 +96,8 @@ class DistributedTrainingConfig(Config):
         self.save_dir = os.path.join("session", dir_suffix)
         self.log_file = str(os.path.join("log", dir_suffix)) + ".log"
 
-    def create_practitioners(self) -> set:
-        practitioners = set()
+    def create_practitioners(self) -> set[Practitioner]:
+        practitioners: set[Practitioner] = set()
         dataset_collection = self.create_dataset_collection()
         assert isinstance(dataset_collection, ClassificationDatasetCollection)
         sampler = get_dataset_collection_split(
