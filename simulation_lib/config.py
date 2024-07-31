@@ -119,6 +119,10 @@ def load_config(conf_obj: Any, global_conf_path: str) -> DistributedTrainingConf
     result_conf = omegaconf.OmegaConf.load(global_conf_path)
     result_conf.merge_with(conf_obj)
     config.load_config_and_process(result_conf)
+    if "dataset_type" in config.dc_config.dataset_kwargs:
+        os.environ["dataset_type"] = config.dc_config.dataset_kwargs[
+            "dataset_type"
+        ].lower()
     return config
 
 
