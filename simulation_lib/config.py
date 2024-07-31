@@ -1,4 +1,5 @@
 import datetime
+import importlib
 import os
 import uuid
 from typing import Any
@@ -31,6 +32,7 @@ class DistributedTrainingConfig(Config):
     def load_config_and_process(self, conf: Any) -> None:
         self.load_config(conf)
         self.reset_session()
+        import_dependencies(self)
 
     def get_worker_number_per_process(self) -> int:
         if self.worker_number_per_process != 0:
@@ -119,10 +121,6 @@ def load_config(conf_obj: Any, global_conf_path: str) -> DistributedTrainingConf
     result_conf = omegaconf.OmegaConf.load(global_conf_path)
     result_conf.merge_with(conf_obj)
     config.load_config_and_process(result_conf)
-    if "dataset_type" in config.dc_config.dataset_kwargs:
-        os.environ["dataset_type"] = config.dc_config.dataset_kwargs[
-            "dataset_type"
-        ].lower()
     return config
 
 
@@ -130,3 +128,26 @@ def load_config_from_file(
     config_file: str, global_conf_path: str
 ) -> DistributedTrainingConfig:
     return load_config(omegaconf.OmegaConf.load(config_file), global_conf_path)
+
+
+def import_dependencies(config: DistributedTrainingConfig) -> dict:
+    result = {}
+    libs = ["cyy_torch_graph", "cyy_torch_text", "cyy_torch_vision"]
+    dataset_type: str | None = config.dc_config.dataset_kwargs.get("dataset_type", None)
+    if dataset_type is not None:
+        match dataset_type.lower():
+            case "graph":
+                libs = ["cyy_torch_graph"]
+            case "vision":
+                libs = ["cyy_torch_vision"]
+            case "text":
+                libs = ["cyy_torch_text"]
+            case _:
+                raise NotImplementedError(dataset_type)
+    for dependency in libs:
+        try:
+            importlib.import_module(dependency)
+            result[dependency] = True
+        except ModuleNotFoundError:
+            pass
+    return result

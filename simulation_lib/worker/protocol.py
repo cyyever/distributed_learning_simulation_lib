@@ -1,37 +1,27 @@
-from cyy_torch_toolbox import Trainer
-from cyy_naive_lib.topology import Endpoint
 from functools import cached_property
-from ..util import ModelCache
+
+from cyy_naive_lib.topology import Endpoint
+from cyy_torch_toolbox import Trainer
+
 from ..protocol import ExecutorProtocol
+from ..util import ModelCache
 
 
 class WorkerProtocol(ExecutorProtocol):
 
     @property
-    def endpoint(self) -> Endpoint:
-        ...
+    def endpoint(self) -> Endpoint: ...
 
     @cached_property
-    def trainer(self) -> Trainer:
-        ...
+    def trainer(self) -> Trainer: ...
 
-    def pause(self) -> None:
-        ...
+    def pause(self) -> None: ...
 
 
 class AggregationWorkerProtocol(WorkerProtocol):
 
     @property
-    def round_index(self) -> int:
-        ...
+    def round_index(self) -> int: ...
 
     @property
-    def model_cache(self) -> ModelCache:
-        ...
-
-
-class GraphWorkerProtocol(AggregationWorkerProtocol):
-
-    @cached_property
-    def training_node_indices(self) -> set:
-        ...
+    def model_cache(self) -> ModelCache: ...
