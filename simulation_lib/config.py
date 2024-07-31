@@ -132,7 +132,7 @@ def load_config_from_file(
     return load_config(omegaconf.OmegaConf.load(config_file), global_conf_path)
 
 
-import_result = {}
+import_result: dict = {}
 
 
 def import_dependencies(dataset_type: str | None = None) -> dict:
