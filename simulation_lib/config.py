@@ -135,10 +135,10 @@ def load_config_from_file(
 import_result: dict = {}
 
 
-def import_dependencies(dataset_type: str | None = None) -> dict:
+def import_dependencies(dataset_type: str | None = None) -> None:
     global import_result
     if import_result:
-        return import_result
+        return
     libs = ["cyy_torch_graph", "cyy_torch_text", "cyy_torch_vision"]
     if dataset_type is not None:
         match dataset_type.lower():
@@ -156,4 +156,3 @@ def import_dependencies(dataset_type: str | None = None) -> dict:
             import_result[dependency] = True
         except ModuleNotFoundError:
             pass
-    return import_result
