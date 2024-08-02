@@ -21,6 +21,7 @@ class Server(Executor):
             name = f"server of {task_id}"
         super().__init__(**kwargs, name=name)
         self._endpoint: ServerEndpoint = endpoint
+        self.__dc = None
 
     @property
     def worker_number(self) -> int:
@@ -28,10 +29,16 @@ class Server(Executor):
 
     def get_tester(self) -> Inferencer:
         tester = self.config.create_inferencer(
-            phase=MachineLearningPhase.Test, inherent_device=False
+            dc=self.__dc, phase=MachineLearningPhase.Test, inherent_device=False
         )
-        tester.dataset_collection.remove_dataset(phase=MachineLearningPhase.Training)
-        tester.dataset_collection.remove_dataset(phase=MachineLearningPhase.Validation)
+        if self.__dc is None:
+            tester.dataset_collection.remove_dataset(
+                phase=MachineLearningPhase.Training
+            )
+            tester.dataset_collection.remove_dataset(
+                phase=MachineLearningPhase.Validation
+            )
+            self.__dc = tester.dataset_collection
         tester.hook_config.summarize_executor = False
         return tester
 
