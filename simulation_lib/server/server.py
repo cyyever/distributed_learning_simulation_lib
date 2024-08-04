@@ -1,25 +1,25 @@
 import copy
 import os
 import pickle
-import random
 import time
 from typing import Any
 
-import torch
 from cyy_naive_lib.log import log_debug, log_info
 from cyy_naive_lib.topology import ServerEndpoint
 from cyy_torch_toolbox import Inferencer, MachineLearningPhase, ModelParameter
 
 from ..executor import Executor, ExecutorContext
-from ..message import Message, MultipleWorkerMessage, ParameterMessage
+from ..message import Message, ParameterMessage
+from .round_selection_mixin import RoundSelectionMixin
 
 
-class Server(Executor):
+class Server(Executor, RoundSelectionMixin):
     def __init__(self, task_id: int, endpoint: ServerEndpoint, **kwargs: Any) -> None:
         name: str = "server"
         if task_id is not None:
             name = f"server of {task_id}"
         super().__init__(**kwargs, name=name)
+        RoundSelectionMixin.__init__(self)
         self._endpoint: ServerEndpoint = endpoint
         self.__tester: Inferencer | None = None
 
@@ -69,8 +69,7 @@ class Server(Executor):
             tester.update_dataloader_kwargs(batch_size=batch_size)
         tester.inference()
         metric: dict = tester.performance_metric.get_epoch_metrics(1)
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
+        tester.offload_from_device()
         return metric
 
     def start(self) -> None:
@@ -114,37 +113,6 @@ class Server(Executor):
 
     def _process_worker_data(self, worker_id: int, data: Message) -> None:
         raise NotImplementedError()
-
-    def _before_send_result(self, result: Message) -> None:
-        pass
-
-    def _after_send_result(self, result: Message) -> None:
-        pass
-
-    def _send_result(self, result: Message) -> None:
-        self._before_send_result(result=result)
-        if isinstance(result, MultipleWorkerMessage):
-            for worker_id, data in result.worker_data.items():
-                self._endpoint.send(worker_id=worker_id, data=data)
-        else:
-            selected_workers = self._select_workers()
-            log_debug("choose workers %s", selected_workers)
-            if selected_workers:
-                self._endpoint.broadcast(data=result, worker_ids=selected_workers)
-            unselected_workers = set(range(self.worker_number)) - selected_workers
-            if unselected_workers:
-                self._endpoint.broadcast(data=None, worker_ids=unselected_workers)
-        self._after_send_result(result=result)
-
-    def _select_workers(self) -> set:
-        if "random_client_number" in self.config.algorithm_kwargs:
-            return set(
-                random.sample(
-                    list(range(self.worker_number)),
-                    k=self.config.algorithm_kwargs["random_client_number"],
-                )
-            )
-        return set(range(self.worker_number))
 
     def _stopped(self) -> bool:
         raise NotImplementedError()

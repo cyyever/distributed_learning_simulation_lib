@@ -12,6 +12,10 @@ class AggregationServerProtocol(Protocol):
     def config(self) -> DistributedTrainingConfig:
         ...
 
+    @property
+    def worker_number(self) -> int:
+        ...
+
     def get_metric(
         self,
         parameter: ModelParameter | ParameterMessage,

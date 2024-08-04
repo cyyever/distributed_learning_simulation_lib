@@ -7,17 +7,19 @@ from cyy_torch_toolbox import Inferencer, ModelParameter
 from cyy_torch_toolbox.tensor import tensor_to
 
 from ..algorithm.aggregation_algorithm import AggregationAlgorithm
-from ..message import (DeltaParameterMessage, Message, ParameterMessage,
-                       ParameterMessageBase)
+from ..message import (DeltaParameterMessage, Message, MultipleWorkerMessage,
+                       ParameterMessage, ParameterMessageBase)
 from ..util.model_cache import ModelCache
 from .performance_mixin import PerformanceMixin
+from .round_selection_mixin import RoundSelectionMixin
 from .server import Server
 
 
-class AggregationServer(Server, PerformanceMixin):
+class AggregationServer(Server, PerformanceMixin, RoundSelectionMixin):
     def __init__(self, algorithm: AggregationAlgorithm, **kwargs: Any) -> None:
         Server.__init__(self, **kwargs)
         PerformanceMixin.__init__(self)
+        RoundSelectionMixin.__init__(self)
         self._round_index: int = 1
         self._compute_stat: bool = True
         self._stop = False
@@ -67,6 +69,21 @@ class AggregationServer(Server, PerformanceMixin):
                     in_round=True, parameter=self.__get_init_model(), is_initial=True
                 )
             )
+
+    def _send_result(self, result: Message) -> None:
+        self._before_send_result(result=result)
+        if isinstance(result, MultipleWorkerMessage):
+            for worker_id, data in result.worker_data.items():
+                self._endpoint.send(worker_id=worker_id, data=data)
+        else:
+            selected_workers = self.select_workers()
+            log_debug("choose workers %s", selected_workers)
+            if selected_workers:
+                self._endpoint.broadcast(data=result, worker_ids=selected_workers)
+            unselected_workers = set(range(self.worker_number)) - selected_workers
+            if unselected_workers:
+                self._endpoint.broadcast(data=None, worker_ids=unselected_workers)
+        self._after_send_result(result=result)
 
     def _server_exit(self) -> None:
         self.__algorithm.exit()
