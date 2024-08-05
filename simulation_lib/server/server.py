@@ -53,6 +53,7 @@ class Server(Executor, RoundSelectionMixin):
         self.load_parameter(tester=tester, parameter=parameter)
         tester.model_util.disable_running_stats()
         tester.hook_config.log_performance_metric = log_performance_metric
+        tester.hook_config.save_performance_metric = log_performance_metric
         batch_size: int | None = None
         if "server_batch_size" in tester.dataloader_kwargs:
             batch_size = tester.dataloader_kwargs["server_batch_size"]
