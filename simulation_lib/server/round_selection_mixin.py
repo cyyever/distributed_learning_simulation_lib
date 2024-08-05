@@ -9,7 +9,7 @@ class RoundSelectionMixin(AggregationServerProtocol):
     def select_workers(self) -> set[int]:
         if self.round_index in self.selection_result:
             return self.selection_result[self.round_index]
-        random_client_number: int | None = self.config.algorithm_kwargs.pop(
+        random_client_number: int | None = self.config.algorithm_kwargs.get(
             "random_client_number", None
         )
         result: set[int] = set()
