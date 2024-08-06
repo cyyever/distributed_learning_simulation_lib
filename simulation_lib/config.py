@@ -139,11 +139,9 @@ def import_dependencies(dataset_type: str | None = None) -> None:
     global import_result
     if import_result:
         return
-    libs = ["cyy_torch_graph", "cyy_torch_text", "cyy_torch_vision"]
+    libs = ["cyy_torch_text", "cyy_torch_vision"]
     if dataset_type is not None:
         match dataset_type.lower():
-            case "graph":
-                libs = ["cyy_torch_graph"]
             case "vision":
                 libs = ["cyy_torch_vision"]
             case "text":
