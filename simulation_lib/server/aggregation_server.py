@@ -77,7 +77,8 @@ class AggregationServer(Server, PerformanceMixin, RoundSelectionMixin):
                 self._endpoint.send(worker_id=worker_id, data=data)
         else:
             selected_workers = self.select_workers()
-            log_debug("choose workers %s", selected_workers)
+            if len(selected_workers) < self.config.worker_number:
+                log_info("choose workers %s", selected_workers)
             if selected_workers:
                 self._endpoint.broadcast(data=result, worker_ids=selected_workers)
             unselected_workers = set(range(self.worker_number)) - selected_workers
