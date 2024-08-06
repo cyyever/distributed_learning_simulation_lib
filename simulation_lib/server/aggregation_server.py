@@ -92,7 +92,7 @@ class AggregationServer(Server, PerformanceMixin, RoundSelectionMixin):
                 if unselected_workers:
                     self._endpoint.broadcast(data=None, worker_ids=unselected_workers)
             case _:
-                raise NotImplementedError()
+                self._endpoint.broadcast(data=result)
 
         self._after_send_result(result=result)
 
