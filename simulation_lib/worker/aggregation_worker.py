@@ -20,7 +20,7 @@ class AggregationWorker(Worker, ClientMixin):
         self._aggregation_time: ExecutorHookPoint = ExecutorHookPoint.AFTER_EXECUTE
         self._reuse_learning_rate: bool = False
         self.__choose_model_by_validation: bool | None = None
-        self._send_parameter_diff: bool = True
+        self._send_parameter_diff: bool = False
         self._keep_model_cache: bool = False
         self._send_loss: bool = False
         self._model_cache: ModelCache = ModelCache()
@@ -37,14 +37,16 @@ class AggregationWorker(Worker, ClientMixin):
     def _before_training(self) -> None:
         super()._before_training()
         self.trainer.dataset_collection.remove_dataset(phase=MachineLearningPhase.Test)
-        if self.__choose_model_by_validation is None:
-            if (
+        choose_model_by_validation = self.__choose_model_by_validation
+        if choose_model_by_validation is None:
+            choose_model_by_validation = (
                 self.config.hyper_parameter_config.epoch > 1
                 and self.config.dataset_sampling == "iid"
-            ):
-                self.enable_choosing_model_by_validation()
-            else:
-                self.disable_choosing_model_by_validation()
+            )
+        if choose_model_by_validation:
+            self.enable_choosing_model_by_validation()
+        else:
+            self.disable_choosing_model_by_validation()
         if not self.__choose_model_by_validation and not self.config.use_validation:
             # Skip Validation to speed up training
             self.trainer.dataset_collection.remove_dataset(
@@ -84,12 +86,12 @@ class AggregationWorker(Worker, ClientMixin):
         assert self.trainer.dataset_collection.has_dataset(
             phase=MachineLearningPhase.Validation
         )
+        self.trainer.remove_hook("keep_model_hook")
         self.trainer.append_hook(hook, "keep_model_hook")
 
     def disable_choosing_model_by_validation(self) -> None:
         self.__choose_model_by_validation = False
-        if self.best_model_hook is not None:
-            self.trainer.remove_hook("keep_model_hook")
+        self.trainer.remove_hook("keep_model_hook")
 
     @property
     def best_model_hook(self) -> KeepModelHook | None:
@@ -101,13 +103,20 @@ class AggregationWorker(Worker, ClientMixin):
 
     def _get_sent_data(self) -> ParameterMessageBase:
         if self.__choose_model_by_validation:
-            log_debug("use best model")
             assert self.best_model_hook is not None
             parameter = self.best_model_hook.best_model["parameter"]
             best_epoch = self.best_model_hook.best_model["epoch"]
+            log_debug("use best model best_epoch %s", best_epoch)
         else:
             parameter = self.trainer.model_util.get_parameters()
             best_epoch = self.trainer.hyper_parameter.epoch
+            log_debug(
+                "use best model best_epoch %s acc %s",
+                best_epoch,
+                self.trainer.performance_metric.get_epoch_metric(
+                    best_epoch, "accuracy"
+                ),
+            )
         other_data = {}
         if self._send_loss:
             other_data["training_loss"] = (
