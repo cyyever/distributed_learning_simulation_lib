@@ -112,7 +112,6 @@ class AggregationServer(Server, PerformanceMixin, RoundSelectionMixin):
             match data:
                 case DeltaParameterMessage():
                     assert old_parameter is not None
-                    data.delta_parameter = tensor_to(data.delta_parameter, device="cpu")
                     data = data.restore(old_parameter)
                 case ParameterMessage():
                     if old_parameter is not None:
