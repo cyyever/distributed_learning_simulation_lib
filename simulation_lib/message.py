@@ -33,15 +33,37 @@ class ParameterMessage(ParameterMessageBase):
 @dataclass(kw_only=True)
 class DeltaParameterMessage(ParameterMessageBase):
     delta_parameter: ModelParameter
+    old_parameter: ModelParameter | None = None
+    new_parameter: ModelParameter | None = None
 
     def restore(self, parameter: ModelParameter) -> ParameterMessage:
-        new_parameter = copy.deepcopy(parameter)
+        restored_parameter = copy.deepcopy(parameter)
+        if self.old_parameter is not None:
+            assert len(self.old_parameter) == len(restored_parameter)
+            for k, v in self.old_parameter.items():
+                assert (v.cpu() == restored_parameter[k]).all().item()
+        assert len(self.delta_parameter) == len(parameter)
+
         for k, v in self.delta_parameter.items():
-            new_parameter[k] += v
-        msg = ParameterMessage(parameter=new_parameter)
+            old_dtype = restored_parameter[k].dtype
+            restored_parameter[k] = (restored_parameter[k] + v).to(dtype=old_dtype)
+            assert self.new_parameter is not None
+            if self.new_parameter is not None:
+                if not torch.allclose(
+                    self.new_parameter[k], restored_parameter[k].cpu()
+                ):
+                    print("key is", k)
+                    print("delta is", v)
+                    print("result", restored_parameter[k])
+                    print("gt", self.new_parameter[k])
+                assert torch.allclose(
+                    self.new_parameter[k], restored_parameter[k].cpu()
+                )
+
+        msg = ParameterMessage(parameter=restored_parameter)
         for f in fields(self):
             setattr(msg, f.name, getattr(self, f.name))
-        msg.parameter = new_parameter
+        msg.parameter = restored_parameter
         return msg
 
 
