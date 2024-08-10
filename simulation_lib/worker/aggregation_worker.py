@@ -41,10 +41,7 @@ class AggregationWorker(Worker, ClientMixin):
         self.trainer.dataset_collection.remove_dataset(phase=MachineLearningPhase.Test)
         choose_model_by_validation = self.__choose_model_by_validation
         if choose_model_by_validation is None:
-            choose_model_by_validation = (
-                self.config.hyper_parameter_config.epoch > 1
-                and self.config.dataset_sampling == "iid"
-            )
+            choose_model_by_validation = self.config.hyper_parameter_config.epoch > 1
         if choose_model_by_validation:
             self.enable_choosing_model_by_validation()
         else:
@@ -113,11 +110,12 @@ class AggregationWorker(Worker, ClientMixin):
             parameter = self.trainer.model_util.get_parameters()
             best_epoch = self.trainer.hyper_parameter.epoch
             log_debug(
-                "use best model best_epoch %s acc %s",
+                "use best model best_epoch %s acc %s parameter size %s",
                 best_epoch,
                 self.trainer.performance_metric.get_epoch_metric(
                     best_epoch, "accuracy"
                 ),
+                len(parameter),
             )
         parameter = tensor_to(parameter, device="cpu", dtype=torch.float64)
         other_data = {}
