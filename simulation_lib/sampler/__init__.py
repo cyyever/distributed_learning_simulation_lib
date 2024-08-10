@@ -54,11 +54,12 @@ class RandomLabelIIDSplit(SplitBase):
 class DirichletSplit(DatasetCollectionSplit):
     def __init__(
         self,
-        dataset_collection: ClassificationDatasetCollection,
+        dataset_collection: DatasetCollection,
         concentration: float | list[dict[Any, float]],
         part_number: int,
     ) -> None:
         if not isinstance(concentration, list):
+            assert isinstance(dataset_collection, ClassificationDatasetCollection)
             all_labels = dataset_collection.get_labels()
             concentration = [
                 {label: float(concentration) for label in all_labels}
