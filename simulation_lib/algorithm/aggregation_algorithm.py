@@ -1,5 +1,6 @@
 from typing import Any, Mapping, MutableMapping
 
+import torch
 from cyy_torch_toolbox import ModelParameter
 
 from ..config import DistributedTrainingConfig
@@ -56,7 +57,10 @@ class AggregationAlgorithm:
                 weight = weights
             assert 0 <= weight <= 1
             assert isinstance(v, ParameterMessage)
-            d = {k2: v2 * weight for (k2, v2) in v.parameter.items()}
+            d = {
+                k2: v2.to(dtype=torch.float64) * weight
+                for (k2, v2) in v.parameter.items()
+            }
             if not avg_data:
                 avg_data = d
             else:

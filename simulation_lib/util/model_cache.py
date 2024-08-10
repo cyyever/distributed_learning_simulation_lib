@@ -1,3 +1,4 @@
+import torch
 from cyy_naive_lib.storage import DataStorage
 from cyy_torch_toolbox import ModelParameter, tensor_to
 
@@ -24,7 +25,10 @@ class ModelCache:
         self.__parameter.set_data_path(path)
 
     def get_parameter_diff(self, new_parameter: ModelParameter) -> ModelParameter:
-        return {k: v - self.parameter[k] for k, v in new_parameter.items()}
+        return {
+            k: v.to(dtype=torch.float64) - self.parameter[k].to(dtype=torch.float64)
+            for k, v in new_parameter.items()
+        }
 
     def add_parameter_diff(self, parameter_diff: ModelParameter, path: str) -> None:
         self.__parameter.set_data_path(path)

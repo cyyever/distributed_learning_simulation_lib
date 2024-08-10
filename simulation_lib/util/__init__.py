@@ -31,15 +31,12 @@ def load_parameters(
     reuse_learning_rate: bool,
     loading_fun: Callable | None = None,
 ) -> None:
+    if loading_fun is not None:
+        loading_fun(parameter)
+    else:
+        trainer.model_util.load_parameters(parameter)
     if reuse_learning_rate:
-        if loading_fun is not None:
-            loading_fun(parameter)
-        else:
-            trainer.model_util.load_parameters(parameter)
         __reset_optimizer_parameters(trainer=trainer)
     else:
-        if loading_fun is not None:
-            loading_fun(parameter)
-        else:
-            trainer.load_parameters(parameter)
+        trainer.remove_optimizer()
     trainer.model_util.disable_running_stats()

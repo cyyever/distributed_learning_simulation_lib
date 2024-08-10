@@ -13,7 +13,6 @@ class FedAVGAlgorithm(AggregationAlgorithm):
         super().__init__()
         self.accumulate: bool = True
         self.aggregate_loss: bool = False
-        self.__dtypes: dict[str, Any] = {}
         self.__total_weights: dict[str, float] = {}
         self.__parameter: ModelParameter = {}
 
@@ -34,7 +33,6 @@ class FedAVGAlgorithm(AggregationAlgorithm):
             return True
         for k, v in worker_data.parameter.items():
             assert not v.isnan().any().cpu()
-            self.__dtypes[k] = v.dtype
             weight = self._get_weight(worker_data, name=k, parameter=v)
             tmp = v.to(dtype=torch.float64) * weight
             if k not in self.__parameter:
@@ -70,7 +68,7 @@ class FedAVGAlgorithm(AggregationAlgorithm):
                 assert not v.isnan().any().cpu()
                 parameter[k] = self._apply_total_weight(
                     name=k, parameter=v, total_weight=self.__total_weights[k]
-                ).to(dtype=self.__dtypes[k])
+                )
                 assert not parameter[k].isnan().any().cpu()
             self.__total_weights = {}
         other_data: dict[str, Any] = {}
