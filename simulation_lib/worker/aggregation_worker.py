@@ -3,7 +3,8 @@ from typing import Any
 
 from cyy_naive_lib.log import log_debug, log_info
 from cyy_torch_toolbox import (ExecutorHookPoint, MachineLearningPhase,
-                               ModelParameter, StopExecutingException)
+                               ModelParameter, StopExecutingException,
+                               tensor_to)
 from cyy_torch_toolbox.hook.keep_model import KeepModelHook
 
 from ..message import (DeltaParameterMessage, Message, ParameterMessage,
@@ -20,7 +21,7 @@ class AggregationWorker(Worker, ClientMixin):
         self._aggregation_time: ExecutorHookPoint = ExecutorHookPoint.AFTER_EXECUTE
         self._reuse_learning_rate: bool = False
         self.__choose_model_by_validation: bool | None = None
-        self._send_parameter_diff: bool = False
+        self._send_parameter_diff: bool = True
         self._keep_model_cache: bool = False
         self._send_loss: bool = False
         self._model_cache: ModelCache = ModelCache()
@@ -117,6 +118,7 @@ class AggregationWorker(Worker, ClientMixin):
                     best_epoch, "accuracy"
                 ),
             )
+        parameter = tensor_to(parameter, device="cpu")
         other_data = {}
         if self._send_loss:
             other_data["training_loss"] = (
@@ -133,8 +135,10 @@ class AggregationWorker(Worker, ClientMixin):
             assert self._model_cache.has_data
             message = DeltaParameterMessage(
                 aggregation_weight=self.trainer.dataset_size,
-                delta_parameter=self._model_cache.get_parameter_diff(parameter),
                 other_data=other_data,
+                # old_parameter=self._model_cache.parameter,
+                # new_parameter=parameter,
+                delta_parameter=self._model_cache.get_parameter_diff(parameter),
             )
         if not self._keep_model_cache:
             self._model_cache.discard()

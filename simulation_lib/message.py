@@ -45,20 +45,15 @@ class DeltaParameterMessage(ParameterMessageBase):
         assert len(self.delta_parameter) == len(parameter)
 
         for k, v in self.delta_parameter.items():
-            old_dtype = restored_parameter[k].dtype
-            restored_parameter[k] = (restored_parameter[k] + v).to(dtype=old_dtype)
-            assert self.new_parameter is not None
+            restored_parameter[k] = restored_parameter[k].to(dtype=torch.float64) + v
             if self.new_parameter is not None:
-                if not torch.allclose(
-                    self.new_parameter[k], restored_parameter[k].cpu()
-                ):
+                v2 = self.new_parameter[k].to(dtype=torch.float64, device="cpu")
+                if not torch.allclose(v2, restored_parameter[k]):
                     print("key is", k)
                     print("delta is", v)
                     print("result", restored_parameter[k])
-                    print("gt", self.new_parameter[k])
-                assert torch.allclose(
-                    self.new_parameter[k], restored_parameter[k].cpu()
-                )
+                    print("gt", v2)
+                assert torch.allclose(v2, restored_parameter[k])
 
         msg = ParameterMessage(parameter=restored_parameter)
         for f in fields(self):
