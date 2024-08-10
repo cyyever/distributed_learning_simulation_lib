@@ -20,15 +20,23 @@ class ModelCache:
 
     def cache_parameter(self, parameter: ModelParameter, path: str) -> None:
         self.__parameter.set_data(
-            {k: v.clone() for k, v in tensor_to(parameter, device="cpu").items()}
+            {
+                k: v.to(dtype=torch.float64)
+                for k, v in tensor_to(parameter, device="cpu").items()
+            }
         )
         self.__parameter.set_data_path(path)
 
     def get_parameter_diff(self, new_parameter: ModelParameter) -> ModelParameter:
-        return {
-            k: v.to(dtype=torch.float64) - self.parameter[k].to(dtype=torch.float64)
-            for k, v in new_parameter.items()
-        }
+        res = {k: v - self.parameter[k] for k, v in new_parameter.items()}
+        for k, v in self.parameter.items():
+            if not torch.allclose(v + res[k], new_parameter[k]):
+                print("key", k)
+                print(v + res[k])
+                print(v)
+                print(new_parameter[k])
+                assert False
+        return res
 
     def add_parameter_diff(self, parameter_diff: ModelParameter, path: str) -> None:
         self.__parameter.set_data_path(path)

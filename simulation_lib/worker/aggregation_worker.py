@@ -1,6 +1,7 @@
 import os
 from typing import Any
 
+import torch
 from cyy_naive_lib.log import log_debug, log_info
 from cyy_torch_toolbox import (ExecutorHookPoint, MachineLearningPhase,
                                ModelParameter, StopExecutingException,
@@ -21,7 +22,7 @@ class AggregationWorker(Worker, ClientMixin):
         self._aggregation_time: ExecutorHookPoint = ExecutorHookPoint.AFTER_EXECUTE
         self._reuse_learning_rate: bool = False
         self.__choose_model_by_validation: bool | None = None
-        self._send_parameter_diff: bool = True
+        self._send_parameter_diff: bool = False
         self._keep_model_cache: bool = False
         self._send_loss: bool = False
         self._model_cache: ModelCache = ModelCache()
@@ -118,7 +119,7 @@ class AggregationWorker(Worker, ClientMixin):
                     best_epoch, "accuracy"
                 ),
             )
-        parameter = tensor_to(parameter, device="cpu")
+        parameter = tensor_to(parameter, device="cpu", dtype=torch.float64)
         other_data = {}
         if self._send_loss:
             other_data["training_loss"] = (
