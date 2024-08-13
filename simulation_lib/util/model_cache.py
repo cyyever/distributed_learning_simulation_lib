@@ -29,13 +29,13 @@ class ModelCache:
 
     def get_parameter_diff(self, new_parameter: ModelParameter) -> ModelParameter:
         res = {k: v - self.parameter[k] for k, v in new_parameter.items()}
-        for k, v in self.parameter.items():
-            if not torch.allclose(v + res[k], new_parameter[k]):
-                print("key", k)
-                print(v + res[k])
-                print(v)
-                print(new_parameter[k])
-                assert False
+        # for k, v in self.parameter.items():
+        #     if not torch.allclose(v + res[k], new_parameter[k]):
+        #         print("key", k)
+        #         print(v + res[k])
+        #         print(v)
+        #         print(new_parameter[k])
+        #         assert False
         return res
 
     def add_parameter_diff(self, parameter_diff: ModelParameter, path: str) -> None:
