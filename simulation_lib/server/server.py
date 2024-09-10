@@ -47,6 +47,7 @@ class Server(Executor, RoundSelectionMixin):
         parameter: ModelParameter | ParameterMessage,
         log_performance_metric: bool = True,
         copy_tester: bool = False,
+        save_dir: str | None = None,
     ) -> dict:
         if isinstance(parameter, ParameterMessage):
             parameter = parameter.parameter
@@ -56,6 +57,9 @@ class Server(Executor, RoundSelectionMixin):
         tester.hook_config.use_performance_metric = True
         tester.hook_config.log_performance_metric = log_performance_metric
         tester.hook_config.save_performance_metric = log_performance_metric
+        if save_dir is not None:
+            assert copy_tester
+            tester.set_save_dir(save_dir)
         batch_size: int | None = None
         if "server_batch_size" in tester.dataloader_kwargs:
             batch_size = tester.dataloader_kwargs["server_batch_size"]
