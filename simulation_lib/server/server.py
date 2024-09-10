@@ -27,8 +27,8 @@ class Server(Executor, RoundSelectionMixin):
     def worker_number(self) -> int:
         return self.config.worker_number
 
-    def get_tester(self) -> Inferencer:
-        if self.__tester is not None:
+    def get_tester(self, copy_tester: bool = False) -> Inferencer:
+        if self.__tester is not None and not copy_tester:
             return self.__tester
         tester = self.config.create_inferencer(
             phase=MachineLearningPhase.Test, inherent_device=False
@@ -50,9 +50,7 @@ class Server(Executor, RoundSelectionMixin):
     ) -> dict:
         if isinstance(parameter, ParameterMessage):
             parameter = parameter.parameter
-        tester = self.get_tester()
-        if copy_tester:
-            tester = copy.deepcopy(tester)
+        tester = self.get_tester(copy_tester=copy_tester)
         self.load_parameter(tester=tester, parameter=parameter)
         tester.model_util.disable_running_stats()
         tester.hook_config.use_performance_metric = True
