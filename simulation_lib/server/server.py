@@ -46,12 +46,16 @@ class Server(Executor, RoundSelectionMixin):
         self,
         parameter: ModelParameter | ParameterMessage,
         log_performance_metric: bool = True,
+        copy_tester: bool = False,
     ) -> dict:
         if isinstance(parameter, ParameterMessage):
             parameter = parameter.parameter
         tester = self.get_tester()
+        if copy_tester:
+            tester = copy.deepcopy(tester)
         self.load_parameter(tester=tester, parameter=parameter)
         tester.model_util.disable_running_stats()
+        tester.hook_config.use_performance_metric = True
         tester.hook_config.log_performance_metric = log_performance_metric
         tester.hook_config.save_performance_metric = log_performance_metric
         batch_size: int | None = None
