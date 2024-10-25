@@ -45,9 +45,8 @@ class DistributedTrainingConfig(Config):
         MB = 1024 * 1024
         GB = MB * 1024
         for device, info in memory_info.items():
-            if info.total / GB >= 20:
-                if info.free / GB < 5:
-                    continue
+            if info.total / GB >= 20 and info.free / GB < 5:
+                continue
             if info.used / info.total > 0.9:
                 continue
             free_GB = int(info.free / GB)

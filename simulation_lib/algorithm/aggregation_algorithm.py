@@ -52,10 +52,7 @@ class AggregationAlgorithm:
         assert data_dict
         avg_data: ModelParameter = {}
         for worker_id, v in data_dict.items():
-            if isinstance(weights, dict):
-                weight = weights[worker_id]
-            else:
-                weight = weights
+            weight = weights[worker_id] if isinstance(weights, dict) else weights
             assert 0 <= weight <= 1
             assert isinstance(v, ParameterMessage)
             d = {
@@ -81,10 +78,7 @@ class AggregationAlgorithm:
         assert data_dict
         result: float = 0
         for worker_id, v in data_dict.items():
-            if isinstance(weights, dict):
-                weight = weights[worker_id]
-            else:
-                weight = weights
+            weight = weights[worker_id] if isinstance(weights, dict) else weights
             assert 0 <= weight <= 1
             result += v.other_data[scalar_key] * weight
         return result
