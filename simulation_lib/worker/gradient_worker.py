@@ -1,4 +1,5 @@
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 import torch
 from cyy_torch_toolbox import ExecutorHookPoint, ModelEvaluator, ModelGradient

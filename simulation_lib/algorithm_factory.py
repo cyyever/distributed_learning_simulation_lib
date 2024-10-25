@@ -1,11 +1,13 @@
 import functools
 import os
-from typing import Callable
+from collections.abc import Callable
 
 from cyy_naive_lib.log import log_warning
 from cyy_naive_lib.system_info import OSType, get_operating_system_type
 from cyy_naive_lib.topology.central_topology import (
-    ProcessPipeCentralTopology, ProcessQueueCentralTopology)
+    ProcessPipeCentralTopology,
+    ProcessQueueCentralTopology,
+)
 from cyy_naive_lib.topology.cs_endpoint import ClientEndpoint, ServerEndpoint
 from cyy_torch_toolbox.concurrency import TorchProcessContext
 

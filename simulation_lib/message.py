@@ -1,6 +1,7 @@
 import copy
+from collections.abc import Mapping
 from dataclasses import dataclass, field, fields
-from typing import Any, Mapping
+from typing import Any
 
 import torch
 from cyy_torch_toolbox import ModelParameter

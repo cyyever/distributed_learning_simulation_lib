@@ -3,13 +3,21 @@ from typing import Any
 
 import torch
 from cyy_naive_lib.log import log_debug, log_info
-from cyy_torch_toolbox import (ExecutorHookPoint, MachineLearningPhase,
-                               ModelParameter, StopExecutingException,
-                               tensor_to)
+from cyy_torch_toolbox import (
+    ExecutorHookPoint,
+    MachineLearningPhase,
+    ModelParameter,
+    StopExecutingException,
+    tensor_to,
+)
 from cyy_torch_toolbox.hook.keep_model import KeepModelHook
 
-from ..message import (DeltaParameterMessage, Message, ParameterMessage,
-                       ParameterMessageBase)
+from ..message import (
+    DeltaParameterMessage,
+    Message,
+    ParameterMessage,
+    ParameterMessageBase,
+)
 from ..util import ModelCache, load_parameters
 from .client import ClientMixin
 from .worker import Worker

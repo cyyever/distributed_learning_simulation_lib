@@ -52,7 +52,7 @@ class PerformanceMixin(AggregationServerProtocol):
         self.__stat[key] = round_stat
         with open(
             os.path.join(self.save_dir, "round_record.json"),
-            "wt",
+            "w",
             encoding="utf8",
         ) as f:
             json.dump(self.__stat, f)

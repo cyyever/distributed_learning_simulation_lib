@@ -1,14 +1,16 @@
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from cyy_naive_lib.log import log_debug
 from cyy_naive_lib.topology.cs_endpoint import ClientEndpoint, ServerEndpoint
 from cyy_torch_algorithm.quantization.deterministic import (
-    NNADQ, NeuralNetworkAdaptiveDeterministicDequant,
-    NeuralNetworkAdaptiveDeterministicQuant)
+    NNADQ,
+    NeuralNetworkAdaptiveDeterministicDequant,
+    NeuralNetworkAdaptiveDeterministicQuant,
+)
 from cyy_torch_algorithm.quantization.stochastic import stochastic_quantization
 
-from ..message import (DeltaParameterMessage, ParameterMessage,
-                       ParameterMessageBase)
+from ..message import DeltaParameterMessage, ParameterMessage, ParameterMessageBase
 
 
 class QuantClientEndpoint(ClientEndpoint):

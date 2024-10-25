@@ -3,14 +3,22 @@ from typing import Any
 
 import torch
 from cyy_naive_lib.algorithm.mapping_op import (
-    get_mapping_items_by_key_order, get_mapping_values_by_key_order)
+    get_mapping_items_by_key_order,
+    get_mapping_values_by_key_order,
+)
 from cyy_naive_lib.log import log_info
-from cyy_torch_toolbox import (ClassificationDatasetCollection,
-                               DatasetCollection, DatasetCollectionSplit,
-                               MachineLearningPhase, SplitBase)
+from cyy_torch_toolbox import (
+    ClassificationDatasetCollection,
+    DatasetCollection,
+    DatasetCollectionSplit,
+    MachineLearningPhase,
+    SplitBase,
+)
 from cyy_torch_toolbox.dataset import (  # noqa: F401
-    get_dataset_collection_sampler, get_dataset_collection_split,
-    global_sampler_factory)
+    get_dataset_collection_sampler,
+    get_dataset_collection_split,
+    global_sampler_factory,
+)
 
 
 class RandomLabelIIDSplit(SplitBase):
@@ -76,7 +84,7 @@ class DirichletSplit(DatasetCollectionSplit):
             ).sample()
             part_proportions.append({})
             for (k, _), label_prob in zip(
-                get_mapping_items_by_key_order(worker_concentration), prob
+                get_mapping_items_by_key_order(worker_concentration), prob, strict=False
             ):
                 part_proportions[-1][k] = label_prob
 

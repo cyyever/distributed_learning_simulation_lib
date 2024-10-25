@@ -1,4 +1,4 @@
-from typing import Callable, Iterable
+from collections.abc import Callable, Iterable
 
 import torch.nn
 from cyy_naive_lib.log import log_debug

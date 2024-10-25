@@ -1,7 +1,8 @@
 import functools
 import json
 import os
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 import torch
 import torch_geometric.nn
@@ -10,8 +11,7 @@ from cyy_naive_lib.log import log_info
 from cyy_torch_graph import GraphDatasetUtil, GraphModelEvaluator
 from cyy_torch_toolbox import MachineLearningPhase
 
-from ..message import (FeatureMessage, Message, ParameterMessageBase,
-                       get_message_size)
+from ..message import FeatureMessage, Message, ParameterMessageBase, get_message_size
 from ..worker import AggregationWorker
 
 
@@ -386,7 +386,7 @@ class GraphWorker(AggregationWorker):
     def _after_training(self) -> None:
         super()._after_training()
         with open(
-            os.path.join(self.save_dir, "graph_worker_stat.json"), "wt", encoding="utf8"
+            os.path.join(self.save_dir, "graph_worker_stat.json"), "w", encoding="utf8"
         ) as f:
             stat = {
                 "original_in_client_training_edge_cnt": self._original_in_client_training_edge_cnt,

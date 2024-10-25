@@ -7,8 +7,13 @@ from cyy_torch_toolbox import Inferencer, ModelParameter
 from cyy_torch_toolbox.tensor import tensor_to
 
 from ..algorithm.aggregation_algorithm import AggregationAlgorithm
-from ..message import (DeltaParameterMessage, Message, MultipleWorkerMessage,
-                       ParameterMessage, ParameterMessageBase)
+from ..message import (
+    DeltaParameterMessage,
+    Message,
+    MultipleWorkerMessage,
+    ParameterMessage,
+    ParameterMessageBase,
+)
 from ..util.model_cache import ModelCache
 from .performance_mixin import PerformanceMixin
 from .round_selection_mixin import RoundSelectionMixin

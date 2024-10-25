@@ -1,5 +1,4 @@
-from cyy_torch_toolbox import (Config, DatasetCollection, MachineLearningPhase,
-                               Trainer)
+from cyy_torch_toolbox import Config, DatasetCollection, MachineLearningPhase, Trainer
 from cyy_torch_toolbox.dataset import SamplerBase, SplitBase
 
 

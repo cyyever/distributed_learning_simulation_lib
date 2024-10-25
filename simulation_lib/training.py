@@ -1,6 +1,7 @@
 import copy
 import multiprocessing
 import os
+
 # we use these env variables to save memory in large-scale training
 import uuid
 
@@ -160,7 +161,7 @@ def get_training_result(task_id: int, timeout: None | float = None) -> None | di
         for round_number, tmp_sv_dict in v.items():
             sv_dict[round_number] = {}
             for practitioner_id, worker_id in zip(
-                sorted(practitioner_ids), range(config.worker_number)
+                sorted(practitioner_ids), range(config.worker_number), strict=False
             ):
                 sv_dict[round_number][practitioner_id] = tmp_sv_dict[worker_id]
         stats[k] = sv_dict

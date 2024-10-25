@@ -2,8 +2,9 @@ import copy
 import multiprocessing
 import os
 import threading
+from collections.abc import Callable
 from functools import cached_property
-from typing import Any, Callable, Self
+from typing import Any, Self
 
 import gevent.lock
 import torch
