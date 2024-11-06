@@ -145,8 +145,6 @@ def import_dependencies(dataset_type: str | None = None) -> None:
                 libs = ["cyy_torch_vision"]
             case "text":
                 libs = ["cyy_torch_text"]
-            case _:
-                raise NotImplementedError(dataset_type)
     for dependency in libs:
         try:
             importlib.import_module(dependency)
