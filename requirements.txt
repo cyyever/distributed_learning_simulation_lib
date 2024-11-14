@@ -1,3 +1,2 @@
 gevent
 cyy_torch_toolbox@git+ssh://git@github.com/cyyever/torch_toolbox.git@main
-cyy_torch_algorithm@git+ssh://git@github.com/cyyever/torch_algorithm.git@main
