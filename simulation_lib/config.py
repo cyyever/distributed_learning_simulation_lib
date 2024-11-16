@@ -29,9 +29,11 @@ class DistributedTrainingConfig(Config):
         self.use_validation: bool = False
         self.worker_number_per_process: int = 0
 
-    def load_config_and_process(self, conf: Any) -> None:
+    def load_config_and_process(self, conf: Any, import_libs: bool = True) -> None:
         self.load_config(conf)
         self.reset_session()
+        if not import_libs:
+            return
         import_dependencies(
             dataset_type=self.dc_config.dataset_kwargs.get("dataset_type", None)
         )
