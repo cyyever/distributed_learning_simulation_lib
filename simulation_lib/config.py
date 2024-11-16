@@ -117,13 +117,15 @@ class DistributedTrainingConfig(Config):
         return practitioners
 
 
-def load_config(conf_obj: Any, global_conf_path: str) -> DistributedTrainingConfig:
+def load_config(
+    conf_obj: Any, global_conf_path: str, import_libs: bool = True
+) -> DistributedTrainingConfig:
     config: DistributedTrainingConfig = DistributedTrainingConfig()
     while "dataset_name" not in conf_obj and len(conf_obj) == 1:
         conf_obj = next(iter(conf_obj.values()))
     result_conf = omegaconf.OmegaConf.load(global_conf_path)
     result_conf.merge_with(conf_obj)
-    config.load_config_and_process(result_conf)
+    config.load_config_and_process(result_conf, import_libs=import_libs)
     return config
 
 
