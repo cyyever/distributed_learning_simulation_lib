@@ -5,7 +5,7 @@ from typing import Any
 
 import dill
 from cyy_naive_lib.log import log_debug
-from cyy_naive_lib.topology.endpoint import Endpoint
+from cyy_naive_lib.topology import Endpoint
 from cyy_torch_toolbox import ExecutorHookPoint, Trainer
 
 from ..executor import Executor, ExecutorContext

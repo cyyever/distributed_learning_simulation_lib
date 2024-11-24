@@ -9,7 +9,7 @@ from typing import Any, Self
 import gevent.lock
 import torch
 from cyy_naive_lib.log import log_debug, log_error
-from cyy_torch_toolbox.device import get_device
+from cyy_torch_toolbox import get_device
 
 from .config import DistributedTrainingConfig
 
