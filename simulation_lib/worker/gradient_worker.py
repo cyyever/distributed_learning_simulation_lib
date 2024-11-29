@@ -17,7 +17,6 @@ class GradientModelEvaluator:
         gradient_fun: Callable,
         aggregation_indicator_fun: Callable,
     ) -> None:
-        assert torch.cuda.is_available()
         self.evaluator: ModelEvaluator = evaluator
         self.__gradient_fun: Callable = gradient_fun
         self.__aggregation_indicator_fun: Callable = aggregation_indicator_fun
