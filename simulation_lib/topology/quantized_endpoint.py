@@ -2,7 +2,7 @@ from collections.abc import Callable
 from typing import Any
 
 from cyy_naive_lib.log import log_debug
-from cyy_naive_lib.topology.cs_endpoint import ClientEndpoint, ServerEndpoint
+from cyy_naive_lib.topology import ClientEndpoint, ServerEndpoint
 from cyy_torch_algorithm.quantization.deterministic import (
     NNADQ,
     NeuralNetworkAdaptiveDeterministicDequant,

@@ -1,6 +1,6 @@
+import contextlib
+
 from .dp_endpoint import DifferentialPrivacyEmbeddingEndpoint  # noqa: F401
 
-try:
+with contextlib.suppress(Exception):
     from .quantized_endpoint import *  # noqa: F401
-except Exception:
-    pass
