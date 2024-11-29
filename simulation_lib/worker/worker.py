@@ -76,12 +76,11 @@ class Worker(Executor):
         self._round_index = 1
         self._force_stop = False
         while not self._stopped():
-            # in case worker changes round number
             with ExecutorContext(self.name):
                 if first_training:
                     self._before_training()
                     first_training = False
-                    # in case worker changes round number
+                    # in case the worker changes round number
                     if self._stopped():
                         break
                     self.trainer.set_device_fun(

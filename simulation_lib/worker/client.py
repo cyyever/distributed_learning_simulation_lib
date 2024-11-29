@@ -12,8 +12,6 @@ class ClientMixin(WorkerProtocol):
     def _send_data_to_server(self, data: Any) -> None:
         assert isinstance(self.endpoint, ClientEndpoint)
         self.endpoint.send(data)
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
 
     def _get_data_from_server(self) -> Any:
         assert isinstance(self.endpoint, ClientEndpoint)

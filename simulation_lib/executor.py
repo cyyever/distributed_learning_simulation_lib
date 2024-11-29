@@ -102,8 +102,7 @@ class Executor:
             self.__thread_data.device = get_device(
                 max_needed_bytes=self.__used_device_memory
             )
-            if "cuda" in self.__thread_data.device.type.lower():
-                torch.cuda.set_device(self.__thread_data.device)
+            torch.set_default_device(self.__thread_data.device)
         return self.__thread_data.device
 
     def _release_device_lock(self, **kwargs: Any) -> None:
@@ -112,6 +111,7 @@ class Executor:
                 stats = torch.cuda.memory_stats(device=self.__thread_data.device)
                 if stats:
                     self.__used_device_memory = stats["allocated_bytes.all.peak"]
+                torch.cuda.empty_cache()
             self.__device_lock.release()
             self.__hold_device_lock = False
 
