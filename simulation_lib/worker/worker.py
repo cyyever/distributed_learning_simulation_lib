@@ -1,15 +1,10 @@
 import functools
 import os
 from functools import cached_property
-from typing import Any
 
 import dill
-from cyy_naive_lib.log import log_debug
-from cyy_naive_lib.topology import Endpoint
 from cyy_torch_toolbox import ExecutorHookPoint, Trainer
 
-from ..executor import Executor, ExecutorContext
-from ..practitioner import Practitioner
 from .worker_base import WorkerBase
 
 
@@ -21,7 +16,7 @@ class Worker(WorkerBase):
     def __new_trainer(self) -> Trainer:
         if "server_batch_size" in self.config.trainer_config.dataloader_kwargs:
             self.config.trainer_config.dataloader_kwargs.pop("server_batch_size")
-        return self.__practitioner.create_trainer(self.config)
+        return self._practitioner.create_trainer(self.config)
 
     def pause(self) -> None:
         self.trainer.offload_from_device()

@@ -20,7 +20,7 @@ class WorkerBase(Executor):
         if task_id is not None:
             name = f"worker {worker_id} of {task_id}"
         super().__init__(name=name, **kwargs)
-        self.__practitioner: Practitioner = practitioner
+        self._practitioner: Practitioner = practitioner
         self._endpoint = endpoint
         self._round_index = 0
         self._force_stop = False
@@ -35,7 +35,7 @@ class WorkerBase(Executor):
 
     @property
     def worker_id(self):
-        return self.__practitioner.worker_id
+        return self._practitioner.worker_id
 
     def _before_training(self) -> None:
         pass

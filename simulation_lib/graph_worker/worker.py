@@ -179,12 +179,15 @@ class GraphWorker(AggregationWorker):
     @property
     def cross_client_edge_mask(self) -> torch.Tensor:
         edge_index = self.edge_index
-        return (self.training_node_mask[edge_index[0]]) & (
-            torch_geometric.utils.index_to_mask(
-                torch.tensor(list(self._other_training_node_indices)),
-                size=self.training_node_mask.shape[0],
-            )
-        )[edge_index[1]]
+        return (
+            (self.training_node_mask[edge_index[0]])
+            & (
+                torch_geometric.utils.index_to_mask(
+                    torch.tensor(list(self._other_training_node_indices)),
+                    size=self.training_node_mask.shape[0],
+                )
+            )[edge_index[1]]
+        )
 
     def __clear_unrelated_edges(self) -> None:
         assert self._other_training_node_indices
