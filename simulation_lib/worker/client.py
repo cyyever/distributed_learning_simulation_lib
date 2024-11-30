@@ -1,7 +1,6 @@
 from typing import Any
 
 import gevent
-import torch
 from cyy_naive_lib.topology import ClientEndpoint
 
 from ..executor import ExecutorContext

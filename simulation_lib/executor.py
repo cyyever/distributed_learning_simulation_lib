@@ -111,7 +111,6 @@ class Executor:
                 stats = torch.cuda.memory_stats(device=self.__thread_data.device)
                 if stats:
                     self.__used_device_memory = stats["allocated_bytes.all.peak"]
-                torch.cuda.empty_cache()
             self.__device_lock.release()
             self.__hold_device_lock = False
 

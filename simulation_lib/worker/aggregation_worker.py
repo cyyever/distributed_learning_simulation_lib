@@ -83,7 +83,6 @@ class AggregationWorker(Worker, ClientMixin):
 
     def _aggregation(self, sent_data: Message, **kwargs: Any) -> None:
         self._send_data_to_server(sent_data)
-        self._offload_from_device()
         self.__get_result_from_server()
 
     def enable_choosing_model_by_validation(self) -> None:
@@ -179,7 +178,7 @@ class AggregationWorker(Worker, ClientMixin):
             self._force_stop = True
             raise StopExecutingException()
 
-    def _offload_from_device(self, in_round: bool = False) -> None:
+    def pause(self, in_round: bool = False) -> None:
         if self._model_cache.has_data:
             if self._keep_model_cache:
                 self._model_cache.save()
@@ -188,7 +187,7 @@ class AggregationWorker(Worker, ClientMixin):
         if self.best_model_hook is not None:
             assert not in_round
             self.best_model_hook.clear()
-        super()._offload_from_device()
+        super().pause()
 
     def __get_result_from_server(self) -> None:
         while True:
