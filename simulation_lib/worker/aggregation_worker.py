@@ -59,7 +59,6 @@ class AggregationWorker(Worker, ClientMixin):
             self.trainer.dataset_collection.remove_dataset(
                 phase=MachineLearningPhase.Validation
             )
-        self.trainer.offload_from_device()
         # load initial parameters
         if self.distribute_init_parameters:
             self.__get_result_from_server()
