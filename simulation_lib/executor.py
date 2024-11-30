@@ -102,7 +102,8 @@ class Executor:
             self.__thread_data.device = get_device(
                 max_needed_bytes=self.__used_device_memory
             )
-            torch.set_default_device(self.__thread_data.device)
+            if "cuda" in self.__thread_data.device.type.lower():
+                torch.cuda.set_device(self.__thread_data.device)
         return self.__thread_data.device
 
     def _release_device_lock(self, **kwargs: Any) -> None:
