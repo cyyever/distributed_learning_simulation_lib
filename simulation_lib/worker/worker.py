@@ -18,8 +18,9 @@ class Worker(WorkerBase):
             self.config.trainer_config.dataloader_kwargs.pop("server_batch_size")
         return self._practitioner.create_trainer(self.config)
 
-    def pause(self) -> None:
-        self.trainer.offload_from_device()
+    def pause(self, in_round: bool = False) -> None:
+        if not in_round:
+            self.trainer.offload_from_device()
         super().pause()
 
     def _after_training(self) -> None:

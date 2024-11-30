@@ -179,15 +179,15 @@ class AggregationWorker(Worker, ClientMixin):
             raise StopExecutingException()
 
     def pause(self, in_round: bool = False) -> None:
-        if self._model_cache.has_data:
-            if self._keep_model_cache:
-                self._model_cache.save()
-            else:
-                self._model_cache.discard()
-        if self.best_model_hook is not None:
-            assert not in_round
-            self.best_model_hook.clear()
-        super().pause()
+        if not in_round:
+            if self._model_cache.has_data:
+                if self._keep_model_cache:
+                    self._model_cache.save()
+                else:
+                    self._model_cache.discard()
+            if self.best_model_hook is not None:
+                self.best_model_hook.clear()
+        super().pause(in_round=in_round)
 
     def __get_result_from_server(self) -> None:
         while True:

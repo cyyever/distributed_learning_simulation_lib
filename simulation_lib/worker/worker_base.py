@@ -49,7 +49,7 @@ class WorkerBase(Executor):
     def _stopped(self) -> bool:
         return self._round_index > self.config.round or self._force_stop
 
-    def pause(self) -> None:
+    def pause(self, in_round: bool = False) -> None:
         self._release_device_lock()
 
     def start(self, **kwargs: Any) -> None:

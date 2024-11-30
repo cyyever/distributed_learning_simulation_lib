@@ -84,7 +84,7 @@ class GraphWorker(AggregationWorker):
             in_round=True,
         )
         self._send_data_to_server(sent_data)
-        res = self._get_data_from_server()
+        res = self._get_data_from_server(in_round=True)
         for worker_id, node_indices in res.other_data["training_node_indices"].items():
             if worker_id != self.worker_id:
                 self._other_training_node_indices |= node_indices
@@ -362,7 +362,7 @@ class GraphWorker(AggregationWorker):
             )
         self._comunicated_batch_cnt += 1
         self._send_data_to_server(sent_data)
-        res = self._get_data_from_server()
+        res = self._get_data_from_server(in_round=True)
         assert isinstance(res, FeatureMessage)
 
         new_x = self._get_cross_deivce_embedding(

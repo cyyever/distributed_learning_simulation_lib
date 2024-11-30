@@ -12,9 +12,9 @@ class ClientMixin(WorkerProtocol):
         assert isinstance(self.endpoint, ClientEndpoint)
         self.endpoint.send(data)
 
-    def _get_data_from_server(self) -> Any:
+    def _get_data_from_server(self, in_round: bool = False) -> Any:
         assert isinstance(self.endpoint, ClientEndpoint)
-        self.pause()
+        self.pause(in_round=in_round)
         ExecutorContext.release()
         while not self.endpoint.has_data():
             gevent.sleep(0.1)
