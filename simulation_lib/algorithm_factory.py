@@ -14,6 +14,7 @@ from cyy_naive_lib.topology.cs_endpoint import ClientEndpoint, ServerEndpoint
 from cyy_torch_toolbox.concurrency import TorchProcessContext
 
 from .config import DistributedTrainingConfig
+from .context import FederatedLearningContext
 
 
 class CentralizedAlgorithmFactory:
@@ -115,7 +116,11 @@ def get_worker_config(
             practitioner.set_worker_id(worker_id)
     assert practitioners
     assert CentralizedAlgorithmFactory.has_algorithm(config.distributed_algorithm)
-    result: dict = {"topology": get_topology(worker_num=config.worker_number)}
+
+    result: dict = {
+        "topology": get_topology(worker_num=config.worker_number),
+        "context": FederatedLearningContext(worker_num=config.worker_number),
+    }
     result["server"] = {}
     result["server"]["constructor"] = functools.partial(
         CentralizedAlgorithmFactory.create_server,

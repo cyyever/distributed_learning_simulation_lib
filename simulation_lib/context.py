@@ -1,25 +1,22 @@
 import multiprocessing
-
 import os
-from collections.abc import Callable
-
-from cyy_naive_lib.log import log_warning
-from cyy_naive_lib.system_info import OSType, get_operating_system_type
-from cyy_naive_lib.topology.central_topology import (
-    CentralTopology,
-    ProcessPipeCentralTopology,
-    ProcessQueueCentralTopology,
-)
-from cyy_naive_lib.topology.cs_endpoint import ClientEndpoint, ServerEndpoint
-from cyy_torch_toolbox.concurrency import TorchProcessContext
-
 import threading
+from collections.abc import Callable
 from typing import Any, Self
 
 import gevent.lock
 import torch
-from cyy_naive_lib.log import log_debug, log_error
+from cyy_naive_lib.log import log_debug, log_error, log_warning
+from cyy_naive_lib.system_info import OSType, get_operating_system_type
+from cyy_naive_lib.topology import (
+    CentralTopology,
+    ClientEndpoint,
+    ProcessPipeCentralTopology,
+    ProcessQueueCentralTopology,
+    ServerEndpoint,
+)
 from cyy_torch_toolbox import get_device
+from cyy_torch_toolbox.concurrency import TorchProcessContext
 
 
 class ExecutorContext:
@@ -101,6 +98,16 @@ class FederatedLearningContext:
             mp_context=TorchProcessContext(), worker_num=self.__worker_num
         )
         self.__executor_context = ExecutorContext(self.manager.RLock())
+
+    def create_client_endpoint(
+        self, end_point_cls: type, **endpoint_kwargs
+    ) -> ClientEndpoint:
+        return end_point_cls(topology=self.topology, **endpoint_kwargs)
+
+    def create_server_endpoint(
+        self, end_point_cls: type, **endpoint_kwargs
+    ) -> ServerEndpoint:
+        return end_point_cls(topology=self.topology, **endpoint_kwargs)
 
     def __enter__(self) -> Self:
         self.__executor_context.__enter__()
