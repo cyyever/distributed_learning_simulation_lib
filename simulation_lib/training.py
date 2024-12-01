@@ -1,13 +1,10 @@
 import copy
-import concurrent.futures
-import functools
 import os
 import uuid
-from typing import Callable
+from collections.abc import Callable
 
 from cyy_naive_lib.log import add_file_handler, log_debug, log_info
 from cyy_naive_lib.time_counter import TimeCounter
-from cyy_torch_toolbox.concurrency import TorchProcessPool
 
 from .algorithm_factory import get_worker_config
 from .config import DistributedTrainingConfig
@@ -25,7 +22,7 @@ def start_server(context: FederatedLearningContext, server_config: dict) -> dict
             "context": context,
         }
     )
-    log_debug("server %s context id %d", server.name, id(context))
+    log_debug("context id %d", id(context))
 
     server.start()
     log_info("stop server")
@@ -41,7 +38,7 @@ def run_worker(
     constructor: Callable,
     context: FederatedLearningContext,
 ) -> None:
-    worker = constructor(context=context)
+    worker: Worker = constructor(context=context)
     worker.start()
 
 
@@ -61,9 +58,7 @@ def start_workers(
         "run %s workers in the same process",
         len(worker_configs),
     )
-    future = context.submit(worker_funs, kwargs_list=worker_configs)
-    concurrent.futures.wait([future])
-    log_debug("stop workers")
+    context.submit(worker_funs, kwargs_list=worker_configs)
 
 
 tasks: dict = {}
@@ -90,14 +85,14 @@ def train(
     )
     context = worker_config.pop("context")
     assert isinstance(context, FederatedLearningContext)
+    server_config = worker_config.get("server", None)
+    assert server_config is not None
+    context.submit(
+        [start_server],
+        server_config=server_config,
+    )
     for worker_configs in worker_config["worker"]:
         start_workers(context=context, worker_configs=worker_configs)
-    server_config = worker_config.get("server", None)
-    if server_config is not None:
-        context.submit(
-            [start_server],
-            server_config=server_config,
-        )
     if practitioners is not None:
         tasks[task_id] = {
             "process_pool": context.executor_pool,

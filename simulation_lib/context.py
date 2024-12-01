@@ -189,6 +189,6 @@ class FederatedLearningContext(ExecutorContext):
         return self.executor_pool.submit_batch(
             [
                 functools.partial(wrap_fun, fn=fn, **kwargs_elem)
-                for fn, kwargs_elem in zip(funs, kwargs["kwargs_list"])
+                for fn, kwargs_elem in zip(funs, kwargs["kwargs_list"], strict=False)
             ],
         )
