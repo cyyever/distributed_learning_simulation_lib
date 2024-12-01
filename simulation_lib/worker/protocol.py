@@ -1,8 +1,6 @@
-from functools import cached_property
 from typing import Protocol
 
 from cyy_naive_lib.topology import Endpoint
-from cyy_torch_toolbox import Trainer
 
 from ..protocol import ExecutorProtocol
 from ..util import ModelCache
@@ -16,7 +14,7 @@ class WorkerProtocol(ExecutorProtocol):
     @property
     def endpoint(self) -> Endpoint: ...
 
-    def pause(self) -> None: ...
+    def pause(self, in_round: bool) -> None: ...
 
 
 class AggregationWorkerProtocol(WorkerProtocol):

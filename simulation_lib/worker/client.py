@@ -3,7 +3,6 @@ from typing import Any
 import gevent
 from cyy_naive_lib.topology import ClientEndpoint
 
-from ..executor import ExecutorContext
 from .protocol import WorkerProtocol
 
 
@@ -15,8 +14,8 @@ class ClientMixin(WorkerProtocol):
     def _get_data_from_server(self, in_round: bool = False) -> Any:
         assert isinstance(self.endpoint, ClientEndpoint)
         self.pause(in_round=in_round)
-        ExecutorContext.release()
+        self.device_context.release()
         while not self.endpoint.has_data():
             gevent.sleep(0.1)
-        ExecutorContext.acquire(self.name)
+        self.device_context.acquire(self.name)
         return self.endpoint.get()

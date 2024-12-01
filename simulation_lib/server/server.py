@@ -8,7 +8,7 @@ from cyy_naive_lib.log import log_debug, log_info
 from cyy_naive_lib.topology import ServerEndpoint
 from cyy_torch_toolbox import Inferencer, MachineLearningPhase, ModelParameter
 
-from ..executor import Executor, ExecutorContext
+from ..executor import Executor
 from ..message import Message, ParameterMessage
 from .round_selection_mixin import RoundSelectionMixin
 
@@ -81,7 +81,6 @@ class Server(Executor, RoundSelectionMixin):
         return metric
 
     def start(self) -> None:
-        ExecutorContext.set_name(self.name)
         with open(os.path.join(self.save_dir, "config.pkl"), "wb") as f:
             pickle.dump(self.config, f)
         self._before_start()
