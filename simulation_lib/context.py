@@ -59,14 +59,18 @@ class ExecutorContext:
         if ExecutorContext.semaphore is None:
             ExecutorContext.semaphore = gevent.lock.BoundedSemaphore(value=1)
         ExecutorContext.semaphore.acquire()
-        multiprocessing.current_process().name = self.__name
-        threading.current_thread().name = self.__name
+        self.__set_proc_name(self.__name)
         log_debug("get lock %s", self.semaphore)
+
+    @classmethod
+    def __set_proc_name(cls, name: str) -> None:
+        multiprocessing.current_process().name = name
+        threading.current_thread().name = name
 
     def release(self) -> None:
         log_debug("release lock %s", self.semaphore)
         self.release_device_lock()
-        self.set_name("unknown executor")
+        self.__set_proc_name("unknown executor")
         if ExecutorContext.semaphore is not None:
             ExecutorContext.semaphore.release()
 
