@@ -1,10 +1,12 @@
 import functools
+import itertools
 import os
 from collections.abc import Callable
 
 from cyy_naive_lib.log import log_warning
 from cyy_naive_lib.system_info import OSType, get_operating_system_type
 from cyy_naive_lib.topology.central_topology import (
+    CentralTopology,
     ProcessPipeCentralTopology,
     ProcessQueueCentralTopology,
 )
@@ -90,6 +92,15 @@ class CentralizedAlgorithmFactory:
         return config["server_cls"](endpoint=endpoint, **(kwargs | extra_kwargs))
 
 
+def get_topology(worker_num: int) -> CentralTopology:
+    topology_class = ProcessPipeCentralTopology
+    if get_operating_system_type() == OSType.Windows or "no_pipe" in os.environ:
+        topology_class = ProcessQueueCentralTopology
+        log_warning("use ProcessQueueCentralTopology")
+    topology = topology_class(mp_context=TorchProcessContext(), worker_num=worker_num)
+    return topology
+
+
 def get_worker_config(
     config: DistributedTrainingConfig, practitioners: None | set = None
 ) -> dict:
@@ -104,14 +115,7 @@ def get_worker_config(
             practitioner.set_worker_id(worker_id)
     assert practitioners
     assert CentralizedAlgorithmFactory.has_algorithm(config.distributed_algorithm)
-    topology_class = ProcessPipeCentralTopology
-    if get_operating_system_type() == OSType.Windows or "no_pipe" in os.environ:
-        topology_class = ProcessQueueCentralTopology
-        log_warning("use ProcessQueueCentralTopology")
-    topology = topology_class(
-        mp_context=TorchProcessContext(), worker_num=config.worker_number
-    )
-    result: dict = {"topology": topology}
+    result: dict = {"topology": get_topology(worker_num=config.worker_number)}
     result["server"] = {}
     result["server"]["constructor"] = functools.partial(
         CentralizedAlgorithmFactory.create_server,
@@ -126,10 +130,7 @@ def get_worker_config(
         worker_number_per_process,
     )
     client_config: list[list[dict]] = []
-    tmp = list(practitioners)
-    while tmp:
-        batch = tmp[:worker_number_per_process]
-        tmp = tmp[worker_number_per_process:]
+    for batch in itertools.batched(list(practitioners), n=worker_number_per_process):
         client_config.append(
             [
                 {
