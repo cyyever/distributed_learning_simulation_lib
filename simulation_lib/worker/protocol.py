@@ -16,6 +16,9 @@ class WorkerProtocol(ExecutorProtocol):
     @property
     def endpoint(self) -> Endpoint: ...
 
+    @property
+    def trainer(self) -> Trainer: ...
+
     def pause(self, in_round: bool) -> None: ...
 
 

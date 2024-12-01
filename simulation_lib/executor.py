@@ -27,7 +27,7 @@ class Executor:
         if semaphore is None:
             self.__has_log_lock = False
             return self.__has_log_lock
-        self.__has_log_lock: bool = semaphore.acquire(blocking=False)
+        self.__has_log_lock = semaphore.acquire(blocking=False)
         return self.__has_log_lock
 
     @property
