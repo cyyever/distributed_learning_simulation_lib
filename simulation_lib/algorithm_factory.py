@@ -1,9 +1,10 @@
 import functools
 import itertools
 from collections.abc import Callable
+from typing import Self
 
 from cyy_naive_lib.log import log_warning
-from cyy_naive_lib.topology.cs_endpoint import ClientEndpoint, ServerEndpoint
+from cyy_naive_lib.topology import ClientEndpoint, ServerEndpoint
 
 from .config import DistributedTrainingConfig
 from .context import FederatedLearningContext
@@ -14,7 +15,7 @@ class CentralizedAlgorithmFactory:
 
     @classmethod
     def register_algorithm(
-        cls: type,
+        cls: type[Self],
         algorithm_name: str,
         client_cls: Callable,
         server_cls: Callable,
@@ -42,7 +43,7 @@ class CentralizedAlgorithmFactory:
 
     @classmethod
     def create_client(
-        cls: type,
+        cls: type[Self],
         context: FederatedLearningContext,
         algorithm_name: str,
         kwargs: dict,

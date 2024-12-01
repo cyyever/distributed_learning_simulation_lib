@@ -1,3 +1,5 @@
+import concurrent.futures
+import functools
 import multiprocessing
 import os
 import threading
@@ -6,7 +8,12 @@ from typing import Any, Self
 
 import gevent.lock
 import torch
-from cyy_naive_lib.log import log_debug, log_error, log_warning
+from cyy_naive_lib.concurrency.process_initialization import get_process_data
+from cyy_naive_lib.log import (
+    log_debug,
+    log_error,
+    log_warning,
+)
 from cyy_naive_lib.system_info import OSType, get_operating_system_type
 from cyy_naive_lib.topology import (
     CentralTopology,
@@ -16,7 +23,7 @@ from cyy_naive_lib.topology import (
     ServerEndpoint,
 )
 from cyy_torch_toolbox import get_device
-from cyy_torch_toolbox.concurrency import TorchProcessContext
+from cyy_torch_toolbox.concurrency import TorchProcessContext, TorchProcessPool
 
 
 class ExecutorContext:
@@ -84,11 +91,21 @@ class ExecutorContext:
             self.__hold_device_lock = False
 
 
+class CoroutineExcutorPool(TorchProcessPool):
+    def submit_batch(self, funs: Sequence[Callable]) -> concurrent.futures.Future:
+        return super().submit(self.__batch_fun, funs)
+
+    def __batch_fun(self, funs) -> None:
+        assert funs
+        gevent.joinall([gevent.spawn(fun) for fun in funs], raise_error=True)
+
+
 class FederatedLearningContext(ExecutorContext):
     manager = multiprocessing.Manager()
     semaphores: dict = {}
 
     def __init__(self, worker_num: int) -> None:
+        super().__init__(self.manager.RLock())
         self.__worker_num = worker_num
         topology_class = ProcessPipeCentralTopology
         if get_operating_system_type() == OSType.Windows or "no_pipe" in os.environ:
@@ -97,7 +114,7 @@ class FederatedLearningContext(ExecutorContext):
         self.topology: CentralTopology = topology_class(
             mp_context=TorchProcessContext(), worker_num=self.__worker_num
         )
-        super().__init__(self.manager.RLock())
+        self.__executor_pool: CoroutineExcutorPool | None = None
 
     @classmethod
     def create_semaphore(cls, semaphore_name: str) -> None:
@@ -118,6 +135,39 @@ class FederatedLearningContext(ExecutorContext):
     ) -> ServerEndpoint:
         return end_point_cls(topology=self.topology, **endpoint_kwargs)
 
-    def run_jobs(self, funs: Sequence[Callable]) -> None:
-        """Submits callables to be executed with in gevent."""
-        gevent.joinall([gevent.spawn(fun) for fun in funs], raise_error=True)
+    @property
+    def executor_pool(self) -> CoroutineExcutorPool:
+        if self.__executor_pool is not None:
+            self.__executor_pool = CoroutineExcutorPool(
+                initargs={
+                    "process_data": {
+                        "context": self,
+                    }
+                }
+            )
+            self.__executor_pool.catch_exception()
+        assert self.__executor_pool is not None
+        return self.__executor_pool
+
+    @classmethod
+    def __wrap_fun(cls: type[Self], fn: Callable, *args: Any, **kwargs: Any):
+        context = get_process_data()["context"]
+        return fn(*args, **kwargs, context=context)
+
+    def submit(self, funs: Sequence[Callable], *args: Any, **kwargs: Any):
+        assert funs
+        if len(funs) == 1:
+            return self.executor_pool.submit(
+                functools.partial(
+                    self.__wrap_fun,
+                    fn=funs[0],
+                ),
+                *args,
+                **kwargs,
+            )
+
+        return self.executor_pool.submit_batch(
+            [functools.partial(self.__wrap_fun, fn=fn) for fn in funs],
+            *args,
+            **kwargs,
+        )
