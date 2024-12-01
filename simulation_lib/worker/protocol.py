@@ -1,13 +1,15 @@
 from typing import Protocol
 
 from cyy_naive_lib.topology import Endpoint
+from cyy_torch_toolbox import Trainer
 
 from ..protocol import ExecutorProtocol
 from ..util import ModelCache
 
 
 class TrainerProtocol(Protocol):
-    pass
+    @property
+    def trainer(self) -> Trainer: ...
 
 
 class WorkerProtocol(ExecutorProtocol):
