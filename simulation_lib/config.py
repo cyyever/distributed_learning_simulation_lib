@@ -139,7 +139,6 @@ import_result: dict = {}
 
 
 def import_dependencies(dataset_type: str | None = None) -> None:
-    global import_result
     if import_result:
         return
     libs = ["cyy_torch_text", "cyy_torch_vision"]
