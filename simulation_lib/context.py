@@ -1,7 +1,7 @@
 import multiprocessing
 import os
 import threading
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from typing import Any, Self
 
 import gevent.lock
@@ -45,7 +45,10 @@ class ExecutorContext:
     def set_name(self, name: str) -> None:
         self.__name = name
 
-    def acquire(self) -> None:
+    def acquire(self, cond_fun: Callable | None = None) -> None:
+        if cond_fun is not None:
+            while not cond_fun():
+                gevent.sleep(0.1)
         self.semaphore.acquire()
         multiprocessing.current_process().name = self.__name
         threading.current_thread().name = self.__name
@@ -114,3 +117,7 @@ class FederatedLearningContext(ExecutorContext):
         self, end_point_cls: type, **endpoint_kwargs
     ) -> ServerEndpoint:
         return end_point_cls(topology=self.topology, **endpoint_kwargs)
+
+    def run_jobs(self, funs: Sequence[Callable]) -> None:
+        """Submits callables to be executed with in gevent."""
+        gevent.joinall([gevent.spawn(fun) for fun in funs], raise_error=True)

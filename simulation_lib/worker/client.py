@@ -1,6 +1,5 @@
 from typing import Any
 
-import gevent
 from cyy_naive_lib.topology import ClientEndpoint
 
 from .protocol import WorkerProtocol
@@ -15,7 +14,5 @@ class ClientMixin(WorkerProtocol):
         assert isinstance(self.endpoint, ClientEndpoint)
         self.pause(in_round=in_round)
         self.context.release()
-        while not self.endpoint.has_data():
-            gevent.sleep(0.1)
-        self.context.acquire()
+        self.context.acquire(cond_fun=self.endpoint.has_data)
         return self.endpoint.get()

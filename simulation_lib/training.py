@@ -2,7 +2,6 @@ import copy
 import os
 import uuid
 
-import gevent
 from cyy_naive_lib.concurrency.process_initialization import get_process_data
 from cyy_naive_lib.log import add_file_handler, log_debug, log_info
 from cyy_naive_lib.time_counter import TimeCounter
@@ -63,7 +62,7 @@ def start_workers(
         [worker.worker_id for worker in workers],
         task_id,
     )
-    gevent.joinall([gevent.spawn(worker.start) for worker in workers], raise_error=True)
+    context.run_jobs([worker.start for worker in workers])
     log_debug("stop workers")
 
 
