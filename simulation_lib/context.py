@@ -1,6 +1,19 @@
 import multiprocessing
-import threading
+
+import os
 from collections.abc import Callable
+
+from cyy_naive_lib.log import log_warning
+from cyy_naive_lib.system_info import OSType, get_operating_system_type
+from cyy_naive_lib.topology.central_topology import (
+    CentralTopology,
+    ProcessPipeCentralTopology,
+    ProcessQueueCentralTopology,
+)
+from cyy_naive_lib.topology.cs_endpoint import ClientEndpoint, ServerEndpoint
+from cyy_torch_toolbox.concurrency import TorchProcessContext
+
+import threading
 from typing import Any, Self
 
 import gevent.lock
@@ -9,22 +22,22 @@ from cyy_naive_lib.log import log_debug, log_error
 from cyy_torch_toolbox import get_device
 
 
-class DeviceContext:
+class ExecutorContext:
     __thread_data = threading.local()
     semaphore = gevent.lock.BoundedSemaphore(value=1)
 
     def __init__(
         self,
-        name: str,
         device_lock: threading.RLock,
+        name: str | None = None,
     ) -> None:
-        self.__name = name
+        self.__name = name if name is not None else "unknown executor"
         self.__device_lock: threading.RLock = device_lock
         self.__hold_device_lock: bool = False
         self.__used_device_memory = None
 
     def __enter__(self) -> Self:
-        self.acquire(name=self.__name)
+        self.acquire()
         return self
 
     def __exit__(self, exc_type, exc, tb) -> None:
@@ -32,14 +45,13 @@ class DeviceContext:
             log_error("Found exception: %s %s %s", exc_type, exc, tb)
         self.release()
 
-    @classmethod
-    def set_name(cls, name: str) -> None:
-        multiprocessing.current_process().name = name
-        threading.current_thread().name = name
+    def set_name(self, name: str) -> None:
+        self.__name = name
 
-    def acquire(self, name: str) -> None:
+    def acquire(self) -> None:
         self.semaphore.acquire()
-        self.set_name(name)
+        multiprocessing.current_process().name = self.__name
+        threading.current_thread().name = self.__name
         log_debug("get lock %s", self.semaphore)
 
     def release(self) -> None:
@@ -70,3 +82,29 @@ class DeviceContext:
                     self.__used_device_memory = stats["allocated_bytes.all.peak"]
             self.__device_lock.release()
             self.__hold_device_lock = False
+
+
+class DeviceContext(ExecutorContext):
+    pass
+
+
+class FederatedLearningContext:
+    manager = multiprocessing.Manager()
+
+    def __init__(self, worker_num: int) -> None:
+        self.__worker_num = worker_num
+        topology_class = ProcessPipeCentralTopology
+        if get_operating_system_type() == OSType.Windows or "no_pipe" in os.environ:
+            topology_class = ProcessQueueCentralTopology
+            log_warning("use ProcessQueueCentralTopology")
+        self.topology: CentralTopology = topology_class(
+            mp_context=TorchProcessContext(), worker_num=self.__worker_num
+        )
+        self.__executor_context = ExecutorContext(self.manager.RLock())
+
+    def __enter__(self) -> Self:
+        self.__executor_context.__enter__()
+        return self
+
+    def __exit__(self, exc_type, exc, tb) -> None:
+        self.__executor_context.__exit__(exc_type, exc, tb)
