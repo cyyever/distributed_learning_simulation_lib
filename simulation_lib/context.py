@@ -81,12 +81,9 @@ class ExecutorContext:
             self.__hold_device_lock = False
 
 
-class DeviceContext(ExecutorContext):
-    pass
-
-
-class FederatedLearningContext:
+class FederatedLearningContext(ExecutorContext):
     manager = multiprocessing.Manager()
+    semaphores: dict = {}
 
     def __init__(self, worker_num: int) -> None:
         self.__worker_num = worker_num
@@ -97,7 +94,16 @@ class FederatedLearningContext:
         self.topology: CentralTopology = topology_class(
             mp_context=TorchProcessContext(), worker_num=self.__worker_num
         )
-        self.__executor_context = ExecutorContext(self.manager.RLock())
+        super().__init__(self.manager.RLock())
+
+    @classmethod
+    def create_semaphore(cls, semaphore_name: str) -> None:
+        assert semaphore_name not in cls.semaphores
+        cls.semaphores[semaphore_name] = cls.manager.Semaphore()
+
+    @classmethod
+    def get_semaphore(cls, semaphore_name: str) -> threading.Semaphore | None:
+        return cls.semaphores.get(semaphore_name, None)
 
     def create_client_endpoint(
         self, end_point_cls: type, **endpoint_kwargs
@@ -108,10 +114,3 @@ class FederatedLearningContext:
         self, end_point_cls: type, **endpoint_kwargs
     ) -> ServerEndpoint:
         return end_point_cls(topology=self.topology, **endpoint_kwargs)
-
-    def __enter__(self) -> Self:
-        self.__executor_context.__enter__()
-        return self
-
-    def __exit__(self, exc_type, exc, tb) -> None:
-        self.__executor_context.__exit__(exc_type, exc, tb)

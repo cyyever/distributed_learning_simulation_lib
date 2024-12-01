@@ -51,38 +51,34 @@ class CentralizedAlgorithmFactory:
     @classmethod
     def create_client(
         cls,
+        context: FederatedLearningContext,
         algorithm_name: str,
         kwargs: dict,
         endpoint_kwargs: dict,
         extra_kwargs: dict | None = None,
-        extra_endpoint_kwargs: dict | None = None,
     ) -> None:
         config = cls.config[algorithm_name]
         if extra_kwargs is None:
             extra_kwargs = {}
-        if extra_endpoint_kwargs is None:
-            extra_endpoint_kwargs = {}
-        endpoint = config["client_endpoint_cls"](
-            **(endpoint_kwargs | extra_endpoint_kwargs)
+        endpoint = context.create_client_endpoint(
+            config["client_endpoint_cls"], **endpoint_kwargs
         )
         return config["client_cls"](endpoint=endpoint, **(kwargs | extra_kwargs))
 
     @classmethod
     def create_server(
         cls,
+        context: FederatedLearningContext,
         algorithm_name: str,
         kwargs: dict,
         endpoint_kwargs: dict,
         extra_kwargs: dict | None = None,
-        extra_endpoint_kwargs: dict | None = None,
     ) -> None:
         config = cls.config[algorithm_name]
         if extra_kwargs is None:
             extra_kwargs = {}
-        if extra_endpoint_kwargs is None:
-            extra_endpoint_kwargs = {}
-        endpoint = config["server_endpoint_cls"](
-            **(endpoint_kwargs | extra_endpoint_kwargs)
+        endpoint = context.create_server_endpoint(
+            config["server_endpoint_cls"], **endpoint_kwargs
         )
         algorithm = None
         if "algorithm_cls" in config:
@@ -117,13 +113,15 @@ def get_worker_config(
     assert practitioners
     assert CentralizedAlgorithmFactory.has_algorithm(config.distributed_algorithm)
 
+    context = FederatedLearningContext(worker_num=config.worker_number)
+    context.create_semaphore("log_lock")
     result: dict = {
-        "topology": get_topology(worker_num=config.worker_number),
-        "context": FederatedLearningContext(worker_num=config.worker_number),
+        "context": context,
     }
     result["server"] = {}
     result["server"]["constructor"] = functools.partial(
         CentralizedAlgorithmFactory.create_server,
+        context=context,
         algorithm_name=config.distributed_algorithm,
         endpoint_kwargs=config.endpoint_kwargs.get("server", {}),
         kwargs={"config": config},
@@ -141,6 +139,7 @@ def get_worker_config(
                 {
                     "constructor": functools.partial(
                         CentralizedAlgorithmFactory.create_client,
+                        context=context,
                         algorithm_name=config.distributed_algorithm,
                         endpoint_kwargs=config.endpoint_kwargs.get("worker", {})
                         | {

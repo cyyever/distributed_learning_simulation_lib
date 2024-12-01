@@ -33,11 +33,11 @@ class Worker(WorkerBase):
     def _before_training(self) -> None:
         self.trainer.set_device_fun(
             functools.partial(
-                self.device_context.get_device,
+                self.context.get_device,
                 lock_callback=lambda: self.trainer.append_named_hook(
                     ExecutorHookPoint.AFTER_BATCH,
                     "_release_device_lock",
-                    self.device_context.release_device_lock,
+                    self.context.release_device_lock,
                 ),
             )
         )

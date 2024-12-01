@@ -1,8 +1,5 @@
 import copy
-import multiprocessing
 import os
-
-# we use these env variables to save memory in large-scale training
 import uuid
 
 import gevent
@@ -13,25 +10,24 @@ from cyy_torch_toolbox.concurrency import TorchProcessPool
 
 from .algorithm_factory import get_worker_config
 from .config import DistributedTrainingConfig
+from .context import FederatedLearningContext
 from .worker import Worker
 
+# we use these environment variables to save memory in large-scale training
 os.environ["CUDA_MODULE_LOADING"] = "LAZY"
 os.environ["USE_THREAD_DATALOADER"] = "1"
 
 
 def start_server(task_id: int | None, server_config: dict) -> dict:
-    device_lock = get_process_data()["device_lock"]
-    topology = get_process_data()["topology"]
-    log_debug("task_id %s topology id %d", task_id, id(topology))
+    context = get_process_data()["context"]
+    assert isinstance(context, FederatedLearningContext)
+    log_debug("task_id %s context id %d", task_id, id(context))
 
     server = server_config["constructor"](
         extra_kwargs={
             "task_id": task_id,
-            "device_lock": device_lock,
-        },
-        extra_endpoint_kwargs={
-            "topology": topology,
-        },
+            "context": context,
+        }
     )
 
     server.start()
@@ -48,9 +44,8 @@ def start_workers(
     task_id: int | None,
     worker_configs: list[dict],
 ) -> None:
-    device_lock = get_process_data()["device_lock"]
-    log_lock = get_process_data()["log_lock"]
-    topology = get_process_data()["topology"]
+    context = get_process_data()["context"]
+    assert isinstance(context, FederatedLearningContext)
     workers: list[Worker] = []
     assert worker_configs
 
@@ -59,11 +54,7 @@ def start_workers(
             worker_config["constructor"](
                 extra_kwargs={
                     "task_id": task_id,
-                    "device_lock": device_lock,
-                    "log_lock": log_lock,
-                },
-                extra_endpoint_kwargs={
-                    "topology": topology,
+                    "context": context,
                 },
             )
         )
@@ -73,7 +64,6 @@ def start_workers(
         task_id,
     )
     gevent.joinall([gevent.spawn(worker.start) for worker in workers], raise_error=True)
-
     log_debug("stop workers")
 
 
@@ -97,17 +87,14 @@ def train(
     else:
         task_id = uuid.uuid4().int + os.getpid()
     worker_config = get_worker_config(config, practitioners=practitioners)
-    topology = worker_config.pop("topology")
-    manager = multiprocessing.Manager()
-    device_lock = manager.RLock()
-    log_lock = manager.Semaphore()
-    assert topology.worker_num == config.worker_number
+    context = worker_config.pop("context")
+    assert isinstance(context, FederatedLearningContext)
+    context.create_semaphore("log_lock")
+    assert context.topology.worker_num == config.worker_number
     process_pool: TorchProcessPool = TorchProcessPool(
         initargs={
             "process_data": {
-                "device_lock": device_lock,
-                "log_lock": log_lock,
-                "topology": topology,
+                "context": context,
             }
         }
     )

@@ -1,12 +1,12 @@
 from typing import Protocol
 
 from .config import DistributedTrainingConfig
-from .context import DeviceContext
+from .context import FederatedLearningContext
 
 
 class ExecutorProtocol(Protocol):
     @property
-    def device_context(self) -> DeviceContext: ...
+    def context(self) -> FederatedLearningContext: ...
     @property
     def hold_log_lock(self) -> bool: ...
 
