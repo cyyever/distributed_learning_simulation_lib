@@ -29,7 +29,6 @@ from cyy_torch_toolbox.concurrency import TorchProcessContext, TorchProcessPool
 class ExecutorContext:
     __thread_data: None | threading.local = None
     semaphore: None | gevent.lock.BoundedSemaphore = None
-    # gevent.lock.BoundedSemaphore(value=1)
 
     def __init__(
         self,
@@ -98,14 +97,14 @@ class ExecutorContext:
             self.__hold_device_lock = False
 
 
+def batch_fun(funs) -> None:
+    assert funs
+    gevent.joinall([gevent.spawn(fun) for fun in funs], raise_error=True)
+
+
 class CoroutineExcutorPool(TorchProcessPool):
     def submit_batch(self, funs: Sequence[Callable]) -> concurrent.futures.Future:
-        return super().submit(CoroutineExcutorPool.__batch_fun, funs)
-
-    @classmethod
-    def __batch_fun(cls, funs) -> None:
-        assert funs
-        gevent.joinall([gevent.spawn(fun) for fun in funs], raise_error=True)
+        return super().submit(batch_fun, funs)
 
 
 def wrap_fun(fn: Callable, *args: Any, **kwargs: Any):
@@ -132,7 +131,6 @@ class FederatedLearningContext(ExecutorContext):
     def __getstate__(self) -> dict[str, Any]:
         state = self.__dict__.copy()
         state.pop("_FederatedLearningContext__executor_pool", None)
-        # log_error("keys are %s", state.keys())
         return state
 
     @classmethod
@@ -168,7 +166,6 @@ class FederatedLearningContext(ExecutorContext):
         return self.__executor_pool
 
     def submit(self, funs: Sequence[Callable], **kwargs: Any):
-        log_error("keys %s", kwargs)
         assert funs
         if len(funs) == 1:
             if "kwargs_list" in kwargs:
