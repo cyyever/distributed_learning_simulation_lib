@@ -27,8 +27,9 @@ from cyy_torch_toolbox.concurrency import TorchProcessContext, TorchProcessPool
 
 
 class ExecutorContext:
-    __thread_data = threading.local()
-    semaphore = gevent.lock.BoundedSemaphore(value=1)
+    __thread_data: None | threading.local = None
+    semaphore: None | gevent.lock.BoundedSemaphore = None
+    # gevent.lock.BoundedSemaphore(value=1)
 
     def __init__(
         self,
@@ -56,7 +57,9 @@ class ExecutorContext:
         if cond_fun is not None:
             while not cond_fun():
                 gevent.sleep(0.1)
-        self.semaphore.acquire()
+        if ExecutorContext.semaphore is None:
+            ExecutorContext.semaphore = gevent.lock.BoundedSemaphore(value=1)
+        ExecutorContext.semaphore.acquire()
         multiprocessing.current_process().name = self.__name
         threading.current_thread().name = self.__name
         log_debug("get lock %s", self.semaphore)
@@ -65,9 +68,12 @@ class ExecutorContext:
         log_debug("release lock %s", self.semaphore)
         self.release_device_lock()
         self.set_name("unknown executor")
-        self.semaphore.release()
+        if ExecutorContext.semaphore is not None:
+            ExecutorContext.semaphore.release()
 
     def get_device(self, lock_callback: None | Callable = None) -> torch.device:
+        if self.__thread_data is None:
+            self.__thread_data = threading.local()
         if not hasattr(self.__thread_data, "device"):
             if not self.__hold_device_lock:
                 self.__device_lock.acquire()
@@ -83,6 +89,7 @@ class ExecutorContext:
 
     def release_device_lock(self, **kwargs: Any) -> None:
         if self.__hold_device_lock:
+            assert self.__thread_data is not None
             if "cuda" in self.__thread_data.device.type.lower():
                 stats = torch.cuda.memory_stats(device=self.__thread_data.device)
                 if stats:
@@ -93,11 +100,17 @@ class ExecutorContext:
 
 class CoroutineExcutorPool(TorchProcessPool):
     def submit_batch(self, funs: Sequence[Callable]) -> concurrent.futures.Future:
-        return super().submit(self.__batch_fun, funs)
+        return super().submit(CoroutineExcutorPool.__batch_fun, funs)
 
-    def __batch_fun(self, funs) -> None:
+    @classmethod
+    def __batch_fun(cls, funs) -> None:
         assert funs
         gevent.joinall([gevent.spawn(fun) for fun in funs], raise_error=True)
+
+
+def wrap_fun(fn: Callable, *args: Any, **kwargs: Any):
+    context = get_process_data()["context"]
+    return fn(*args, **kwargs, context=context)
 
 
 class FederatedLearningContext(ExecutorContext):
@@ -115,6 +128,12 @@ class FederatedLearningContext(ExecutorContext):
             mp_context=TorchProcessContext(), worker_num=self.__worker_num
         )
         self.__executor_pool: CoroutineExcutorPool | None = None
+
+    def __getstate__(self) -> dict[str, Any]:
+        state = self.__dict__.copy()
+        state.pop("_FederatedLearningContext__executor_pool", None)
+        # log_error("keys are %s", state.keys())
+        return state
 
     @classmethod
     def create_semaphore(cls, semaphore_name: str) -> None:
@@ -137,7 +156,7 @@ class FederatedLearningContext(ExecutorContext):
 
     @property
     def executor_pool(self) -> CoroutineExcutorPool:
-        if self.__executor_pool is not None:
+        if self.__executor_pool is None:
             self.__executor_pool = CoroutineExcutorPool(
                 initargs={
                     "process_data": {
@@ -146,28 +165,30 @@ class FederatedLearningContext(ExecutorContext):
                 }
             )
             self.__executor_pool.catch_exception()
-        assert self.__executor_pool is not None
         return self.__executor_pool
 
-    @classmethod
-    def __wrap_fun(cls: type[Self], fn: Callable, *args: Any, **kwargs: Any):
-        context = get_process_data()["context"]
-        return fn(*args, **kwargs, context=context)
-
-    def submit(self, funs: Sequence[Callable], *args: Any, **kwargs: Any):
+    def submit(self, funs: Sequence[Callable], **kwargs: Any):
+        log_error("keys %s", kwargs)
         assert funs
         if len(funs) == 1:
+            if "kwargs_list" in kwargs:
+                kwargs_list = kwargs.pop("kwargs_list")
+                assert not kwargs
+                assert len(kwargs_list) == 1
+                kwargs = kwargs_list[0]
+
             return self.executor_pool.submit(
                 functools.partial(
-                    self.__wrap_fun,
+                    wrap_fun,
                     fn=funs[0],
                 ),
-                *args,
                 **kwargs,
             )
 
+        assert len(kwargs) == 1
         return self.executor_pool.submit_batch(
-            [functools.partial(self.__wrap_fun, fn=fn) for fn in funs],
-            *args,
-            **kwargs,
+            [
+                functools.partial(wrap_fun, fn=fn, **kwargs_elem)
+                for fn, kwargs_elem in zip(funs, kwargs["kwargs_list"])
+            ],
         )

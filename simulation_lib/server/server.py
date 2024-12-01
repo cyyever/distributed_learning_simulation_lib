@@ -18,10 +18,11 @@ class Server(Executor, RoundSelectionMixin):
         name: str = "server"
         if task_id is not None:
             name = f"server of {task_id}"
-        super().__init__(**kwargs, name=name)
+        Executor.__init__(self, **kwargs, name=name)
         RoundSelectionMixin.__init__(self)
         self._endpoint: ServerEndpoint = endpoint
         self.__tester: Inferencer | None = None
+        self.context.acquire()
 
     @property
     def worker_number(self) -> int:

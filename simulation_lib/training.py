@@ -1,8 +1,10 @@
 import copy
+import concurrent.futures
+import functools
 import os
 import uuid
+from typing import Callable
 
-from cyy_naive_lib.concurrency.process_initialization import get_process_data
 from cyy_naive_lib.log import add_file_handler, log_debug, log_info
 from cyy_naive_lib.time_counter import TimeCounter
 from cyy_torch_toolbox.concurrency import TorchProcessPool
@@ -17,17 +19,13 @@ os.environ["CUDA_MODULE_LOADING"] = "LAZY"
 os.environ["USE_THREAD_DATALOADER"] = "1"
 
 
-def start_server(task_id: int | None, server_config: dict) -> dict:
-    context = get_process_data()["context"]
-    assert isinstance(context, FederatedLearningContext)
-    log_debug("task_id %s context id %d", task_id, id(context))
-
+def start_server(context: FederatedLearningContext, server_config: dict) -> dict:
     server = server_config["constructor"](
         extra_kwargs={
-            "task_id": task_id,
             "context": context,
         }
     )
+    log_debug("server %s context id %d", server.name, id(context))
 
     server.start()
     log_info("stop server")
@@ -39,30 +37,32 @@ def start_server(task_id: int | None, server_config: dict) -> dict:
     return res
 
 
+def run_worker(
+    constructor: Callable,
+    context: FederatedLearningContext,
+) -> None:
+    worker = constructor(context=context)
+    worker.start()
+
+
 def start_workers(
-    task_id: int | None,
+    context: FederatedLearningContext,
     worker_configs: list[dict],
 ) -> None:
-    context = get_process_data()["context"]
     assert isinstance(context, FederatedLearningContext)
-    workers: list[Worker] = []
     assert worker_configs
+    worker_funs: list[Callable] = []
+    worker_kwargs: list[dict] = []
 
     for worker_config in worker_configs:
-        workers.append(
-            worker_config["constructor"](
-                extra_kwargs={
-                    "task_id": task_id,
-                    "context": context,
-                },
-            )
-        )
+        worker_funs.append(run_worker)
+        worker_kwargs.append({"worker_config": worker_config})
     log_debug(
-        "run workers %s in the same process for task %s",
-        [worker.worker_id for worker in workers],
-        task_id,
+        "run %s workers in the same process",
+        len(worker_configs),
     )
-    context.run_jobs([worker.start for worker in workers])
+    future = context.submit(worker_funs, kwargs_list=worker_configs)
+    concurrent.futures.wait([future])
     log_debug("stop workers")
 
 
@@ -85,38 +85,29 @@ def train(
         add_file_handler(config.log_file)
     else:
         task_id = uuid.uuid4().int + os.getpid()
-    worker_config = get_worker_config(config, practitioners=practitioners)
+    worker_config = get_worker_config(
+        config, task_id=task_id, practitioners=practitioners
+    )
     context = worker_config.pop("context")
     assert isinstance(context, FederatedLearningContext)
-    process_pool: TorchProcessPool = TorchProcessPool(
-        initargs={
-            "process_data": {
-                "context": context,
-            }
-        }
-    )
-    process_pool.catch_exception()
     for worker_configs in worker_config["worker"]:
-        process_pool.submit(
-            start_workers, task_id=task_id, worker_configs=worker_configs
-        )
+        start_workers(context=context, worker_configs=worker_configs)
     server_config = worker_config.get("server", None)
     if server_config is not None:
-        process_pool.submit(
-            start_server,
-            task_id=task_id,
+        context.submit(
+            [start_server],
             server_config=server_config,
         )
     if practitioners is not None:
         tasks[task_id] = {
-            "process_pool": process_pool,
+            "process_pool": context.executor_pool,
             "practitioner_ids": {practitioner.id for practitioner in practitioners},
             "config": config,
         }
         task_results[task_id] = {}
         return task_id
-    process_pool.wait_results(timeout=None)
-    process_pool.shutdown(wait=True)
+    context.executor_pool.wait_results(timeout=None)
+    context.executor_pool.shutdown(wait=True)
     log_info("training took %s seconds", timer.elapsed_milliseconds() / 1000)
     return None
 
