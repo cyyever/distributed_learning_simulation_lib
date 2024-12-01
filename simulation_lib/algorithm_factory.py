@@ -1,17 +1,9 @@
 import functools
 import itertools
-import os
 from collections.abc import Callable
 
 from cyy_naive_lib.log import log_warning
-from cyy_naive_lib.system_info import OSType, get_operating_system_type
-from cyy_naive_lib.topology.central_topology import (
-    CentralTopology,
-    ProcessPipeCentralTopology,
-    ProcessQueueCentralTopology,
-)
 from cyy_naive_lib.topology.cs_endpoint import ClientEndpoint, ServerEndpoint
-from cyy_torch_toolbox.concurrency import TorchProcessContext
 
 from .config import DistributedTrainingConfig
 from .context import FederatedLearningContext
@@ -22,7 +14,7 @@ class CentralizedAlgorithmFactory:
 
     @classmethod
     def register_algorithm(
-        cls,
+        cls: type,
         algorithm_name: str,
         client_cls: Callable,
         server_cls: Callable,
@@ -50,7 +42,7 @@ class CentralizedAlgorithmFactory:
 
     @classmethod
     def create_client(
-        cls,
+        cls: type,
         context: FederatedLearningContext,
         algorithm_name: str,
         kwargs: dict,
@@ -87,15 +79,6 @@ class CentralizedAlgorithmFactory:
             extra_kwargs["algorithm"] = algorithm
 
         return config["server_cls"](endpoint=endpoint, **(kwargs | extra_kwargs))
-
-
-def get_topology(worker_num: int) -> CentralTopology:
-    topology_class = ProcessPipeCentralTopology
-    if get_operating_system_type() == OSType.Windows or "no_pipe" in os.environ:
-        topology_class = ProcessQueueCentralTopology
-        log_warning("use ProcessQueueCentralTopology")
-    topology = topology_class(mp_context=TorchProcessContext(), worker_num=worker_num)
-    return topology
 
 
 def get_worker_config(
