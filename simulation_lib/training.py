@@ -89,7 +89,6 @@ def train(
     worker_config = get_worker_config(config, practitioners=practitioners)
     context = worker_config.pop("context")
     assert isinstance(context, FederatedLearningContext)
-    context.create_semaphore("log_lock")
     assert context.topology.worker_num == config.worker_number
     process_pool: TorchProcessPool = TorchProcessPool(
         initargs={
