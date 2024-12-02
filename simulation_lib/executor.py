@@ -23,11 +23,7 @@ class Executor:
     def hold_log_lock(self) -> bool:
         if self.__has_log_lock is not None:
             return self.__has_log_lock
-        semaphore = self.context.get_semaphore("log_lock")
-        if semaphore is None:
-            self.__has_log_lock = False
-            return self.__has_log_lock
-        self.__has_log_lock = semaphore.acquire(blocking=False)
+        self.__has_log_lock = self.context.hold_semaphore("log_lock")
         return self.__has_log_lock
 
     @property

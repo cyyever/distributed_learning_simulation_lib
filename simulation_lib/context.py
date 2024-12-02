@@ -119,6 +119,7 @@ class FederatedLearningContext(ExecutorContext):
         super().__init__(manager.RLock())
         self.manager = manager
         self.semaphores = self.manager.dict()
+        self.dict_lock = manager.RLock()
         self.__worker_num = worker_num
         topology_class = ProcessPipeCentralTopology
         if get_operating_system_type() == OSType.Windows or "no_pipe" in os.environ:
@@ -132,22 +133,18 @@ class FederatedLearningContext(ExecutorContext):
     def __getstate__(self) -> dict[str, Any]:
         state = self.__dict__.copy()
         state.pop("_FederatedLearningContext__executor_pool", None)
-        state.pop("semaphores", None)
+        # state.pop("semaphores", None)
         state.pop("manager", None)
+        # state.pop("dict_lock", None)
         return state
 
-    def __create_semaphore(self, semaphore_name: str) -> None:
-        assert semaphore_name not in self.semaphores
-        self.semaphores[semaphore_name] = self.manager.Semaphore()
-
-    def get_semaphore(
-        self, semaphore_name: str, create: bool = True
-    ) -> threading.Semaphore | None:
-        res = self.semaphores.get(semaphore_name, None)
-        if res is None and create:
-            self.__create_semaphore(semaphore_name=semaphore_name)
-            res = self.semaphores[semaphore_name]
-        return res
+    def hold_semaphore(self, semaphore_name: str) -> bool:
+        with self.dict_lock:
+            semaphore = self.semaphores.get(semaphore_name, None)
+            if semaphore is None:
+                self.semaphores[semaphore_name] = self.manager.Semaphore()
+                semaphore = self.semaphores[semaphore_name]
+            return semaphore.acquire(blocking=False)
 
     def create_client_endpoint(
         self, end_point_cls: type, **endpoint_kwargs
