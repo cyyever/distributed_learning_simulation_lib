@@ -4,7 +4,7 @@ import torch.nn
 from cyy_naive_lib.log import log_debug
 from cyy_torch_toolbox import ModelParameter, Trainer
 
-from .model_cache import *  # noqa: F401
+from .model_cache import ModelCache
 
 
 def __reset_optimizer_parameters(
@@ -40,3 +40,6 @@ def load_parameters(
     else:
         trainer.remove_optimizer()
     trainer.model_util.disable_running_stats()
+
+
+__all__ = ["ModelCache", "load_parameters"]

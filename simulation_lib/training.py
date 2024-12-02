@@ -8,7 +8,7 @@ from cyy_naive_lib.time_counter import TimeCounter
 from .algorithm_factory import get_worker_config
 from .config import DistributedTrainingConfig
 from .context import FederatedLearningContext
-from .task import OptionalTaskIDType, get_task_id
+from .task import OptionalTaskIDType, TaskIDType, get_task_id
 from .worker import Worker
 
 # we use these environment variables to save memory in large-scale training
@@ -102,7 +102,9 @@ def train(
     return None
 
 
-def get_training_result(task_id: int, timeout: None | float = None) -> None | dict:
+def get_training_result(
+    task_id: TaskIDType, timeout: None | float = None
+) -> None | dict:
     task = tasks[task_id]
     process_pool = task["process_pool"]
     results, not_done = process_pool.wait_results(timeout=timeout)
