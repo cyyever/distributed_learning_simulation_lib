@@ -8,6 +8,7 @@ from cyy_naive_lib.topology import ClientEndpoint, ServerEndpoint
 
 from .config import DistributedTrainingConfig
 from .context import FederatedLearningContext
+from .task import OptionalTaskIDType
 
 
 class CentralizedAlgorithmFactory:
@@ -79,7 +80,7 @@ class CentralizedAlgorithmFactory:
 
 def get_worker_config(
     config: DistributedTrainingConfig,
-    task_id: int | None = None,
+    task_id: OptionalTaskIDType,
     practitioners: None | set = None,
 ) -> dict:
     if practitioners is None:

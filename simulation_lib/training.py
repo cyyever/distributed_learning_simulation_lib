@@ -1,6 +1,5 @@
 import copy
 import os
-import uuid
 from collections.abc import Callable
 
 from cyy_naive_lib.log import add_file_handler, log_debug, log_info
@@ -9,6 +8,7 @@ from cyy_naive_lib.time_counter import TimeCounter
 from .algorithm_factory import get_worker_config
 from .config import DistributedTrainingConfig
 from .context import FederatedLearningContext
+from .task import OptionalTaskIDType, get_task_id
 from .worker import Worker
 
 # we use these environment variables to save memory in large-scale training
@@ -63,18 +63,18 @@ task_results: dict = {}
 def train(
     config: DistributedTrainingConfig,
     practitioners: None | set = None,
-) -> int | None:
+) -> OptionalTaskIDType:
     # we need to deepcopy config for concurrent training
     config = copy.deepcopy(config)
     practitioners = copy.deepcopy(practitioners)
     config.reset_session()
     config.apply_global_config()
     timer = TimeCounter()
-    task_id = None
+    task_id: OptionalTaskIDType = None
     if practitioners is None:
         add_file_handler(config.log_file)
     else:
-        task_id = uuid.uuid4().int + os.getpid()
+        task_id = get_task_id()
     worker_config = get_worker_config(
         config, task_id=task_id, practitioners=practitioners
     )
