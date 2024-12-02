@@ -1,4 +1,5 @@
 import functools
+import concurrent.futures
 import multiprocessing
 import os
 import threading
@@ -28,6 +29,8 @@ from .concurrency import CoroutineExcutorPool
 
 manager = multiprocessing.Manager()
 device_lock: threading.RLock = manager.RLock()
+dict_lock = manager.RLock()
+from .task import TaskIDType
 
 
 class ExecutorContext:
@@ -107,7 +110,6 @@ class FederatedLearningContext(ExecutorContext):
     def __init__(self, worker_num: int) -> None:
         super().__init__()
         self.semaphores = manager.dict()
-        self.dict_lock = manager.RLock()
         self.__worker_num = worker_num
         topology_class = ProcessPipeCentralTopology
         if get_operating_system_type() == OSType.Windows or "no_pipe" in os.environ:
@@ -124,7 +126,7 @@ class FederatedLearningContext(ExecutorContext):
         return state
 
     def hold_semaphore(self, semaphore_name: str) -> bool:
-        with self.dict_lock:
+        with dict_lock:
             semaphore = self.semaphores.get(semaphore_name, None)
             if semaphore is None:
                 self.semaphores[semaphore_name] = manager.Semaphore()
@@ -166,6 +168,41 @@ class FederatedLearningContext(ExecutorContext):
                 for kwargs_elem in kwargs_list
             ],
         )
+
+
+class ConcurrentFederatedLearningContext:
+    def __init__(self) -> None:
+        self.__contexts: dict[TaskIDType, FederatedLearningContext] = {}
+        self.__finished_tasks = set()
+
+    def add_context(
+        self, task_id: TaskIDType, context: FederatedLearningContext
+    ) -> None:
+        assert task_id not in self.__contexts
+        self.__contexts[task_id] = context
+
+    def wait_results(
+        self,
+        timeout: float | None = None,
+        return_when=concurrent.futures.ALL_COMPLETED,
+    ) -> tuple[dict, int]:
+        res: dict = {}
+        remaining_jobs: int = 0
+        for task_id, context in list(self.__contexts.items()):
+            task_results, unfinised_cnt = context.executor_pool.wait_results(
+                timeout=timeout, return_when=return_when
+            )
+            remaining_jobs += unfinised_cnt
+            if task_results:
+                res[task_id] = task_results
+            if unfinised_cnt == 0:
+                self.__contexts.pop(task_id)
+                self.__finished_tasks.add(task_id)
+        return res, remaining_jobs
+
+    def shutdown(self) -> None:
+        for context in self.__contexts.values():
+            context.executor_pool.shutdown()
 
 
 def get_worker_number_per_process(worker_number: int) -> int:
