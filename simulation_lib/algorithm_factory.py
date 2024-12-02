@@ -4,7 +4,6 @@ from collections.abc import Callable
 from typing import Self
 
 from cyy_naive_lib.log import log_warning
-from cyy_naive_lib.topology import ClientEndpoint, ServerEndpoint
 
 from .config import DistributedTrainingConfig
 from .context import FederatedLearningContext
@@ -25,16 +24,14 @@ class CentralizedAlgorithmFactory:
         algorithm_cls: None | Callable = None,
     ) -> None:
         assert algorithm_name not in cls.config
-        if client_endpoint_cls is None:
-            client_endpoint_cls = ClientEndpoint
-        if server_endpoint_cls is None:
-            server_endpoint_cls = ServerEndpoint
         cls.config[algorithm_name] = {
             "client_cls": client_cls,
             "server_cls": server_cls,
-            "client_endpoint_cls": client_endpoint_cls,
-            "server_endpoint_cls": server_endpoint_cls,
         }
+        if client_endpoint_cls is not None:
+            cls.config[algorithm_name]["client_endpoint_cls"] = client_endpoint_cls
+        if server_endpoint_cls is not None:
+            cls.config[algorithm_name]["server_endpoint_cls"] = server_endpoint_cls
         if algorithm_cls is not None:
             cls.config[algorithm_name]["algorithm_cls"] = algorithm_cls
 
