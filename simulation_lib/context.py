@@ -26,6 +26,7 @@ from cyy_torch_toolbox.concurrency import TorchProcessContext, TorchProcessPool
 from cyy_torch_toolbox.device import get_device_memory_info
 
 manager = multiprocessing.Manager()
+device_lock: threading.RLock = manager.RLock()
 
 
 class ExecutorContext:
@@ -37,7 +38,6 @@ class ExecutorContext:
         name: str | None = None,
     ) -> None:
         self.__name = name if name is not None else "unknown executor"
-        self.__device_lock: threading.RLock = manager.RLock()
         self.__hold_device_lock: bool = False
         self.__used_device_memory = None
 
@@ -80,7 +80,7 @@ class ExecutorContext:
             self.__thread_data = threading.local()
         if not hasattr(self.__thread_data, "device"):
             if not self.__hold_device_lock:
-                self.__device_lock.acquire()
+                device_lock.acquire()
                 self.__hold_device_lock = True
                 if lock_callback is not None:
                     lock_callback()
@@ -98,7 +98,7 @@ class ExecutorContext:
                 stats = torch.cuda.memory_stats(device=self.__thread_data.device)
                 if stats:
                     self.__used_device_memory = stats["allocated_bytes.all.peak"]
-            self.__device_lock.release()
+            device_lock.release()
             self.__hold_device_lock = False
 
 

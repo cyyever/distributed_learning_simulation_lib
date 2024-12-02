@@ -1,6 +1,6 @@
 from typing import Any
 
-from cyy_naive_lib.log import log_debug
+from cyy_naive_lib.log import log_debug, log_error
 from cyy_naive_lib.topology import Endpoint
 
 from ..executor import Executor
@@ -24,12 +24,12 @@ class WorkerBase(Executor):
         )
         super().__init__(name=name, task_id=task_id, **kwargs)
         self._practitioner: Practitioner = practitioner
-        self._endpoint = endpoint
+        self._endpoint: Endpoint = endpoint
         self._round_index = 0
         self._force_stop = False
 
     @property
-    def endpoint(self):
+    def endpoint(self) -> Endpoint:
         return self._endpoint
 
     @property
@@ -70,8 +70,6 @@ class WorkerBase(Executor):
                 self._train(first_training=first_training, training_kwargs=kwargs)
                 self._round_index += 1
         with self.context:
-            log_debug("finish worker")
-            self.endpoint.close()
-            log_debug("close endpoint")
+            log_error("end training")
             self._after_training()
-            log_debug("end worker")
+            log_error("end worker")

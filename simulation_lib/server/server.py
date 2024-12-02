@@ -26,6 +26,10 @@ class Server(Executor, RoundSelectionMixin):
         self.context.acquire()
 
     @property
+    def endpoint(self) -> ServerEndpoint:
+        return self._endpoint
+
+    @property
     def worker_number(self) -> int:
         return self.config.worker_number
 
@@ -88,18 +92,18 @@ class Server(Executor, RoundSelectionMixin):
         worker_set: set = set()
         while not self._stopped():
             if not worker_set:
-                worker_set = set(range(self._endpoint.worker_num))
-            assert self._endpoint.worker_num == self.config.worker_number
+                worker_set = set(range(self.endpoint.worker_num))
+            assert self.endpoint.worker_num == self.config.worker_number
             for worker_id in copy.copy(worker_set):
-                has_data: bool = self._endpoint.has_data(worker_id)
+                has_data: bool = self.endpoint.has_data(worker_id)
                 if has_data:
                     log_debug(
                         "get result from %s worker_num %s",
                         worker_id,
-                        self._endpoint.worker_num,
+                        self.endpoint.worker_num,
                     )
                     self._process_worker_data(
-                        worker_id, self._endpoint.get(worker_id=worker_id)
+                        worker_id, self.endpoint.get(worker_id=worker_id)
                     )
                     worker_set.remove(worker_id)
             if worker_set:
@@ -108,7 +112,7 @@ class Server(Executor, RoundSelectionMixin):
             if worker_set and not self._stopped():
                 time.sleep(1)
 
-        self._endpoint.close()
+        self.endpoint.close()
         self._server_exit()
         log_info("end server")
 
