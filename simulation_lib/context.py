@@ -173,13 +173,15 @@ class FederatedLearningContext(ExecutorContext):
 class ConcurrentFederatedLearningContext:
     def __init__(self) -> None:
         self.__contexts: dict[TaskIDType, FederatedLearningContext] = {}
+        self.context_info: dict[TaskIDType, dict] = {}
         self.__finished_tasks: set[TaskIDType] = set()
 
     def add_context(
-        self, task_id: TaskIDType, context: FederatedLearningContext
+        self, task_id: TaskIDType, context: FederatedLearningContext, **other_info
     ) -> None:
         assert task_id not in self.__contexts
         self.__contexts[task_id] = context
+        self.context_info[task_id] = other_info
 
     def wait_results(
         self,
@@ -197,12 +199,16 @@ class ConcurrentFederatedLearningContext:
                 res[task_id] = task_results
             if unfinised_cnt == 0:
                 self.__contexts.pop(task_id)
+                self.context_info.pop(task_id)
                 self.__finished_tasks.add(task_id)
         return res, remaining_jobs
 
-    def shutdown(self) -> None:
+    def shutdown(self, **kwargs) -> dict:
+        res, _ = self.wait_results()
         for context in self.__contexts.values():
-            context.executor_pool.shutdown()
+            context.executor_pool.shutdown(**kwargs)
+        self.__contexts.clear()
+        return res
 
 
 def get_worker_number_per_process(worker_number: int) -> int:

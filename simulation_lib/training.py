@@ -7,7 +7,7 @@ from cyy_naive_lib.time_counter import TimeCounter
 
 from .algorithm_factory import get_worker_config
 from .config import DistributedTrainingConfig
-from .context import FederatedLearningContext
+from .context import FederatedLearningContext, ConcurrentFederatedLearningContext
 from .task import OptionalTaskIDType, TaskIDType, get_task_id
 from .worker import Worker
 
@@ -56,6 +56,7 @@ def start_workers(
     context.submit_batch(batch_fun=run_worker, kwargs_list=worker_configs)
 
 
+concurrent_context = ConcurrentFederatedLearningContext()
 tasks: dict = {}
 task_results: dict = {}
 
@@ -70,11 +71,9 @@ def train(
     config.reset_session()
     config.apply_global_config()
     timer = TimeCounter()
-    task_id: OptionalTaskIDType = None
+    task_id = get_task_id()
     if practitioners is None:
         add_file_handler(config.log_file)
-    else:
-        task_id = get_task_id()
     worker_config = get_worker_config(
         config, task_id=task_id, practitioners=practitioners
     )
@@ -88,16 +87,18 @@ def train(
     )
     for worker_configs in worker_config["worker"]:
         start_workers(context=context, worker_configs=worker_configs)
+    concurrent_context.add_context(
+        task_id=task_id,
+        context=context,
+        config=config,
+        practitioner_ids={practitioner.id for practitioner in practitioners}
+        if practitioners is not None
+        else None,
+    )
     if practitioners is not None:
-        tasks[task_id] = {
-            "process_pool": context.executor_pool,
-            "practitioner_ids": {practitioner.id for practitioner in practitioners},
-            "config": config,
-        }
-        task_results[task_id] = {}
         return task_id
-    context.executor_pool.wait_results(timeout=None)
-    context.executor_pool.shutdown(wait=True)
+    concurrent_context.wait_results(timeout=None)
+    concurrent_context.shutdown(wait=True)
     log_info("training took %s seconds", timer.elapsed_milliseconds() / 1000)
     return None
 
