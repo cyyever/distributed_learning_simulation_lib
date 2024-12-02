@@ -70,6 +70,6 @@ class WorkerBase(Executor):
                 self._train(first_training=first_training, training_kwargs=kwargs)
                 self._round_index += 1
         with self.context:
-            log_error("end training")
+            log_debug("end training")
             self._after_training()
-            log_error("end worker")
+            log_debugr("end worker")
