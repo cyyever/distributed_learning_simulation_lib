@@ -1,9 +1,8 @@
-import concurrent.futures
 import functools
 import multiprocessing
 import os
 import threading
-from collections.abc import Callable, Sequence
+from collections.abc import Callable
 from typing import Any, Self
 
 import gevent.lock
@@ -22,8 +21,10 @@ from cyy_naive_lib.topology import (
     ServerEndpoint,
 )
 from cyy_torch_toolbox import get_device
-from cyy_torch_toolbox.concurrency import TorchProcessContext, TorchProcessPool
+from cyy_torch_toolbox.concurrency import TorchProcessContext
 from cyy_torch_toolbox.device import get_device_memory_info
+
+from .concurrency import CoroutineExcutorPool
 
 manager = multiprocessing.Manager()
 device_lock: threading.RLock = manager.RLock()
@@ -100,18 +101,6 @@ class ExecutorContext:
                     self.__used_device_memory = stats["allocated_bytes.all.peak"]
             device_lock.release()
             self.__hold_device_lock = False
-
-
-class CoroutineExcutorPool(TorchProcessPool):
-    def submit_batch(self, funs: Sequence[Callable]) -> concurrent.futures.Future:
-        return super().submit(self.batch_fun, funs)
-
-    @classmethod
-    def batch_fun(cls, funs, *args, **kwargs) -> None:
-        assert funs
-        gevent.joinall(
-            [gevent.spawn(fun, *args, **kwargs) for fun in funs], raise_error=True
-        )
 
 
 class FederatedLearningContext(ExecutorContext):
