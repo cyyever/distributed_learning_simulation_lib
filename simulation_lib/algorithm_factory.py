@@ -95,7 +95,6 @@ def get_worker_config(
     assert CentralizedAlgorithmFactory.has_algorithm(config.distributed_algorithm)
 
     context = FederatedLearningContext(worker_num=config.worker_number)
-    context.create_semaphore("log_lock")
     result: dict = {
         "context": context,
     }

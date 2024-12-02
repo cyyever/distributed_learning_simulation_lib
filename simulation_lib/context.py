@@ -114,11 +114,11 @@ class CoroutineExcutorPool(TorchProcessPool):
 
 
 class FederatedLearningContext(ExecutorContext):
-    manager = multiprocessing.Manager()
-    semaphores: dict = {}
-
     def __init__(self, worker_num: int) -> None:
-        super().__init__(self.manager.RLock())
+        manager = multiprocessing.Manager()
+        super().__init__(manager.RLock())
+        self.manager = manager
+        self.semaphores = self.manager.dict()
         self.__worker_num = worker_num
         topology_class = ProcessPipeCentralTopology
         if get_operating_system_type() == OSType.Windows or "no_pipe" in os.environ:
@@ -132,16 +132,22 @@ class FederatedLearningContext(ExecutorContext):
     def __getstate__(self) -> dict[str, Any]:
         state = self.__dict__.copy()
         state.pop("_FederatedLearningContext__executor_pool", None)
+        state.pop("semaphores", None)
+        state.pop("manager", None)
         return state
 
-    @classmethod
-    def create_semaphore(cls, semaphore_name: str) -> None:
-        assert semaphore_name not in cls.semaphores
-        cls.semaphores[semaphore_name] = cls.manager.Semaphore()
+    def __create_semaphore(self, semaphore_name: str) -> None:
+        assert semaphore_name not in self.semaphores
+        self.semaphores[semaphore_name] = self.manager.Semaphore()
 
-    @classmethod
-    def get_semaphore(cls, semaphore_name: str) -> threading.Semaphore | None:
-        return cls.semaphores.get(semaphore_name, None)
+    def get_semaphore(
+        self, semaphore_name: str, create: bool = True
+    ) -> threading.Semaphore | None:
+        res = self.semaphores.get(semaphore_name, None)
+        if res is None and create:
+            self.__create_semaphore(semaphore_name=semaphore_name)
+            res = self.semaphores[semaphore_name]
+        return res
 
     def create_client_endpoint(
         self, end_point_cls: type, **endpoint_kwargs
