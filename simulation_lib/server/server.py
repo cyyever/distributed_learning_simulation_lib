@@ -15,10 +15,8 @@ from .round_selection_mixin import RoundSelectionMixin
 
 class Server(Executor, RoundSelectionMixin):
     def __init__(self, task_id: int, endpoint: ServerEndpoint, **kwargs: Any) -> None:
-        name: str = "server"
-        if task_id is not None:
-            name = f"server of {task_id}"
-        Executor.__init__(self, **kwargs, name=name)
+        name: str = "server" if task_id is None else f"server of {task_id}"
+        Executor.__init__(self, **kwargs, name=name, task_id=task_id)
         RoundSelectionMixin.__init__(self)
         self._endpoint: ServerEndpoint = endpoint
         self.__tester: Inferencer | None = None

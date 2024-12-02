@@ -12,12 +12,14 @@ class Executor:
         config: DistributedTrainingConfig,
         context: FederatedLearningContext,
         name: str,
+        task_id: int | None = None,
     ) -> None:
         self.__config: DistributedTrainingConfig = copy.deepcopy(config)
         self.__context: FederatedLearningContext = copy.copy(context)
         self.__context.set_name(name)
         self.__name = name
         self.__has_log_lock: bool | None = None
+        self.__task_id = task_id
 
     @property
     def hold_log_lock(self) -> bool:

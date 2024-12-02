@@ -16,10 +16,12 @@ class WorkerBase(Executor):
         **kwargs: Any,
     ) -> None:
         worker_id = practitioner.worker_id
-        name = f"worker {worker_id}"
-        if task_id is not None:
-            name = f"worker {worker_id} of {task_id}"
-        super().__init__(name=name, **kwargs)
+        name = (
+            f"worker {worker_id}"
+            if task_id is None
+            else f"worker {worker_id} of {task_id}"
+        )
+        super().__init__(name=name, task_id=task_id, **kwargs)
         self._practitioner: Practitioner = practitioner
         self._endpoint = endpoint
         self._round_index = 0
