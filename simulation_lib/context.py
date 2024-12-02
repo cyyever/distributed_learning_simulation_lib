@@ -1,5 +1,5 @@
-import functools
 import concurrent.futures
+import functools
 import multiprocessing
 import os
 import threading
@@ -26,11 +26,11 @@ from cyy_torch_toolbox.concurrency import TorchProcessContext
 from cyy_torch_toolbox.device import get_device_memory_info
 
 from .concurrency import CoroutineExcutorPool
+from .task import TaskIDType
 
 manager = multiprocessing.Manager()
 device_lock: threading.RLock = manager.RLock()
 dict_lock = manager.RLock()
-from .task import TaskIDType
 
 
 class ExecutorContext:
@@ -173,7 +173,7 @@ class FederatedLearningContext(ExecutorContext):
 class ConcurrentFederatedLearningContext:
     def __init__(self) -> None:
         self.__contexts: dict[TaskIDType, FederatedLearningContext] = {}
-        self.__finished_tasks = set()
+        self.__finished_tasks: set[TaskIDType] = set()
 
     def add_context(
         self, task_id: TaskIDType, context: FederatedLearningContext
