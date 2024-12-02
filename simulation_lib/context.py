@@ -135,14 +135,14 @@ class FederatedLearningContext(ExecutorContext):
             return semaphore.acquire(blocking=False)
 
     def create_client_endpoint(
-        self, end_point_cls: type = ClientEndpoint, **endpoint_kwargs
+        self, endpoint_cls: type = ClientEndpoint, **endpoint_kwargs
     ) -> ClientEndpoint:
-        return end_point_cls(topology=self.topology, **endpoint_kwargs)
+        return endpoint_cls(topology=self.topology, **endpoint_kwargs)
 
     def create_server_endpoint(
-        self, end_point_cls: type = ServerEndpoint, **endpoint_kwargs
+        self, endpoint_cls: type = ServerEndpoint, **endpoint_kwargs
     ) -> ServerEndpoint:
-        return end_point_cls(topology=self.topology, **endpoint_kwargs)
+        return endpoint_cls(topology=self.topology, **endpoint_kwargs)
 
     @property
     def executor_pool(self) -> CoroutineExcutorPool:

@@ -49,7 +49,7 @@ class CentralizedAlgorithmFactory:
     ) -> None:
         config = cls.config[algorithm_name]
         if "client_endpoint_cls" in config:
-            endpoint_kwargs["client_endpoint_cls"] = config["client_endpoint_cls"]
+            endpoint_kwargs["endpoint_cls"] = config["client_endpoint_cls"]
         endpoint = context.create_client_endpoint(**endpoint_kwargs)
         return config["client_cls"](endpoint=endpoint, context=context, **kwargs)
 
@@ -64,7 +64,7 @@ class CentralizedAlgorithmFactory:
         config = cls.config[algorithm_name]
         context = extra_kwargs["context"]
         if "server_endpoint_cls" in config:
-            endpoint_kwargs["server_endpoint_cls"] = config["server_endpoint_cls"]
+            endpoint_kwargs["endpoint_cls"] = config["server_endpoint_cls"]
         endpoint = context.create_server_endpoint(**endpoint_kwargs)
         algorithm = None
         if "algorithm_cls" in config:
