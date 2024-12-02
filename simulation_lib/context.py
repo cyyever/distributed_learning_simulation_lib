@@ -214,7 +214,7 @@ class ConcurrentFederatedLearningContext:
                 if unfinised_cnt == 0:
                     context = self.__contexts.pop(task_id)
                     context.shutdown()
-                    self.context_info.pop(task_id)
+                    res[task_id] |= self.context_info.pop(task_id)
                     self.__finished_tasks.add(task_id)
         return res, remaining_jobs
 
