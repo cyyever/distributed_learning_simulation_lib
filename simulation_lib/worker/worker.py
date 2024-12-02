@@ -37,7 +37,7 @@ class Worker(WorkerBase):
                 lock_callback=lambda: self.trainer.append_named_hook(
                     ExecutorHookPoint.AFTER_BATCH,
                     "_release_device_lock",
-                    self.context.release_device_lock,
+                    lambda *args, **kwagrs: self.context.release_device_lock(),
                 ),
             )
         )

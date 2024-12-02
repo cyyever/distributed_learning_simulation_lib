@@ -23,6 +23,7 @@ from cyy_naive_lib.topology import (
 )
 from cyy_torch_toolbox import get_device
 from cyy_torch_toolbox.concurrency import TorchProcessContext, TorchProcessPool
+from cyy_torch_toolbox.device import get_device_memory_info
 
 
 class ExecutorContext:
@@ -89,7 +90,7 @@ class ExecutorContext:
                 torch.cuda.set_device(self.__thread_data.device)
         return self.__thread_data.device
 
-    def release_device_lock(self, **kwargs: Any) -> None:
+    def release_device_lock(self) -> None:
         if self.__hold_device_lock:
             assert self.__thread_data is not None
             if "cuda" in self.__thread_data.device.type.lower():
@@ -177,3 +178,38 @@ class FederatedLearningContext(ExecutorContext):
                 for kwargs_elem in kwargs_list
             ],
         )
+
+
+def get_worker_number_per_process(worker_number: int) -> int:
+    memory_info = get_device_memory_info()
+    refined_memory_info: dict = {}
+    MB = 1024 * 1024
+    GB = MB * 1024
+    for device, info in memory_info.items():
+        if info.total / GB >= 20 and info.free / GB < 5:
+            continue
+        if info.used / info.total > 0.9:
+            continue
+        free_GB = int(info.free / GB)
+        if free_GB == 0:
+            continue
+        refined_memory_info[device] = info.free
+    assert refined_memory_info
+    log_warning("Use devices %s", list(refined_memory_info.keys()))
+    if worker_number <= len(refined_memory_info):
+        return 1
+    # small scale training
+    if worker_number <= 50:
+        return int(worker_number / len(refined_memory_info))
+    total_bytes = sum(refined_memory_info.values())
+    MB_per_worker = min(total_bytes / MB / worker_number, 10 * GB)
+    log_debug(
+        "MB_per_worker %s other %s",
+        MB_per_worker,
+        min(refined_memory_info.values()) / MB,
+    )
+    worker_number_per_process = int(
+        min(refined_memory_info.values()) / MB / MB_per_worker
+    )
+    assert worker_number_per_process > 0
+    return worker_number_per_process
