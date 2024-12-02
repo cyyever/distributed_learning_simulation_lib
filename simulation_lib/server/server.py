@@ -112,7 +112,8 @@ class Server(Executor, RoundSelectionMixin):
             if worker_set and not self._stopped():
                 time.sleep(1)
 
-        self.endpoint.close()
+        for worker_id in range(self.endpoint.worker_num):
+            self.endpoint.get(worker_id=worker_id)
         self._server_exit()
         log_info("end server")
 

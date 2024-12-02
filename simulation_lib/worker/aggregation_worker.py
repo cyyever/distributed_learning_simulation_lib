@@ -190,16 +190,7 @@ class AggregationWorker(Worker, ClientMixin):
 
     def __get_result_from_server(self) -> None:
         while True:
-            result = None
-            try:
-                result = super()._get_data_from_server()
-            except BaseException as e:
-                # if server has stoped
-                self._round_index += 1
-                if self._stopped():
-                    return
-                self._round_index -= 1
-                raise e
+            result = super()._get_data_from_server()
             log_debug("get result from server %s", type(result))
             if result is None:
                 log_info("skip round %s", self.round_index)

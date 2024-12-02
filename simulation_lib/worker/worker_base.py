@@ -72,4 +72,5 @@ class WorkerBase(Executor):
         with self.context:
             log_debug("end training")
             self._after_training()
+            self.endpoint.send(None)
             log_debug("end worker")
