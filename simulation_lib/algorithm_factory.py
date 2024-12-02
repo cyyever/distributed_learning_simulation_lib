@@ -48,9 +48,9 @@ class CentralizedAlgorithmFactory:
         context: FederatedLearningContext,
     ) -> None:
         config = cls.config[algorithm_name]
-        endpoint = context.create_client_endpoint(
-            config["client_endpoint_cls"], **endpoint_kwargs
-        )
+        if "client_endpoint_cls" in config:
+            endpoint_kwargs["client_endpoint_cls"] = config["client_endpoint_cls"]
+        endpoint = context.create_client_endpoint(**endpoint_kwargs)
         return config["client_cls"](endpoint=endpoint, context=context, **kwargs)
 
     @classmethod
@@ -63,9 +63,9 @@ class CentralizedAlgorithmFactory:
     ) -> None:
         config = cls.config[algorithm_name]
         context = extra_kwargs["context"]
-        endpoint = context.create_server_endpoint(
-            config["server_endpoint_cls"], **endpoint_kwargs
-        )
+        if "server_endpoint_cls" in config:
+            endpoint_kwargs["server_endpoint_cls"] = config["server_endpoint_cls"]
+        endpoint = context.create_server_endpoint(**endpoint_kwargs)
         algorithm = None
         if "algorithm_cls" in config:
             algorithm = config["algorithm_cls"]()
