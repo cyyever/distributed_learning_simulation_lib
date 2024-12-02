@@ -72,4 +72,4 @@ class WorkerBase(Executor):
         with self.context:
             log_debug("end training")
             self._after_training()
-            log_debugr("end worker")
+            log_debug("end worker")
