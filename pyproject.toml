@@ -28,10 +28,7 @@ Repository = "https://github.com/cyyever/distributed_learning_simulation_lib"
 
 [tool.pyright]
 include = ["simulation_lib"]
-defineConstant = { DEBUG = true }
 
-reportMissingImports = true
-reportMissingTypeStubs = false
 
 [tool.ruff]
 target-version = "py312"

@@ -1,6 +1,6 @@
 from typing import Any
 
-from cyy_naive_lib.log import log_debug, log_error
+from cyy_naive_lib.log import log_debug
 from cyy_naive_lib.topology import Endpoint
 
 from ..executor import Executor
