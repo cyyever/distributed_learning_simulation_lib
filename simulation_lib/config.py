@@ -5,10 +5,9 @@ import uuid
 from typing import Any
 
 import omegaconf
-from cyy_naive_lib.log import log_debug, log_warning
 from cyy_torch_toolbox import ClassificationDatasetCollection, Config
-from cyy_torch_toolbox.device import get_device_memory_info
 
+from .context import get_worker_number_per_process as _get_worker_number_per_process
 from .practitioner import Practitioner
 from .sampler import get_dataset_collection_split
 
@@ -39,41 +38,11 @@ class DistributedTrainingConfig(Config):
         )
 
     def get_worker_number_per_process(self) -> int:
-        if self.worker_number_per_process != 0:
-            return self.worker_number_per_process
-
-        memory_info = get_device_memory_info()
-        refined_memory_info: dict = {}
-        MB = 1024 * 1024
-        GB = MB * 1024
-        for device, info in memory_info.items():
-            if info.total / GB >= 20 and info.free / GB < 5:
-                continue
-            if info.used / info.total > 0.9:
-                continue
-            free_GB = int(info.free / GB)
-            if free_GB == 0:
-                continue
-            refined_memory_info[device] = info.free
-        assert refined_memory_info
-        log_warning("Use devices %s", list(refined_memory_info.keys()))
-        if self.worker_number <= len(refined_memory_info):
-            return 1
-        # small scale training
-        if self.worker_number <= 50:
-            return int(self.worker_number / len(refined_memory_info))
-        total_bytes = sum(refined_memory_info.values())
-        MB_per_worker = min(total_bytes / MB / self.worker_number, 10 * GB)
-        log_debug(
-            "MB_per_worker %s other %s",
-            MB_per_worker,
-            min(refined_memory_info.values()) / MB,
-        )
-        worker_number_per_process = int(
-            min(refined_memory_info.values()) / MB / MB_per_worker
-        )
-        assert worker_number_per_process > 0
-        return worker_number_per_process
+        if self.worker_number_per_process == 0:
+            self.worker_number_per_process = _get_worker_number_per_process(
+                self.worker_number
+            )
+        return self.worker_number_per_process
 
     def reset_session(self) -> None:
         task_time = datetime.datetime.now()
