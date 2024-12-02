@@ -31,9 +31,7 @@ class Server(Executor, RoundSelectionMixin):
     def get_tester(self, copy_tester: bool = False) -> Inferencer:
         if self.__tester is not None and not copy_tester:
             return self.__tester
-        tester = self.config.create_inferencer(
-            phase=MachineLearningPhase.Test, inherent_device=False
-        )
+        tester = self.config.create_inferencer(phase=MachineLearningPhase.Test)
         tester.dataset_collection.remove_dataset(phase=MachineLearningPhase.Training)
         tester.dataset_collection.remove_dataset(phase=MachineLearningPhase.Validation)
         tester.hook_config.summarize_executor = False
