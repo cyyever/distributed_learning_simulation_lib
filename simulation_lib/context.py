@@ -25,6 +25,8 @@ from cyy_torch_toolbox import get_device
 from cyy_torch_toolbox.concurrency import TorchProcessContext, TorchProcessPool
 from cyy_torch_toolbox.device import get_device_memory_info
 
+manager = multiprocessing.Manager()
+
 
 class ExecutorContext:
     __thread_data: None | threading.local = None
@@ -32,11 +34,10 @@ class ExecutorContext:
 
     def __init__(
         self,
-        device_lock: threading.RLock,
         name: str | None = None,
     ) -> None:
         self.__name = name if name is not None else "unknown executor"
-        self.__device_lock: threading.RLock = device_lock
+        self.__device_lock: threading.RLock = manager.RLock()
         self.__hold_device_lock: bool = False
         self.__used_device_memory = None
 
@@ -115,10 +116,8 @@ class CoroutineExcutorPool(TorchProcessPool):
 
 class FederatedLearningContext(ExecutorContext):
     def __init__(self, worker_num: int) -> None:
-        manager = multiprocessing.Manager()
-        super().__init__(manager.RLock())
-        self.manager = manager
-        self.semaphores = self.manager.dict()
+        super().__init__()
+        self.semaphores = manager.dict()
         self.dict_lock = manager.RLock()
         self.__worker_num = worker_num
         topology_class = ProcessPipeCentralTopology
@@ -133,16 +132,13 @@ class FederatedLearningContext(ExecutorContext):
     def __getstate__(self) -> dict[str, Any]:
         state = self.__dict__.copy()
         state.pop("_FederatedLearningContext__executor_pool", None)
-        # state.pop("semaphores", None)
-        state.pop("manager", None)
-        # state.pop("dict_lock", None)
         return state
 
     def hold_semaphore(self, semaphore_name: str) -> bool:
         with self.dict_lock:
             semaphore = self.semaphores.get(semaphore_name, None)
             if semaphore is None:
-                self.semaphores[semaphore_name] = self.manager.Semaphore()
+                self.semaphores[semaphore_name] = manager.Semaphore()
                 semaphore = self.semaphores[semaphore_name]
             return semaphore.acquire(blocking=False)
 
