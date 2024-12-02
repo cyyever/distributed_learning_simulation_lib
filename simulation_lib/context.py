@@ -8,7 +8,6 @@ from typing import Any, Self
 
 import gevent.lock
 import torch
-from cyy_naive_lib.concurrency.process_initialization import get_process_data
 from cyy_naive_lib.log import (
     log_debug,
     log_error,
@@ -101,19 +100,16 @@ class ExecutorContext:
             self.__hold_device_lock = False
 
 
-def batch_fun(funs) -> None:
-    assert funs
-    gevent.joinall([gevent.spawn(fun) for fun in funs], raise_error=True)
-
-
 class CoroutineExcutorPool(TorchProcessPool):
     def submit_batch(self, funs: Sequence[Callable]) -> concurrent.futures.Future:
-        return super().submit(batch_fun, funs)
+        return super().submit(self.batch_fun, funs)
 
-
-def wrap_fun(fn: Callable, *args: Any, **kwargs: Any):
-    context = get_process_data()["context"]
-    return fn(*args, **kwargs, context=context)
+    @classmethod
+    def batch_fun(cls, funs, *args, **kwargs) -> None:
+        assert funs
+        gevent.joinall(
+            [gevent.spawn(fun, *args, **kwargs) for fun in funs], raise_error=True
+        )
 
 
 class FederatedLearningContext(ExecutorContext):
@@ -164,32 +160,20 @@ class FederatedLearningContext(ExecutorContext):
                     "process_data": {
                         "context": self,
                     }
-                }
+                },
+                pass_process_data=True,
             )
             self.__executor_pool.catch_exception()
         return self.__executor_pool
 
-    def submit(self, funs: Sequence[Callable], **kwargs: Any):
-        assert funs
-        if len(funs) == 1:
-            if "kwargs_list" in kwargs:
-                kwargs_list = kwargs.pop("kwargs_list")
-                assert not kwargs
-                assert len(kwargs_list) == 1
-                kwargs = kwargs_list[0]
+    @property
+    def submit(self):
+        return self.executor_pool.submit
 
-            return self.executor_pool.submit(
-                functools.partial(
-                    wrap_fun,
-                    fn=funs[0],
-                ),
-                **kwargs,
-            )
-
-        assert len(kwargs) == 1
+    def submit_batch(self, batch_fun: Callable, kwargs_list: list):
         return self.executor_pool.submit_batch(
             [
-                functools.partial(wrap_fun, fn=fn, **kwargs_elem)
-                for fn, kwargs_elem in zip(funs, kwargs["kwargs_list"], strict=False)
+                functools.partial(batch_fun, **kwargs_elem)
+                for kwargs_elem in kwargs_list
             ],
         )

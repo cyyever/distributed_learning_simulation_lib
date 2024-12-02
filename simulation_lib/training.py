@@ -48,17 +48,12 @@ def start_workers(
 ) -> None:
     assert isinstance(context, FederatedLearningContext)
     assert worker_configs
-    worker_funs: list[Callable] = []
-    worker_kwargs: list[dict] = []
 
-    for worker_config in worker_configs:
-        worker_funs.append(run_worker)
-        worker_kwargs.append({"worker_config": worker_config})
     log_debug(
         "run %s workers in the same process",
         len(worker_configs),
     )
-    context.submit(worker_funs, kwargs_list=worker_configs)
+    context.submit_batch(batch_fun=run_worker, kwargs_list=worker_configs)
 
 
 tasks: dict = {}
@@ -88,7 +83,7 @@ def train(
     server_config = worker_config.get("server", None)
     assert server_config is not None
     context.submit(
-        [start_server],
+        start_server,
         server_config=server_config,
     )
     for worker_configs in worker_config["worker"]:
