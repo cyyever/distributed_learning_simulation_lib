@@ -7,7 +7,7 @@ from cyy_naive_lib.time_counter import TimeCounter
 
 from .algorithm_factory import get_worker_config
 from .config import DistributedTrainingConfig
-from .context import FederatedLearningContext, ConcurrentFederatedLearningContext
+from .context import ConcurrentFederatedLearningContext, FederatedLearningContext
 from .task import OptionalTaskIDType, TaskIDType, get_task_id
 from .worker import Worker
 
@@ -57,7 +57,6 @@ def start_workers(
 
 
 concurrent_context = ConcurrentFederatedLearningContext()
-tasks: dict = {}
 task_results: dict = {}
 
 
@@ -106,20 +105,16 @@ def train(
 def get_training_result(
     task_id: TaskIDType, timeout: None | float = None
 ) -> None | dict:
-    task = tasks[task_id]
-    process_pool = task["process_pool"]
-    results, not_done = process_pool.wait_results(timeout=timeout)
-    for result in results.values():
-        if result is not None:
-            task_results[task_id] |= result
-    if not_done:
+    results, _ = concurrent_context.wait_results(timeout=timeout)
+    for task_id2, result in results.items():
+        task_results[task_id2] |= result
+    if not concurrent_context.finished(task_id):
         return None
-    process_pool.shutdown()
-    tasks.pop(task_id)
+    task_result = task_results.pop(task_id)
     log_info("finish task %s", task_id)
     stats: dict = {}
-    practitioner_ids = task["practitioner_ids"]
-    config = task["config"]
+    practitioner_ids = task_result["practitioner_ids"]
+    config = task_result["config"]
     assert practitioner_ids is not None
     for k, v in task_results[task_id].items():
         if k != "sv":

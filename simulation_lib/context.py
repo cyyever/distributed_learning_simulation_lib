@@ -14,6 +14,7 @@ from cyy_naive_lib.log import (
     log_warning,
 )
 from cyy_naive_lib.system_info import OSType, get_operating_system_type
+from cyy_naive_lib.time_counter import TimeCounter
 from cyy_naive_lib.topology import (
     CentralTopology,
     ClientEndpoint,
@@ -169,6 +170,9 @@ class FederatedLearningContext(ExecutorContext):
             ],
         )
 
+    def shutdown(self) -> None:
+        self.executor_pool.shutdown()
+
 
 class ConcurrentFederatedLearningContext:
     def __init__(self) -> None:
@@ -183,6 +187,9 @@ class ConcurrentFederatedLearningContext:
         self.__contexts[task_id] = context
         self.context_info[task_id] = other_info
 
+    def finished(self, task_id: TaskIDType) -> bool:
+        return task_id in self.__finished_tasks
+
     def wait_results(
         self,
         timeout: float | None = None,
@@ -190,17 +197,25 @@ class ConcurrentFederatedLearningContext:
     ) -> tuple[dict, int]:
         res: dict = {}
         remaining_jobs: int = 0
+        timeout_ms: float | None = None
+        if timeout is not None:
+            timeout_ms = timeout * 1000
         for task_id, context in list(self.__contexts.items()):
-            task_results, unfinised_cnt = context.executor_pool.wait_results(
-                timeout=timeout, return_when=return_when
-            )
-            remaining_jobs += unfinised_cnt
-            if task_results:
-                res[task_id] = task_results
-            if unfinised_cnt == 0:
-                self.__contexts.pop(task_id)
-                self.context_info.pop(task_id)
-                self.__finished_tasks.add(task_id)
+            with TimeCounter() as counter:
+                task_results, unfinised_cnt = context.executor_pool.wait_results(
+                    timeout=timeout_ms / 1000 if timeout_ms is not None else None,
+                    return_when=return_when,
+                )
+                if timeout_ms is not None:
+                    timeout_ms = max(timeout_ms - counter.elapsed_milliseconds(), 0)
+                remaining_jobs += unfinised_cnt
+                if task_results:
+                    res[task_id] = task_results
+                if unfinised_cnt == 0:
+                    context = self.__contexts.pop(task_id)
+                    context.shutdown()
+                    self.context_info.pop(task_id)
+                    self.__finished_tasks.add(task_id)
         return res, remaining_jobs
 
     def shutdown(self, **kwargs) -> dict:
