@@ -58,6 +58,9 @@ class ExecutorContext:
     def set_name(self, name: str) -> None:
         self.__name = name
 
+    def wait_execution(self, cond_fun: Callable) -> None:
+        self.acquire(cond_fun=cond_fun)
+
     def acquire(self, cond_fun: Callable | None = None) -> None:
         if cond_fun is not None:
             while not cond_fun():

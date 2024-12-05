@@ -14,5 +14,5 @@ class ClientMixin(WorkerProtocol):
         assert isinstance(self.endpoint, ClientEndpoint)
         self.pause(in_round=in_round)
         self.context.release()
-        self.context.acquire(cond_fun=self.endpoint.has_data)
+        self.context.wait_execution(cond_fun=self.endpoint.has_data)
         return self.endpoint.get()
