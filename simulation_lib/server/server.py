@@ -1,4 +1,3 @@
-import copy
 import os
 import pickle
 import time
@@ -94,18 +93,15 @@ class Server(Executor, RoundSelectionMixin):
             if not worker_set:
                 worker_set = set(range(self.endpoint.worker_num))
             assert self.endpoint.worker_num == self.config.worker_number
-            for worker_id in copy.copy(worker_set):
-                has_data: bool = self.endpoint.has_data(worker_id)
-                if has_data:
-                    log_debug(
-                        "get result from %s worker_num %s",
-                        worker_id,
-                        self.endpoint.worker_num,
-                    )
-                    self._process_worker_data(
-                        worker_id, self.endpoint.get(worker_id=worker_id)
-                    )
-                    worker_set.remove(worker_id)
+            res = self.endpoint.poll(worker_ids=worker_set)
+            for worker_id, data in res.items():
+                log_debug(
+                    "get result from %s worker_num %s",
+                    worker_id,
+                    self.endpoint.worker_num,
+                )
+                self._process_worker_data(worker_id=worker_id, data=data)
+                worker_set.remove(worker_id)
             if worker_set:
                 log_debug("wait workers %s", worker_set)
 
