@@ -8,6 +8,7 @@ from typing import Any, Self
 
 import gevent.lock
 import torch
+from cyy_naive_lib.decorator import Decorator
 from cyy_naive_lib.log import (
     log_debug,
     log_error,
@@ -58,9 +59,6 @@ class ExecutorContext:
     def set_name(self, name: str) -> None:
         self.__name = name
 
-    def wait_execution(self, cond_fun: Callable) -> None:
-        self.acquire(cond_fun=cond_fun)
-
     def acquire(self, cond_fun: Callable | None = None) -> None:
         if cond_fun is not None:
             while not cond_fun():
@@ -110,6 +108,17 @@ class ExecutorContext:
             self.__hold_device_lock = False
 
 
+class ClientEndpointInCoroutine(Decorator):
+    def __init__(self, endpoint: ClientEndpoint, context: ExecutorContext) -> None:
+        super().__init__(endpoint)
+        self.__context = context
+
+    def get(self) -> Any:
+        self.__context.release()
+        self.__context.acquire(cond_fun=self.has_data)
+        return self._object.get()
+
+
 class FederatedLearningContext(ExecutorContext):
     def __init__(self, worker_num: int) -> None:
         super().__init__()
@@ -140,7 +149,9 @@ class FederatedLearningContext(ExecutorContext):
     def create_client_endpoint(
         self, endpoint_cls: type = ClientEndpoint, **endpoint_kwargs
     ) -> ClientEndpoint:
-        return endpoint_cls(topology=self.topology, **endpoint_kwargs)
+        return ClientEndpointInCoroutine(
+            endpoint_cls(topology=self.topology, **endpoint_kwargs), context=self
+        )
 
     def create_server_endpoint(
         self, endpoint_cls: type = ServerEndpoint, **endpoint_kwargs
