@@ -5,7 +5,7 @@ import uuid
 from typing import Any
 
 import omegaconf
-from cyy_torch_toolbox import ClassificationDatasetCollection, Config
+from cyy_torch_toolbox import Config
 
 from .context import get_worker_number_per_process as _get_worker_number_per_process
 from .practitioner import Practitioner
@@ -69,7 +69,6 @@ class DistributedTrainingConfig(Config):
     def create_practitioners(self) -> set[Practitioner]:
         practitioners: set[Practitioner] = set()
         dataset_collection = self.create_dataset_collection()
-        assert isinstance(dataset_collection, ClassificationDatasetCollection)
         sampler = get_dataset_collection_split(
             name=self.dataset_sampling,
             dataset_collection=dataset_collection,
