@@ -1,3 +1,4 @@
+from functools import cached_property
 from typing import Protocol
 
 from cyy_naive_lib.topology import Endpoint
@@ -16,7 +17,7 @@ class WorkerProtocol(ExecutorProtocol):
     @property
     def endpoint(self) -> Endpoint: ...
 
-    @property
+    @cached_property
     def trainer(self) -> Trainer: ...
 
     def pause(self, in_round: bool) -> None: ...
