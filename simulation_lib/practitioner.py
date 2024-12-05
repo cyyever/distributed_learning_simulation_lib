@@ -38,7 +38,7 @@ class Practitioner:
         trainer = config.create_trainer(
             dc=self.create_dataset_collection(config=config)
         )
-        trainer.dataset_collection.remove_dataset(phase=MachineLearningPhase.Test)
         sampler = self._dataset_sampler[config.dc_config.dataset_name]
+        trainer.dataset_collection.remove_dataset(phase=MachineLearningPhase.Test)
         assert sampler.dataset_collection.has_dataset(MachineLearningPhase.Test)
         return trainer
