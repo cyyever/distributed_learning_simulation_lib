@@ -46,7 +46,10 @@ class QuantServerEndpoint(ServerEndpoint):
         super().__init__(**kwargs)
         self._quant: Callable | None = quant
         self._dequant: Callable = dequant
-        self.use_quant: bool = False
+        self.__use_quant: bool = False
+
+    def use_quant(self) -> None:
+        self.__use_quant = True
 
     def get(self, worker_id) -> Any:
         data = super().get(worker_id=worker_id)
@@ -61,7 +64,7 @@ class QuantServerEndpoint(ServerEndpoint):
         if isinstance(data, ParameterMessageBase):
             quantized: bool = data.other_data.pop("quantized", False)
             if not quantized:
-                if self.use_quant:
+                if self.__use_quant:
                     assert isinstance(data, ParameterMessage)
                     assert self._quant is not None
                     data.parameter = self._quant(data.parameter)
