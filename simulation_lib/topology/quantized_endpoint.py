@@ -18,11 +18,14 @@ class QuantClientEndpoint(ClientEndpoint):
         super().__init__(**kwargs)
         self._quant: Callable = quant
         self._dequant: Callable = dequant
-        self.dequant_server_data: bool = False
+        self.__dequant_server_data: bool = False
+
+    def dequant_server_data(self) -> None:
+        self.__dequant_server_data = True
 
     def get(self) -> Any:
         data = super().get()
-        if not self.dequant_server_data or data is None:
+        if not self.__dequant_server_data or data is None:
             return data
         assert isinstance(data, ParameterMessage)
         data.parameter = self._dequant(data.parameter)
