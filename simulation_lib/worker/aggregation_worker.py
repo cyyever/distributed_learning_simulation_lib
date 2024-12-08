@@ -189,7 +189,8 @@ class AggregationWorker(Worker, ClientMixin):
                     self._model_cache.discard()
             if self.best_model_hook is not None:
                 self.best_model_hook.clear()
-            self.trainer.remove_model()
+            if not self._reuse_learning_rate:
+                self.trainer.remove_model()
         super().pause(in_round=in_round)
 
     def __get_result_from_server(self) -> None:
