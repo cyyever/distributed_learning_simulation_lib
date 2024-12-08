@@ -63,11 +63,11 @@ class WorkerBase(Executor):
             with self.context:
                 if first_training:
                     self._before_training()
-                    first_training = False
                     # in case the worker changes round number
                     if self._stopped():
                         break
                 self._train(first_training=first_training, training_kwargs=kwargs)
+                first_training = False
                 self._round_index += 1
         with self.context:
             log_debug("end training")
