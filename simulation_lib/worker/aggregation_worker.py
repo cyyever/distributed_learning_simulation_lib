@@ -106,8 +106,8 @@ class AggregationWorker(Worker, ClientMixin):
         assert isinstance(hook, KeepModelHook)
         return hook
 
-    def _get_sent_parameters(self) -> ModelParameter:
-        return self.trainer.model_util.get_parameters()
+    def _get_sent_parameter_names(self) -> set[str] | None:
+        return None
 
     def _get_sent_data(self) -> ParameterMessageBase:
         if self.__choose_model_by_validation:
@@ -116,7 +116,7 @@ class AggregationWorker(Worker, ClientMixin):
             best_epoch = self.best_model_hook.best_model["epoch"]
             log_debug("use best model best_epoch %s", best_epoch)
         else:
-            parameter = self._get_sent_parameters()
+            parameter = self.trainer.model_util.get_parameters()
             best_epoch = self.trainer.hyper_parameter.epoch
             log_debug(
                 "use best model best_epoch %s acc %s parameter size %s",
@@ -126,6 +126,10 @@ class AggregationWorker(Worker, ClientMixin):
                 ),
                 len(parameter),
             )
+        parameter_names = self._get_sent_parameter_names()
+        if parameter_names is not None:
+            assert parameter_names
+            parameter = {k: parameter[k] for k in parameter_names}
         parameter = tensor_to(parameter, device="cpu", dtype=torch.float64)
         other_data = {}
         if self._send_loss:
