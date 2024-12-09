@@ -176,6 +176,10 @@ class FederatedLearningContext(ExecutorContext):
     def submit(self):
         return self.executor_pool.submit
 
+    @property
+    def wait_results(self):
+        return self.executor_pool.wait_results
+
     def submit_batch(self, batch_fun: Callable, kwargs_list: list):
         return self.executor_pool.submit_batch(
             [
@@ -216,7 +220,7 @@ class ConcurrentFederatedLearningContext:
             timeout_ms = timeout * 1000
         for task_id, context in list(self.__contexts.items()):
             with TimeCounter() as counter:
-                task_results, unfinised_cnt = context.executor_pool.wait_results(
+                task_results, unfinised_cnt = context.wait_results(
                     timeout=timeout_ms / 1000 if timeout_ms is not None else None,
                     return_when=return_when,
                 )
@@ -232,10 +236,10 @@ class ConcurrentFederatedLearningContext:
                     self.__finished_tasks.add(task_id)
         return res, remaining_jobs
 
-    def shutdown(self, **kwargs) -> dict:
+    def release(self) -> dict:
         res, _ = self.wait_results()
         for context in self.__contexts.values():
-            context.executor_pool.shutdown(**kwargs)
+            context.executor_pool.shutdown()
         self.__contexts.clear()
         return res
 

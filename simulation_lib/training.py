@@ -97,7 +97,7 @@ def train(
     if practitioners is not None:
         return task_id
     concurrent_context.wait_results(timeout=None)
-    concurrent_context.shutdown(wait=True)
+    concurrent_context.release()
     log_info("training took %s seconds", timer.elapsed_milliseconds() / 1000)
     return None
 
