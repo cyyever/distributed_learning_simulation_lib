@@ -1,5 +1,6 @@
 import concurrent.futures
 from collections.abc import Callable, Sequence
+from typing import Any
 
 import gevent.lock
 from cyy_torch_toolbox.concurrency import TorchProcessPool
@@ -10,8 +11,8 @@ class CoroutineExcutorPool(TorchProcessPool):
         return super().submit(self.batch_fun, funs)
 
     @classmethod
-    def batch_fun(cls, funs, *args, **kwargs) -> None:
+    def batch_fun(cls, funs, *args, **kwargs) -> list[Any]:
         assert funs
-        gevent.joinall(
-            [gevent.spawn(fun, *args, **kwargs) for fun in funs], raise_error=True
-        )
+        coroutines = [gevent.spawn(fun, *args, **kwargs) for fun in funs]
+        gevent.joinall(coroutines, raise_error=True)
+        return [g.value for g in coroutines]
