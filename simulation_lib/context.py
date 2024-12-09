@@ -116,7 +116,7 @@ class ClientEndpointInCoroutine(Decorator):
     def get(self) -> Any:
         self.__context.release()
         self.__context.acquire(cond_fun=self.has_data)
-        return self._object.get()
+        return self._decorator_object.get()
 
 
 class FederatedLearningContext(ExecutorContext):
