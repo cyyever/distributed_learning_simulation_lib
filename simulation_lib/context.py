@@ -30,9 +30,9 @@ from cyy_torch_toolbox.device import get_device_memory_info
 from .concurrency import CoroutineExcutorPool
 from .task import TaskIDType
 
-manager = TorchProcessContext().get_ctx().Manager()
+manager = multiprocessing.Manager()
 device_lock: threading.RLock = manager.RLock()
-dict_lock = manager.RLock()
+dict_lock: threading.RLock = manager.RLock()
 
 
 class ExecutorContext:
@@ -139,12 +139,13 @@ class FederatedLearningContext(ExecutorContext):
         return state
 
     def hold_semaphore(self, semaphore_name: str) -> bool:
-        with dict_lock:
-            semaphore = self.semaphores.get(semaphore_name, None)
-            if semaphore is None:
-                self.semaphores[semaphore_name] = manager.Semaphore()
-                semaphore = self.semaphores[semaphore_name]
-            return semaphore.acquire(blocking=False)
+        semaphore = self.semaphores.get(semaphore_name, None)
+        if semaphore is None:
+            with dict_lock:
+                semaphore = self.semaphores.setdefault(
+                    semaphore_name, manager.Semaphore()
+                )
+        return semaphore.acquire(blocking=False)
 
     def create_client_endpoint(
         self, endpoint_cls: type = ClientEndpoint, **endpoint_kwargs
