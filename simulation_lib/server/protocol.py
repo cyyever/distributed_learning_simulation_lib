@@ -5,9 +5,10 @@ from cyy_torch_toolbox import ModelParameter
 
 from ..config import DistributedTrainingConfig
 from ..message import ParameterMessage
+from ..protocol import ExecutorProtocol
 
 
-class AggregationServerProtocol(Protocol):
+class AggregationServerProtocol(ExecutorProtocol, Protocol):
     @property
     def config(self) -> DistributedTrainingConfig: ...
 
