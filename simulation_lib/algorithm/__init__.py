@@ -1,15 +1,24 @@
-from .aggregation_algorithm import AggregationAlgorithm  # noqa: F401
-from .composite_aggregation_algorithm import CompositeAggregationAlgorithm  # noqa: F401
-from .fed_avg_algorithm import FedAVGAlgorithm  # noqa: F401
+from .aggregation_algorithm import AggregationAlgorithm
+from .composite_aggregation_algorithm import CompositeAggregationAlgorithm
+from .fed_avg_algorithm import FedAVGAlgorithm
+from .personalized_aggregation_algorithm import PersonalizedFedAVGAlgorithm
+
+__all__ = [
+    "AggregationAlgorithm",
+    "CompositeAggregationAlgorithm",
+    "FedAVGAlgorithm",
+    "PersonalizedFedAVGAlgorithm",
+]
 
 try:
-    from .graph_algorithm import GraphAlgorithm  # noqa: F401
-    from .graph_embedding_algorithm import (
-        GraphNodeEmbeddingPassingAlgorithm,  # noqa: F401
-    )
-    from .graph_topology_algorithm import GraphTopologyAlgorithm  # noqa: F401
+    from .graph_algorithm import GraphAlgorithm
+    from .graph_embedding_algorithm import GraphNodeEmbeddingPassingAlgorithm
+    from .graph_topology_algorithm import GraphTopologyAlgorithm
+
+    __all__ += [
+        "GraphAlgorithm",
+        "GraphNodeEmbeddingPassingAlgorithm",
+        "GraphTopologyAlgorithm",
+    ]
 except Exception:
     pass
-from .personalized_aggregation_algorithm import (
-    PersonalizedFedAVGAlgorithm,  # noqa: F401
-)
