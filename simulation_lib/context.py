@@ -30,7 +30,7 @@ from cyy_torch_toolbox.device import get_device_memory_info
 from .concurrency import CoroutineExcutorPool
 from .task import TaskIDType
 
-manager = multiprocessing.Manager()
+manager = TorchProcessContext().get_ctx().Manager()
 device_lock: threading.RLock = manager.RLock()
 dict_lock = manager.RLock()
 
@@ -148,7 +148,7 @@ class FederatedLearningContext(ExecutorContext):
 
     def create_client_endpoint(
         self, endpoint_cls: type = ClientEndpoint, **endpoint_kwargs
-    ) -> ClientEndpoint:
+    ) -> ClientEndpointInCoroutine:
         return ClientEndpointInCoroutine(
             endpoint_cls(topology=self.topology, **endpoint_kwargs), context=self
         )
