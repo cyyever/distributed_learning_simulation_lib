@@ -15,9 +15,11 @@ classifiers = [
   "Programming Language :: Python"
 ]
 
-dynamic = ["dependencies"]
-[tool.setuptools.dynamic]
-dependencies = {file = ["requirements.txt"]}
+dependencies=[
+"gevent",
+"cyy_torch_toolbox@git+https://github.com/cyyever/torch_toolbox.git@main",
+"cyy_torch_algorithm@git+https://github.com/cyyever/torch_algorithm.git@main",
+]
 
 
 [tool.setuptools.package-dir]
