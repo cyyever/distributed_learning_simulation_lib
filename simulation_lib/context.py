@@ -36,6 +36,9 @@ dict_lock = None
 
 
 def initialize_global_locks() -> None:
+    global manager
+    global device_lock
+    global dict_lock
     if manager is None:
         manager = multiprocessing.Manager()
     if device_lock is None:
