@@ -5,6 +5,7 @@ import uuid
 from typing import Any
 
 import omegaconf
+from cyy_naive_lib.system_info import OSType, get_operating_system_type
 from cyy_torch_toolbox import Config, MachineLearningPhase
 
 from .context import get_worker_number_per_process as _get_worker_number_per_process
@@ -63,6 +64,8 @@ class DistributedTrainingConfig(Config):
         )
         if self.exp_name:
             dir_suffix = os.path.join(self.exp_name, dir_suffix)
+        if get_operating_system_type() == OSType.Windows:
+            dir_suffix = str(uuid.uuid4().int + os.getpid())
         self.save_dir = os.path.join("session", dir_suffix)
         self.log_file = str(os.path.join("log", dir_suffix)) + ".log"
 
