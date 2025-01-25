@@ -30,9 +30,18 @@ from cyy_torch_toolbox.device import get_device_memory_info
 from .concurrency import CoroutineExcutorPool
 from .task import TaskIDType
 
-manager = multiprocessing.Manager()
-device_lock: threading.RLock = manager.RLock()
-dict_lock: threading.RLock = manager.RLock()
+manager = None
+device_lock = None
+dict_lock = None
+
+
+def initialize_global_locks() -> None:
+    if manager is None:
+        manager = multiprocessing.Manager()
+    if device_lock is None:
+        device_lock = manager.RLock()
+    if dict_lock is None:
+        dict_lock = manager.RLock()
 
 
 class ExecutorContext:
@@ -122,6 +131,7 @@ class ClientEndpointInCoroutine(Decorator):
 class FederatedLearningContext(ExecutorContext):
     def __init__(self, worker_num: int) -> None:
         super().__init__()
+        initialize_global_locks()
         self.semaphores = manager.dict()
         self.__worker_num = worker_num
         topology_class = ProcessPipeCentralTopology
