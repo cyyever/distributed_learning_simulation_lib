@@ -134,7 +134,6 @@ class ClientEndpointInCoroutine(Decorator):
 class FederatedLearningContext(ExecutorContext):
     def __init__(self, worker_num: int) -> None:
         super().__init__()
-        initialize_global_locks()
         self.semaphores = manager.dict()
         self.__worker_num = worker_num
         topology_class = ProcessPipeCentralTopology
