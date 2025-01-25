@@ -30,26 +30,12 @@ from cyy_torch_toolbox.device import get_device_memory_info
 from .concurrency import CoroutineExcutorPool
 from .task import TaskIDType
 
-manager = None
-device_lock = None
-dict_lock = None
-
-
-def initialize_global_locks() -> None:
-    global manager
-    global device_lock
-    global dict_lock
-    if manager is None:
-        manager = multiprocessing.Manager()
-    if device_lock is None:
-        device_lock = manager.RLock()
-    if dict_lock is None:
-        dict_lock = manager.RLock()
-
 
 class ExecutorContext:
     __thread_data: None | threading.local = None
     semaphore: None | gevent.lock.BoundedSemaphore = None
+    device_lock = None
+    manager = None
 
     def __init__(
         self,
@@ -58,6 +44,11 @@ class ExecutorContext:
         self.__name = name if name is not None else "unknown executor"
         self.__hold_device_lock: bool = False
         self.__used_device_memory = None
+        if ExecutorContext.manager is None:
+            ExecutorContext.manager = TorchProcessContext().get_ctx().Manager()
+        if ExecutorContext.device_lock is None:
+            ExecutorContext.device_lock = self.manager.RLock()
+        self.device_lock = ExecutorContext.device_lock
 
     def __enter__(self) -> Self:
         self.acquire()
@@ -98,7 +89,8 @@ class ExecutorContext:
             self.__thread_data = threading.local()
         if not hasattr(self.__thread_data, "device"):
             if not self.__hold_device_lock:
-                device_lock.acquire()
+                print("device_lock is ", id(self.device_lock))
+                self.device_lock.acquire()
                 self.__hold_device_lock = True
                 if lock_callback is not None:
                     lock_callback()
@@ -116,7 +108,7 @@ class ExecutorContext:
                 stats = torch.cuda.memory_stats(device=self.__thread_data.device)
                 if stats:
                     self.__used_device_memory = stats["allocated_bytes.all.peak"]
-            device_lock.release()
+            self.device_lock.release()
             self.__hold_device_lock = False
 
 
@@ -132,9 +124,14 @@ class ClientEndpointInCoroutine(Decorator):
 
 
 class FederatedLearningContext(ExecutorContext):
+    dict_lock = None
+
     def __init__(self, worker_num: int) -> None:
         super().__init__()
-        self.semaphores = manager.dict()
+        if FederatedLearningContext.dict_lock is None:
+            FederatedLearningContext.dict_lock = self.manager.RLock()
+        self.dict_lock = FederatedLearningContext.dict_lock
+        self.semaphores = self.manager.dict()
         self.__worker_num = worker_num
         topology_class = ProcessPipeCentralTopology
         if get_operating_system_type() == OSType.Windows or "no_pipe" in os.environ:
@@ -153,9 +150,9 @@ class FederatedLearningContext(ExecutorContext):
     def hold_semaphore(self, semaphore_name: str) -> bool:
         semaphore = self.semaphores.get(semaphore_name, None)
         if semaphore is None:
-            with dict_lock:
+            with self.dict_lock:
                 semaphore = self.semaphores.setdefault(
-                    semaphore_name, manager.Semaphore()
+                    semaphore_name, self.manager.Semaphore()
                 )
         return semaphore.acquire(blocking=False)
 

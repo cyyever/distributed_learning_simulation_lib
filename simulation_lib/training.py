@@ -7,7 +7,10 @@ from cyy_naive_lib.time_counter import TimeCounter
 
 from .algorithm_factory import get_worker_config
 from .config import DistributedTrainingConfig
-from .context import ConcurrentFederatedLearningContext, FederatedLearningContext, initialize_global_locks
+from .context import (
+    ConcurrentFederatedLearningContext,
+    FederatedLearningContext,
+)
 from .task import OptionalTaskIDType, TaskIDType, get_task_id
 from .worker import Worker
 
@@ -86,7 +89,6 @@ def train(
     )
     for worker_configs in worker_config["worker"]:
         start_workers(context=context, worker_configs=worker_configs)
-    initialize_global_locks()
     concurrent_context.add_context(
         task_id=task_id,
         context=context,
