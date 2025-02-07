@@ -41,7 +41,7 @@ class DistributedTrainingConfig(Config):
     def get_worker_number_per_process(self) -> int:
         if self.worker_number_per_process == 0:
             self.worker_number_per_process = _get_worker_number_per_process(
-                self.worker_number
+                worker_number=self.worker_number, count_server=True
             )
         return self.worker_number_per_process
 
