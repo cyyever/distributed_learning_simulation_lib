@@ -34,7 +34,7 @@ from .task import TaskIDType
 class ExecutorContext:
     __thread_data: None | threading.local = None
     semaphore: None | gevent.lock.BoundedSemaphore = None
-    device_lock = None
+    device_lock: None | Any = None
     manager = None
 
     def __init__(
@@ -89,8 +89,8 @@ class ExecutorContext:
             self.__thread_data = threading.local()
         if not hasattr(self.__thread_data, "device"):
             if not self.__hold_device_lock:
-                print("device_lock is ", id(self.device_lock))
                 self.device_lock.acquire()
+                log_info("hold device_lock is %s", id(self.device_lock))
                 self.__hold_device_lock = True
                 if lock_callback is not None:
                     lock_callback()
@@ -108,6 +108,7 @@ class ExecutorContext:
                 stats = torch.cuda.memory_stats(device=self.__thread_data.device)
                 if stats:
                     self.__used_device_memory = stats["allocated_bytes.all.peak"]
+            log_info("release device_lock ")
             self.device_lock.release()
             self.__hold_device_lock = False
 
