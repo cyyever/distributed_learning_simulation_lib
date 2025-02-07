@@ -73,6 +73,11 @@ class Server(Executor, RoundSelectionMixin):
             log_info("server uses batch_size %s", batch_size)
             tester.remove_dataloader_kwargs("batch_number")
             tester.update_dataloader_kwargs(batch_size=batch_size)
+        metric = self._get_metric(tester)
+        tester.offload_from_device()
+        return metric
+
+    def _get_metric(self, tester: Inferencer) -> Any:
         if tester.has_hook_obj("performance_metric"):
             tester.performance_metric.clear_metric()
             metric: dict = tester.performance_metric.get_epoch_metrics(1)
@@ -80,7 +85,6 @@ class Server(Executor, RoundSelectionMixin):
         tester.inference()
         metric = tester.performance_metric.get_epoch_metrics(1)
         assert metric
-        tester.offload_from_device()
         return metric
 
     def start(self) -> None:
