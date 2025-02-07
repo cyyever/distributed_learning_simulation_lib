@@ -256,7 +256,9 @@ class ConcurrentFederatedLearningContext:
         return res
 
 
-def get_worker_number_per_process(worker_number: int) -> int:
+def get_worker_number_per_process(
+    worker_number: int, count_server: bool = False
+) -> int:
     memory_info = get_device_memory_info()
     refined_memory_info: dict = {}
     MB = 1024 * 1024
@@ -272,20 +274,20 @@ def get_worker_number_per_process(worker_number: int) -> int:
         refined_memory_info[device] = info.free
     assert refined_memory_info
     log_warning("Use devices %s", list(refined_memory_info.keys()))
-    if worker_number <= len(refined_memory_info):
+    free_bytes = sorted(list(refined_memory_info.values()))
+    if count_server and len(free_bytes) > 1:
+        free_bytes = free_bytes[1:]
+    if worker_number <= len(free_bytes):
         return 1
     # small scale training
     if worker_number <= 50:
-        return int(worker_number / len(refined_memory_info))
-    total_bytes = sum(refined_memory_info.values())
+        return max(int(worker_number / len(free_bytes)), 1)
+    total_bytes = sum(free_bytes)
     MB_per_worker = min(total_bytes / MB / worker_number, 10 * GB)
     log_debug(
         "MB_per_worker %s other %s",
         MB_per_worker,
-        min(refined_memory_info.values()) / MB,
+        min(free_bytes) / MB,
     )
-    worker_number_per_process = int(
-        min(refined_memory_info.values()) / MB / MB_per_worker
-    )
-    assert worker_number_per_process > 0
+    worker_number_per_process = max(int(min(free_bytes) / MB / MB_per_worker), 1)
     return worker_number_per_process
