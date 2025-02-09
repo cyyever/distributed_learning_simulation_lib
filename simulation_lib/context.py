@@ -290,7 +290,7 @@ def get_worker_number_per_process(
         return 1
     # small scale training
     if worker_number <= 50:
-        res = max(int(worker_number / len(free_bytes)), 1)
+        res = max(int(worker_number / len(free_bytes) - 1), 1)
         while worker_number / res > len(free_bytes):
             res += 1
         return res
