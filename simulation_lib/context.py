@@ -36,7 +36,7 @@ class ExecutorContext:
     __thread_data: None | threading.local = None
     semaphore: None | gevent.lock.BoundedSemaphore = None
     device_lock: None | Any = None
-    manager = None
+    global_manager: None | Any = None
 
     def __init__(
         self,
@@ -45,11 +45,16 @@ class ExecutorContext:
         self.__name = name if name is not None else "unknown executor"
         self.__hold_device_lock: bool = False
         self.__used_device_memory = None
-        if ExecutorContext.manager is None:
-            ExecutorContext.manager = TorchProcessContext().get_ctx().Manager()
         if ExecutorContext.device_lock is None:
             ExecutorContext.device_lock = self.manager.RLock()
         self.device_lock = ExecutorContext.device_lock
+
+    @property
+    def manager(self):
+        if ExecutorContext.global_manager is None:
+            ExecutorContext.global_manager = TorchProcessContext().get_ctx().Manager()
+        assert ExecutorContext.global_manager is not None
+        return ExecutorContext.global_manager
 
     def __enter__(self) -> Self:
         self.acquire()
@@ -90,6 +95,7 @@ class ExecutorContext:
             self.__thread_data = threading.local()
         if not hasattr(self.__thread_data, "device"):
             if not self.__hold_device_lock:
+                assert self.device_lock is not None
                 self.device_lock.acquire()
                 log_info("hold device_lock is %s", id(self.device_lock))
                 self.__hold_device_lock = True
@@ -110,6 +116,7 @@ class ExecutorContext:
                 if stats:
                     self.__used_device_memory = stats["allocated_bytes.all.peak"]
             log_info("release device_lock ")
+            assert self.device_lock is not None
             self.device_lock.release()
             self.__hold_device_lock = False
 
@@ -126,10 +133,11 @@ class ClientEndpointInCoroutine(Decorator):
 
 
 class FederatedLearningContext(ExecutorContext):
-    dict_lock = None
+    dict_lock: None | Any = None
 
     def __init__(self, worker_num: int) -> None:
         super().__init__()
+        assert self.manager is not None
         if FederatedLearningContext.dict_lock is None:
             FederatedLearningContext.dict_lock = self.manager.RLock()
         self.dict_lock = FederatedLearningContext.dict_lock
@@ -152,6 +160,7 @@ class FederatedLearningContext(ExecutorContext):
     def hold_semaphore(self, semaphore_name: str) -> bool:
         semaphore = self.semaphores.get(semaphore_name, None)
         if semaphore is None:
+            assert self.dict_lock is not None
             with self.dict_lock:
                 semaphore = self.semaphores.setdefault(
                     semaphore_name, self.manager.Semaphore()
@@ -159,14 +168,14 @@ class FederatedLearningContext(ExecutorContext):
         return semaphore.acquire(blocking=False)
 
     def create_client_endpoint(
-        self, endpoint_cls: type = ClientEndpoint, **endpoint_kwargs
+        self, endpoint_cls: type = ClientEndpoint, **endpoint_kwargs: Any
     ) -> ClientEndpointInCoroutine:
         return ClientEndpointInCoroutine(
             endpoint_cls(topology=self.topology, **endpoint_kwargs), context=self
         )
 
     def create_server_endpoint(
-        self, endpoint_cls: type = ServerEndpoint, **endpoint_kwargs
+        self, endpoint_cls: type = ServerEndpoint, **endpoint_kwargs: Any
     ) -> ServerEndpoint:
         return endpoint_cls(topology=self.topology, **endpoint_kwargs)
 
