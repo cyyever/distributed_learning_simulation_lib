@@ -7,7 +7,10 @@ from cyy_naive_lib.time_counter import TimeCounter
 
 from .algorithm_factory import get_worker_config
 from .config import DistributedTrainingConfig
-from .context import ConcurrentFederatedLearningContext, FederatedLearningContext
+from .context import (
+    ConcurrentFederatedLearningContext,
+    FederatedLearningContext,
+)
 from .task import OptionalTaskIDType, TaskIDType, get_task_id
 from .worker import Worker
 

@@ -12,6 +12,7 @@ from cyy_naive_lib.decorator import Decorator
 from cyy_naive_lib.log import (
     log_debug,
     log_error,
+    log_info,
     log_warning,
 )
 from cyy_naive_lib.system_info import OSType, get_operating_system_type
@@ -30,14 +31,12 @@ from cyy_torch_toolbox.device import get_device_memory_info
 from .concurrency import CoroutineExcutorPool
 from .task import TaskIDType
 
-manager = multiprocessing.Manager()
-device_lock: threading.RLock = manager.RLock()
-dict_lock: threading.RLock = manager.RLock()
-
 
 class ExecutorContext:
     __thread_data: None | threading.local = None
     semaphore: None | gevent.lock.BoundedSemaphore = None
+    device_lock: None | Any = None
+    global_manager: None | Any = None
 
     def __init__(
         self,
@@ -46,6 +45,16 @@ class ExecutorContext:
         self.__name = name if name is not None else "unknown executor"
         self.__hold_device_lock: bool = False
         self.__used_device_memory = None
+        if ExecutorContext.device_lock is None:
+            ExecutorContext.device_lock = self.manager.RLock()
+        self.device_lock = ExecutorContext.device_lock
+
+    @property
+    def manager(self):
+        if ExecutorContext.global_manager is None:
+            ExecutorContext.global_manager = TorchProcessContext().get_ctx().Manager()
+        assert ExecutorContext.global_manager is not None
+        return ExecutorContext.global_manager
 
     def __enter__(self) -> Self:
         self.acquire()
@@ -86,7 +95,9 @@ class ExecutorContext:
             self.__thread_data = threading.local()
         if not hasattr(self.__thread_data, "device"):
             if not self.__hold_device_lock:
-                device_lock.acquire()
+                assert self.device_lock is not None
+                self.device_lock.acquire()
+                log_info("hold device_lock is %s", id(self.device_lock))
                 self.__hold_device_lock = True
                 if lock_callback is not None:
                     lock_callback()
@@ -104,7 +115,9 @@ class ExecutorContext:
                 stats = torch.cuda.memory_stats(device=self.__thread_data.device)
                 if stats:
                     self.__used_device_memory = stats["allocated_bytes.all.peak"]
-            device_lock.release()
+            log_info("release device_lock ")
+            assert self.device_lock is not None
+            self.device_lock.release()
             self.__hold_device_lock = False
 
 
@@ -120,9 +133,15 @@ class ClientEndpointInCoroutine(Decorator):
 
 
 class FederatedLearningContext(ExecutorContext):
+    dict_lock: None | Any = None
+
     def __init__(self, worker_num: int) -> None:
         super().__init__()
-        self.semaphores = manager.dict()
+        assert self.manager is not None
+        if FederatedLearningContext.dict_lock is None:
+            FederatedLearningContext.dict_lock = self.manager.RLock()
+        self.dict_lock = FederatedLearningContext.dict_lock
+        self.semaphores = self.manager.dict()
         self.__worker_num = worker_num
         topology_class = ProcessPipeCentralTopology
         if get_operating_system_type() == OSType.Windows or "no_pipe" in os.environ:
@@ -141,21 +160,22 @@ class FederatedLearningContext(ExecutorContext):
     def hold_semaphore(self, semaphore_name: str) -> bool:
         semaphore = self.semaphores.get(semaphore_name, None)
         if semaphore is None:
-            with dict_lock:
+            assert self.dict_lock is not None
+            with self.dict_lock:
                 semaphore = self.semaphores.setdefault(
-                    semaphore_name, manager.Semaphore()
+                    semaphore_name, self.manager.Semaphore()
                 )
         return semaphore.acquire(blocking=False)
 
     def create_client_endpoint(
-        self, endpoint_cls: type = ClientEndpoint, **endpoint_kwargs
+        self, endpoint_cls: type = ClientEndpoint, **endpoint_kwargs: Any
     ) -> ClientEndpointInCoroutine:
         return ClientEndpointInCoroutine(
             endpoint_cls(topology=self.topology, **endpoint_kwargs), context=self
         )
 
     def create_server_endpoint(
-        self, endpoint_cls: type = ServerEndpoint, **endpoint_kwargs
+        self, endpoint_cls: type = ServerEndpoint, **endpoint_kwargs: Any
     ) -> ServerEndpoint:
         return endpoint_cls(topology=self.topology, **endpoint_kwargs)
 
@@ -245,7 +265,9 @@ class ConcurrentFederatedLearningContext:
         return res
 
 
-def get_worker_number_per_process(worker_number: int) -> int:
+def get_worker_number_per_process(
+    worker_number: int, count_server: bool = False
+) -> int:
     memory_info = get_device_memory_info()
     refined_memory_info: dict = {}
     MB = 1024 * 1024
@@ -261,20 +283,25 @@ def get_worker_number_per_process(worker_number: int) -> int:
         refined_memory_info[device] = info.free
     assert refined_memory_info
     log_warning("Use devices %s", list(refined_memory_info.keys()))
-    if worker_number <= len(refined_memory_info):
+    free_bytes = sorted(list(refined_memory_info.values()))
+    if count_server:
+        free_bytes = free_bytes[1:]
+        if not free_bytes:
+            return 1
+    if worker_number <= len(free_bytes):
         return 1
     # small scale training
     if worker_number <= 50:
-        return int(worker_number / len(refined_memory_info))
-    total_bytes = sum(refined_memory_info.values())
+        res = max(int(worker_number / len(free_bytes) - 1), 1)
+        while worker_number / res > len(free_bytes):
+            res += 1
+        return res
+    total_bytes = sum(free_bytes)
     MB_per_worker = min(total_bytes / MB / worker_number, 10 * GB)
     log_debug(
         "MB_per_worker %s other %s",
         MB_per_worker,
-        min(refined_memory_info.values()) / MB,
+        min(free_bytes) / MB,
     )
-    worker_number_per_process = int(
-        min(refined_memory_info.values()) / MB / MB_per_worker
-    )
-    assert worker_number_per_process > 0
+    worker_number_per_process = max(int(min(free_bytes) / MB / MB_per_worker), 1)
     return worker_number_per_process

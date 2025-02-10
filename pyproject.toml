@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "distributed_learning_simulation"
-version = "1.0"
-requires-python = ">=3.11"
+version = "0.2"
+requires-python = ">=3.12"
 readme = {file = "README.md", content-type = "text/markdown"}
 authors = [
   {name = "cyy", email = "cyyever@outlook.com"},
@@ -15,9 +15,11 @@ classifiers = [
   "Programming Language :: Python"
 ]
 
-dynamic = ["dependencies"]
-[tool.setuptools.dynamic]
-dependencies = {file = ["requirements.txt"]}
+dependencies=[
+"gevent",
+"cyy_torch_toolbox@git+https://github.com/cyyever/torch_toolbox.git@main",
+"cyy_torch_algorithm@git+https://github.com/cyyever/torch_algorithm.git@main",
+]
 
 
 [tool.setuptools.package-dir]
