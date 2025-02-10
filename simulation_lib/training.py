@@ -37,11 +37,8 @@ def start_server(
     return res
 
 
-def run_worker(
-    constructor: Callable,
-    context: FederatedLearningContext,
-) -> None:
-    worker: Worker = constructor(context=context)
+def run_worker(constructor: Callable, **kwargs) -> None:
+    worker: Worker = constructor(**kwargs)
     worker.start()
 
 
