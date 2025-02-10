@@ -16,11 +16,11 @@ os.environ["CUDA_MODULE_LOADING"] = "LAZY"
 os.environ["USE_THREAD_DATALOADER"] = "1"
 
 
-def start_server(context: FederatedLearningContext, server_config: dict) -> dict:
+def start_server(
+    context: FederatedLearningContext, server_config: dict, single_task: bool
+) -> dict:
     server = server_config["constructor"](
-        extra_kwargs={
-            "context": context,
-        }
+        extra_kwargs={"context": context, "single_task": single_task}
     )
     log_debug("context id %d", id(context))
 
@@ -63,6 +63,7 @@ task_results: dict = {}
 def train(
     config: DistributedTrainingConfig,
     practitioners: None | set = None,
+    single_task: bool = False,
 ) -> OptionalTaskIDType:
     # we need to deepcopy config for concurrent training
     config = copy.deepcopy(config)
@@ -80,11 +81,10 @@ def train(
     assert isinstance(context, FederatedLearningContext)
     server_config = worker_config.get("server", None)
     assert server_config is not None
-    context.submit(
-        start_server,
-        server_config=server_config,
-    )
+    context.submit(start_server, server_config=server_config, single_task=single_task)
     for worker_configs in worker_config["worker"]:
+        for cfg in worker_configs:
+            cfg["single_task"] = single_task
         start_workers(context=context, worker_configs=worker_configs)
     concurrent_context.add_context(
         task_id=task_id,

@@ -1,7 +1,7 @@
 import functools
 import itertools
 from collections.abc import Callable
-from typing import Self
+from typing import Any, Self
 
 from cyy_naive_lib.log import log_warning
 
@@ -59,7 +59,7 @@ class CentralizedAlgorithmFactory:
         algorithm_name: str,
         kwargs: dict,
         endpoint_kwargs: dict,
-        extra_kwargs: dict,
+        **extra_kwargs: Any,
     ) -> None:
         config = cls.config[algorithm_name]
         context = extra_kwargs["context"]
@@ -72,7 +72,7 @@ class CentralizedAlgorithmFactory:
             assert "algorithm" not in extra_kwargs
             extra_kwargs["algorithm"] = algorithm
 
-        return config["server_cls"](endpoint=endpoint, **(kwargs | extra_kwargs))
+        return config["server_cls"](endpoint=endpoint, **kwargs, **extra_kwargs)
 
 
 def get_worker_config(

@@ -9,15 +9,19 @@ from cyy_torch_toolbox import Inferencer, MachineLearningPhase, ModelParameter
 
 from ..executor import Executor
 from ..message import Message, ParameterMessage
-from ..task import OptionalTaskIDType
+from ..task import TaskIDType
 from .round_selection_mixin import RoundSelectionMixin
 
 
 class Server(Executor, RoundSelectionMixin):
     def __init__(
-        self, task_id: OptionalTaskIDType, endpoint: ServerEndpoint, **kwargs: Any
+        self,
+        task_id: TaskIDType,
+        endpoint: ServerEndpoint,
+        single_task: bool = False,
+        **kwargs: Any,
     ) -> None:
-        name: str = "server" if task_id is None else f"server of {task_id}"
+        name: str = "server" if single_task else f"server of {task_id}"
         Executor.__init__(self, **kwargs, name=name, task_id=task_id)
         RoundSelectionMixin.__init__(self)
         self._endpoint: ServerEndpoint = endpoint
