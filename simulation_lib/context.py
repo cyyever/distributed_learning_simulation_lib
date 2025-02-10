@@ -284,8 +284,10 @@ def get_worker_number_per_process(
     assert refined_memory_info
     log_warning("Use devices %s", list(refined_memory_info.keys()))
     free_bytes = sorted(list(refined_memory_info.values()))
-    if count_server and len(free_bytes) > 1:
+    if count_server:
         free_bytes = free_bytes[1:]
+        if not free_bytes:
+            return 1
     if worker_number <= len(free_bytes):
         return 1
     # small scale training
