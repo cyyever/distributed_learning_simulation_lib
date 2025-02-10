@@ -91,9 +91,9 @@ class ExecutorContext:
             ExecutorContext.semaphore.release()
 
     def get_device(self, lock_callback: None | Callable = None) -> torch.device:
-        if self.__thread_data is None:
-            self.__thread_data = threading.local()
-        if not hasattr(self.__thread_data, "device"):
+        if ExecutorContext.__thread_data is None:
+            ExecutorContext.__thread_data = threading.local()
+        if not hasattr(ExecutorContext.__thread_data, "device"):
             if not self.__hold_device_lock:
                 assert self.device_lock is not None
                 self.device_lock.acquire()
@@ -101,12 +101,17 @@ class ExecutorContext:
                 self.__hold_device_lock = True
                 if lock_callback is not None:
                     lock_callback()
-            self.__thread_data.device = get_device(
-                max_needed_bytes=self.__used_device_memory
+            device = get_device(max_needed_bytes=self.__used_device_memory)
+            ExecutorContext.__thread_data.device = device
+            log_debug(
+                "get device %s for process %s",
+                device,
+                os.getpid(),
             )
-            if "cuda" in self.__thread_data.device.type.lower():
-                torch.cuda.set_device(self.__thread_data.device)
-        return self.__thread_data.device
+            torch.set_default_device(device)
+            if "cuda" in device.type.lower():
+                torch.cuda.set_device(device)
+        return ExecutorContext.__thread_data.device
 
     def release_device_lock(self) -> None:
         if self.__hold_device_lock:
