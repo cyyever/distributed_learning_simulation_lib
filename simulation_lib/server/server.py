@@ -1,3 +1,4 @@
+import functools
 import os
 import pickle
 import time
@@ -5,7 +6,12 @@ from typing import Any
 
 from cyy_naive_lib.log import log_debug, log_info
 from cyy_naive_lib.topology import ServerEndpoint
-from cyy_torch_toolbox import Inferencer, MachineLearningPhase, ModelParameter
+from cyy_torch_toolbox import (
+    ExecutorHookPoint,
+    Inferencer,
+    MachineLearningPhase,
+    ModelParameter,
+)
 
 from ..executor import Executor
 from ..message import Message, ParameterMessage
@@ -40,6 +46,16 @@ class Server(Executor, RoundSelectionMixin):
         if self.__tester is not None and not copy_tester:
             return self.__tester
         tester = self.config.create_inferencer(phase=MachineLearningPhase.Test)
+        tester.set_device_fun(
+            functools.partial(
+                self.context.get_device,
+                lock_callback=lambda: tester.append_named_hook(
+                    ExecutorHookPoint.AFTER_BATCH,
+                    "_release_device_lock",
+                    lambda *args, **kwagrs: self.context.release_device_lock(),
+                ),
+            )
+        )
         tester.dataset_collection.remove_dataset(phase=MachineLearningPhase.Training)
         tester.dataset_collection.remove_dataset(phase=MachineLearningPhase.Validation)
         tester.hook_config.summarize_executor = False
