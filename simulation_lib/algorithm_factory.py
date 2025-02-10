@@ -52,9 +52,7 @@ class CentralizedAlgorithmFactory:
             endpoint_kwargs["endpoint_cls"] = config["client_endpoint_cls"]
         context = extra_kwargs["context"]
         endpoint = context.create_client_endpoint(**endpoint_kwargs)
-        return config["client_cls"](
-            endpoint=endpoint, context=context, **kwargs, **extra_kwargs
-        )
+        return config["client_cls"](endpoint=endpoint, **kwargs, **extra_kwargs)
 
     @classmethod
     def create_server(
