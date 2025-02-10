@@ -22,9 +22,7 @@ os.environ["USE_THREAD_DATALOADER"] = "1"
 def start_server(
     context: FederatedLearningContext, server_config: dict, single_task: bool
 ) -> dict:
-    server = server_config["constructor"](
-        extra_kwargs={"context": context, "single_task": single_task}
-    )
+    server = server_config["constructor"](context=context, single_task=single_task)
     log_debug("context id %d", id(context))
 
     server.start()
