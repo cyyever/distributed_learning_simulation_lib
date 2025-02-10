@@ -26,7 +26,7 @@ from cyy_naive_lib.topology import (
 )
 from cyy_torch_toolbox import get_device
 from cyy_torch_toolbox.concurrency import TorchProcessContext
-from cyy_torch_toolbox.device import get_device_memory_info
+from cyy_torch_toolbox.device import get_device_memory_info, set_device
 
 from .concurrency import CoroutineExcutorPool
 from .task import TaskIDType
@@ -108,9 +108,7 @@ class ExecutorContext:
                 device,
                 os.getpid(),
             )
-            torch.set_default_device(device)
-            if "cuda" in device.type.lower():
-                torch.cuda.set_device(device)
+            set_device(device)
         return ExecutorContext.__thread_data.device
 
     def release_device_lock(self) -> None:
@@ -118,7 +116,7 @@ class ExecutorContext:
             assert self.__thread_data is not None
             if "cuda" in self.__thread_data.device.type.lower():
                 stats = torch.cuda.memory_stats(device=self.__thread_data.device)
-                if stats:
+                if "allocated_bytes.all.peak" in stats:
                     self.__used_device_memory = stats["allocated_bytes.all.peak"]
             log_info("release device_lock ")
             assert self.device_lock is not None
