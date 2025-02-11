@@ -113,7 +113,7 @@ class ExecutorContext:
                 os.getpid(),
             )
             set_device(device)
-        return self.thread_local_data().device
+        return self.__thread_local_data().device
 
     def release_device_lock(self) -> None:
         if self.__hold_device_lock:
@@ -141,6 +141,7 @@ class ClientEndpointInCoroutine(Decorator):
 
 class FederatedLearningContext(ExecutorContext):
     dict_lock: None | Any = None
+    semaphores: None | Any = None
 
     def __init__(self, worker_num: int) -> None:
         super().__init__()
@@ -148,7 +149,9 @@ class FederatedLearningContext(ExecutorContext):
         if FederatedLearningContext.dict_lock is None:
             FederatedLearningContext.dict_lock = self.manager.RLock()
         self.dict_lock = FederatedLearningContext.dict_lock
-        self.semaphores = self.manager.dict()
+        if FederatedLearningContext.semaphores is None:
+            FederatedLearningContext.semaphores = self.manager.dict()
+        self.semaphores = FederatedLearningContext.semaphores
         self.__worker_num = worker_num
         topology_class = ProcessPipeCentralTopology
         if get_operating_system_type() == OSType.Windows or "no_pipe" in os.environ:
