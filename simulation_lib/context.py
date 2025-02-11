@@ -290,7 +290,7 @@ def get_worker_number_per_process(
     if count_server:
         free_bytes = free_bytes[1:]
         if not free_bytes:
-            return 1
+            return worker_number
     if worker_number <= len(free_bytes):
         return 1
     # small scale training
