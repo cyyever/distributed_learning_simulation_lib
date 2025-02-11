@@ -65,7 +65,15 @@ class GlobalStore:
         if GlobalStore.objects is None:
             assert GlobalStore.global_manager is not None
             GlobalStore.objects = GlobalStore.global_manager.dict()
-            self.store_lock("default")
+            self.store_lock("default_lock")
+            self.store(
+                "free_semaphores",
+                GlobalStore.global_manager.list(
+                    [GlobalStore.global_manager.Semaphore() for _ in range(10)]
+                ),
+            )
+        self.objects = GlobalStore.objects
+        self.default_lock = self.get("default_lock")
 
     def store_lock(self, name: str) -> None:
         assert self.global_manager is not None
@@ -76,9 +84,16 @@ class GlobalStore:
         assert name not in self.objects
         self.objects[name] = obj
 
-    def set_default_with_manager_object(self, name: str, type_name: str) -> Any:
+    def get_semaphore(self, name: str) -> Any:
         assert self.objects is not None
-        self.objects.setdefault(name, getattr(self.global_manager, type_name)())
+        result = self.get_with_default(name)
+        if result is None:
+            with self.default_lock:
+                result = self.get_with_default(name)
+                if result is None:
+                    free_semaphore = self.get("free_semaphores").pop()
+                    result = self.objects.setdefault(name, free_semaphore)
+        return result
 
     def get_with_default(self, name: str, default: Any = None) -> Any:
         assert self.objects is not None
@@ -90,7 +105,7 @@ class GlobalStore:
 
 
 class ExecutorContext:
-    __global_store: None | GlobalStore = None
+    _global_store: None | GlobalStore = None
     __thread_store: None | ThreadStore = None
     coroutine_semaphore: None | gevent.lock.BoundedSemaphore = None
 
@@ -101,14 +116,10 @@ class ExecutorContext:
         self.__name = name if name is not None else "unknown executor"
         self.__hold_device_lock: bool = False
         self.__used_device_memory = None
+        if ExecutorContext._global_store is None:
+            ExecutorContext._global_store = GlobalStore()
+        self.global_store = ExecutorContext._global_store
         self.global_store.store_lock("device_lock")
-
-    @property
-    def global_store(self) -> GlobalStore:
-        if ExecutorContext.__global_store is None:
-            ExecutorContext.__global_store = GlobalStore()
-        assert ExecutorContext.__global_store is not None
-        return ExecutorContext.__global_store
 
     @property
     def thread_local_store(self) -> ThreadStore:
@@ -179,7 +190,7 @@ class ExecutorContext:
                 stats = torch.cuda.memory_stats(device=device)
                 if "allocated_bytes.all.peak" in stats:
                     self.__used_device_memory = stats["allocated_bytes.all.peak"]
-            log_info("release device_lock ")
+            log_debug("release device_lock ")
             assert self.device_lock is not None
             self.device_lock.release()
             self.__hold_device_lock = False
@@ -215,11 +226,7 @@ class FederatedLearningContext(ExecutorContext):
         return state
 
     def hold_semaphore(self, semaphore_name: str) -> bool:
-        semaphore = self.global_store.get_with_default(semaphore_name, None)
-        if semaphore is None:
-            semaphore = self.global_store.set_default_with_manager_object(
-                semaphore_name, "Semaphore"
-            )
+        semaphore = self.global_store.get_semaphore(semaphore_name)
         return semaphore.acquire(blocking=False)
 
     def create_client_endpoint(
