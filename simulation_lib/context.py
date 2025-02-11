@@ -118,8 +118,8 @@ class ExecutorContext:
         self.__used_device_memory = None
         if ExecutorContext._global_store is None:
             ExecutorContext._global_store = GlobalStore()
+            ExecutorContext._global_store.store_lock("device_lock")
         self.global_store = ExecutorContext._global_store
-        self.global_store.store_lock("device_lock")
 
     @property
     def thread_local_store(self) -> ThreadStore:
