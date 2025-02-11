@@ -169,7 +169,7 @@ class ExecutorContext:
             if not self.__hold_device_lock:
                 self.device_lock.acquire()
                 log_error(
-                    "lock device  for process %s",
+                    "lock device for process %s",
                     os.getpid(),
                 )
                 self.__hold_device_lock = True
