@@ -90,9 +90,13 @@ class ExecutorContext:
         if ExecutorContext.semaphore is not None:
             ExecutorContext.semaphore.release()
 
-    def get_device(self, lock_callback: None | Callable = None) -> torch.device:
+    @classmethod
+    def __thread_local_data(cls) -> threading.local:
         if ExecutorContext.__thread_data is None:
             ExecutorContext.__thread_data = threading.local()
+        return ExecutorContext.__thread_data
+
+    def get_device(self, lock_callback: None | Callable = None) -> torch.device:
         if not hasattr(ExecutorContext.__thread_data, "device"):
             if not self.__hold_device_lock:
                 assert self.device_lock is not None
@@ -102,14 +106,14 @@ class ExecutorContext:
                 if lock_callback is not None:
                     lock_callback()
             device = get_device(max_needed_bytes=self.__used_device_memory)
-            ExecutorContext.__thread_data.device = device
+            self.__thread_local_data().device = device
             log_debug(
                 "get device %s for process %s",
                 device,
                 os.getpid(),
             )
             set_device(device)
-        return ExecutorContext.__thread_data.device
+        return self.thread_local_data().device
 
     def release_device_lock(self) -> None:
         if self.__hold_device_lock:
