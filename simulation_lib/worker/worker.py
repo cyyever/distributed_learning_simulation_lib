@@ -30,6 +30,10 @@ class Worker(WorkerBase):
                 f,
             )
 
+    def _release_device_lock(self, *args, **kwargs) -> None:
+        self.context.release_device_lock()
+        self.trainer.remove_named_hook("_release_device_lock")
+
     def _before_training(self) -> None:
         self.trainer.set_device_fun(
             functools.partial(
@@ -37,7 +41,7 @@ class Worker(WorkerBase):
                 lock_callback=lambda: self.trainer.append_named_hook(
                     ExecutorHookPoint.AFTER_BATCH,
                     "_release_device_lock",
-                    lambda *args, **kwagrs: self.context.release_device_lock(),
+                    self._release_device_lock,
                 ),
             )
         )

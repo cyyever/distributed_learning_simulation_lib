@@ -57,14 +57,15 @@ class ThreadStore:
 
 class GlobalStore:
     global_manager: None | Any = None
-    objects: None | dict = None
+    _objects: None | dict = None
 
     def __init__(self) -> None:
         if GlobalStore.global_manager is None:
             GlobalStore.global_manager = TorchProcessContext().get_ctx().Manager()
-        if GlobalStore.objects is None:
+        if GlobalStore._objects is None:
             assert GlobalStore.global_manager is not None
-            GlobalStore.objects = GlobalStore.global_manager.dict()
+            GlobalStore._objects = GlobalStore.global_manager.dict()
+            self.objects = GlobalStore._objects
             self.store_lock("default_lock")
             self.store(
                 "free_semaphores",
@@ -72,7 +73,7 @@ class GlobalStore:
                     [GlobalStore.global_manager.Semaphore() for _ in range(10)]
                 ),
             )
-        self.objects = GlobalStore.objects
+        self.objects = GlobalStore._objects
         self.default_lock = self.get("default_lock")
 
     def store_lock(self, name: str) -> None:
@@ -105,7 +106,6 @@ class GlobalStore:
 
 
 class ExecutorContext:
-    _global_store: None | GlobalStore = None
     __thread_store: None | ThreadStore = None
     coroutine_semaphore: None | gevent.lock.BoundedSemaphore = None
 
@@ -155,13 +155,13 @@ class ExecutorContext:
         threading.current_thread().name = name
 
     def release(self) -> None:
-        log_debug("release lock %s", self.coroutine_semaphore)
+        log_error("release lock %s", self.coroutine_semaphore)
         self.release_device_lock()
         self.__set_proc_name("unknown executor")
         if ExecutorContext.coroutine_semaphore is not None:
             ExecutorContext.coroutine_semaphore.release()
 
-    @property
+    @functools.cached_property
     def device_lock(self) -> threading.RLock:
         return self.global_store.get("device_lock")
 
@@ -178,7 +178,7 @@ class ExecutorContext:
                     lock_callback()
             device = get_device(max_needed_bytes=self.__used_device_memory)
             self.thread_local_store.store("device", device)
-            log_error(
+            log_debug(
                 "get device %s for process %s",
                 device,
                 os.getpid(),
@@ -193,10 +193,7 @@ class ExecutorContext:
                 stats = torch.cuda.memory_stats(device=device)
                 if "allocated_bytes.all.peak" in stats:
                     self.__used_device_memory = stats["allocated_bytes.all.peak"]
-            log_error("release device_lock ")
-            assert self.device_lock is not None
             self.device_lock.release()
-            log_error("finish release device_lock ")
             self.__hold_device_lock = False
 
 
