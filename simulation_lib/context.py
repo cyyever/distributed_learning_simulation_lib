@@ -32,9 +32,32 @@ from .concurrency import CoroutineExcutorPool
 from .task import TaskIDType
 
 
-class ExecutorContext:
+class ThreadLocalStore:
     __thread_data: None | threading.local = None
-    semaphore: None | gevent.lock.BoundedSemaphore = None
+
+    @classmethod
+    def __thread_local_data(cls) -> threading.local:
+        if cls.__thread_data is None:
+            cls.__thread_data = threading.local()
+        return cls.__thread_data
+
+    def store(self, name: str, obj: Any) -> None:
+        setattr(self.__thread_local_data(), name, obj)
+
+    def has(self, name: str) -> bool:
+        if self.__thread_data is None:
+            return False
+        return hasattr(self.__thread_local_data(), name)
+
+    def get(self, name: str) -> Any:
+        if not self.has(name):
+            return None
+        return getattr(self.__thread_local_data(), name)
+
+
+class ExecutorContext:
+    __thread_store: None | ThreadLocalStore = None
+    coroutine_semaphore: None | gevent.lock.BoundedSemaphore = None
     device_lock: None | Any = None
     global_manager: None | Any = None
 
@@ -50,11 +73,18 @@ class ExecutorContext:
         self.device_lock = ExecutorContext.device_lock
 
     @property
-    def manager(self):
+    def manager(self) -> Any:
         if ExecutorContext.global_manager is None:
             ExecutorContext.global_manager = TorchProcessContext().get_ctx().Manager()
         assert ExecutorContext.global_manager is not None
         return ExecutorContext.global_manager
+
+    @property
+    def thread_local_store(self) -> ThreadLocalStore:
+        if ExecutorContext.__thread_store is None:
+            ExecutorContext.__thread_store = ThreadLocalStore()
+        assert ExecutorContext.__thread_store is not None
+        return ExecutorContext.__thread_store
 
     def __enter__(self) -> Self:
         self.acquire()
@@ -72,11 +102,11 @@ class ExecutorContext:
         if cond_fun is not None:
             while not cond_fun():
                 gevent.sleep(0.1)
-        if ExecutorContext.semaphore is None:
-            ExecutorContext.semaphore = gevent.lock.BoundedSemaphore(value=1)
-        ExecutorContext.semaphore.acquire()
+        if ExecutorContext.coroutine_semaphore is None:
+            ExecutorContext.coroutine_semaphore = gevent.lock.BoundedSemaphore(value=1)
+        ExecutorContext.coroutine_semaphore.acquire()
         self.__set_proc_name(self.__name)
-        log_debug("get lock %s", self.semaphore)
+        log_debug("get lock %s", self.coroutine_semaphore)
 
     @classmethod
     def __set_proc_name(cls, name: str) -> None:
@@ -84,20 +114,14 @@ class ExecutorContext:
         threading.current_thread().name = name
 
     def release(self) -> None:
-        log_debug("release lock %s", self.semaphore)
+        log_debug("release lock %s", self.coroutine_semaphore)
         self.release_device_lock()
         self.__set_proc_name("unknown executor")
-        if ExecutorContext.semaphore is not None:
-            ExecutorContext.semaphore.release()
-
-    @classmethod
-    def __thread_local_data(cls) -> threading.local:
-        if ExecutorContext.__thread_data is None:
-            ExecutorContext.__thread_data = threading.local()
-        return ExecutorContext.__thread_data
+        if ExecutorContext.coroutine_semaphore is not None:
+            ExecutorContext.coroutine_semaphore.release()
 
     def get_device(self, lock_callback: None | Callable = None) -> torch.device:
-        if not hasattr(ExecutorContext.__thread_data, "device"):
+        if not self.thread_local_store.has("device"):
             if not self.__hold_device_lock:
                 assert self.device_lock is not None
                 self.device_lock.acquire()
@@ -106,20 +130,20 @@ class ExecutorContext:
                 if lock_callback is not None:
                     lock_callback()
             device = get_device(max_needed_bytes=self.__used_device_memory)
-            self.__thread_local_data().device = device
+            self.thread_local_store.store("device", device)
             log_debug(
                 "get device %s for process %s",
                 device,
                 os.getpid(),
             )
             set_device(device)
-        return self.__thread_local_data().device
+        return self.thread_local_store.get("device")
 
     def release_device_lock(self) -> None:
         if self.__hold_device_lock:
-            assert self.__thread_data is not None
-            if "cuda" in self.__thread_data.device.type.lower():
-                stats = torch.cuda.memory_stats(device=self.__thread_data.device)
+            device: torch.device = self.thread_local_store.get("device")
+            if "cuda" in device.type.lower():
+                stats = torch.cuda.memory_stats(device=device)
                 if "allocated_bytes.all.peak" in stats:
                     self.__used_device_memory = stats["allocated_bytes.all.peak"]
             log_info("release device_lock ")
@@ -148,10 +172,10 @@ class FederatedLearningContext(ExecutorContext):
         assert self.manager is not None
         if FederatedLearningContext.dict_lock is None:
             FederatedLearningContext.dict_lock = self.manager.RLock()
-        self.dict_lock = FederatedLearningContext.dict_lock
+        self._dict_lock = FederatedLearningContext.dict_lock
         if FederatedLearningContext.semaphores is None:
             FederatedLearningContext.semaphores = self.manager.dict()
-        self.semaphores = FederatedLearningContext.semaphores
+        self._semaphores: Any = FederatedLearningContext.semaphores
         self.__worker_num = worker_num
         topology_class = ProcessPipeCentralTopology
         if get_operating_system_type() == OSType.Windows or "no_pipe" in os.environ:
@@ -168,11 +192,11 @@ class FederatedLearningContext(ExecutorContext):
         return state
 
     def hold_semaphore(self, semaphore_name: str) -> bool:
-        semaphore = self.semaphores.get(semaphore_name, None)
+        semaphore = self._semaphores.get(semaphore_name, None)
         if semaphore is None:
-            assert self.dict_lock is not None
-            with self.dict_lock:
-                semaphore = self.semaphores.setdefault(
+            assert self._dict_lock is not None
+            with self._dict_lock:
+                semaphore = self._semaphores.setdefault(
                     semaphore_name, self.manager.Semaphore()
                 )
         return semaphore.acquire(blocking=False)
