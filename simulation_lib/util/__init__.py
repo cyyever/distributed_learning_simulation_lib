@@ -1,24 +1,18 @@
-from collections.abc import Callable, Iterable
+from collections.abc import Callable
 
-import torch.nn
 from cyy_naive_lib.log import log_debug
 from cyy_torch_toolbox import ModelParameter, Trainer
 
 from .model_cache import ModelCache
 
 
-def __reset_optimizer_parameters(
-    trainer: Trainer, params: Iterable[torch.nn.Parameter] | None = None
-) -> None:
+def __reset_optimizer_parameters(trainer: Trainer) -> None:
     optimizer = trainer.get_optimizer()
     assert len(optimizer.param_groups) == 1
     old_param_group = optimizer.param_groups[0]
     optimizer.param_groups.clear()
     optimizer.state.clear()
-    if params is None:
-        optimizer.add_param_group({"params": trainer.model.parameters()})
-    else:
-        optimizer.add_param_group({"params": params})
+    optimizer.add_param_group({"params": trainer.model.parameters()})
     for k, v in old_param_group.items():
         if k not in "params":
             optimizer.param_groups[0][k] = v

@@ -5,7 +5,7 @@ from collections.abc import Callable
 from cyy_naive_lib.log import add_file_handler, log_debug, log_info
 from cyy_naive_lib.time_counter import TimeCounter
 
-from .algorithm_factory import get_worker_config
+from .algorithm_repository import get_worker_config
 from .config import DistributedTrainingConfig
 from .context import (
     ConcurrentFederatedLearningContext,

@@ -1,7 +1,7 @@
 from typing import Any
 
 from cyy_naive_lib.log import log_debug
-from cyy_naive_lib.topology import Endpoint
+from cyy_naive_lib.topology import ClientEndpoint
 
 from ..executor import Executor
 from ..practitioner import Practitioner
@@ -12,7 +12,7 @@ class WorkerBase(Executor):
     def __init__(
         self,
         task_id: OptionalTaskIDType,
-        endpoint: Endpoint,
+        endpoint: ClientEndpoint,
         practitioner: Practitioner,
         single_task: bool = False,
         **kwargs: Any,
@@ -23,12 +23,12 @@ class WorkerBase(Executor):
         )
         super().__init__(name=name, task_id=task_id, **kwargs)
         self._practitioner: Practitioner = practitioner
-        self._endpoint: Endpoint = endpoint
+        self._endpoint: ClientEndpoint = endpoint
         self._round_index = 0
         self._force_stop = False
 
     @property
-    def endpoint(self) -> Endpoint:
+    def endpoint(self) -> ClientEndpoint:
         return self._endpoint
 
     @property

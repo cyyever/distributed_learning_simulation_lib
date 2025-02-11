@@ -7,10 +7,10 @@ from cyy_naive_lib.log import log_warning
 
 from .config import DistributedTrainingConfig
 from .context import FederatedLearningContext
-from .task import OptionalTaskIDType
+from .task import TaskIDType
 
 
-class CentralizedAlgorithmFactory:
+class AlgorithmRepository:
     config: dict[str, dict] = {}
 
     @classmethod
@@ -78,7 +78,7 @@ class CentralizedAlgorithmFactory:
 
 def get_worker_config(
     config: DistributedTrainingConfig,
-    task_id: OptionalTaskIDType,
+    task_id: TaskIDType,
     practitioners: None | set = None,
 ) -> dict:
     if practitioners is None:
@@ -91,7 +91,7 @@ def get_worker_config(
             assert practitioner.has_dataset(config.dc_config.dataset_name)
             practitioner.set_worker_id(worker_id)
     assert practitioners
-    assert CentralizedAlgorithmFactory.has_algorithm(config.distributed_algorithm)
+    assert AlgorithmRepository.has_algorithm(config.distributed_algorithm)
 
     context = FederatedLearningContext(worker_num=config.worker_number)
     result: dict = {
@@ -99,7 +99,7 @@ def get_worker_config(
     }
     result["server"] = {}
     result["server"]["constructor"] = functools.partial(
-        CentralizedAlgorithmFactory.create_server,
+        AlgorithmRepository.create_server,
         algorithm_name=config.distributed_algorithm,
         endpoint_kwargs=config.endpoint_kwargs.get("server", {}),
         kwargs={
@@ -119,7 +119,7 @@ def get_worker_config(
             [
                 {
                     "constructor": functools.partial(
-                        CentralizedAlgorithmFactory.create_client,
+                        AlgorithmRepository.create_client,
                         algorithm_name=config.distributed_algorithm,
                         endpoint_kwargs=config.endpoint_kwargs.get("worker", {})
                         | {
