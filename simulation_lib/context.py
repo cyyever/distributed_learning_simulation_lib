@@ -12,7 +12,6 @@ from cyy_naive_lib.decorator import Decorator
 from cyy_naive_lib.log import (
     log_debug,
     log_error,
-    log_info,
     log_warning,
 )
 from cyy_naive_lib.system_info import OSType, get_operating_system_type
