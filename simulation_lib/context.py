@@ -32,7 +32,7 @@ from .concurrency import CoroutineExcutorPool
 from .task import TaskIDType
 
 
-class ThreadLocalStore:
+class ThreadStore:
     __thread_data: None | threading.local = None
 
     @classmethod
@@ -55,11 +55,44 @@ class ThreadLocalStore:
         return getattr(self.__thread_local_data(), name)
 
 
-class ExecutorContext:
-    __thread_store: None | ThreadLocalStore = None
-    coroutine_semaphore: None | gevent.lock.BoundedSemaphore = None
-    device_lock: None | Any = None
+class GlobalStore:
     global_manager: None | Any = None
+    objects: None | dict = None
+
+    def __init__(self) -> None:
+        if GlobalStore.global_manager is None:
+            GlobalStore.global_manager = TorchProcessContext().get_ctx().Manager()
+        if GlobalStore.objects is None:
+            assert GlobalStore.global_manager is not None
+            GlobalStore.objects = GlobalStore.global_manager.dict()
+            self.store_lock("default")
+
+    def store_lock(self, name: str) -> None:
+        assert self.global_manager is not None
+        self.store(name, self.global_manager.RLock())
+
+    def store(self, name: str, obj: Any) -> None:
+        assert self.objects is not None
+        assert name not in self.objects
+        self.objects[name] = obj
+
+    def set_default_with_manager_object(self, name: str, type_name: str) -> Any:
+        assert self.objects is not None
+        self.objects.setdefault(name, getattr(self.global_manager, type_name)())
+
+    def get_with_default(self, name: str, default: Any = None) -> Any:
+        assert self.objects is not None
+        return self.objects.get(name, default)
+
+    def get(self, name: str) -> Any:
+        assert self.objects is not None
+        return self.objects[name]
+
+
+class ExecutorContext:
+    __global_store: None | GlobalStore = None
+    __thread_store: None | ThreadStore = None
+    coroutine_semaphore: None | gevent.lock.BoundedSemaphore = None
 
     def __init__(
         self,
@@ -68,21 +101,19 @@ class ExecutorContext:
         self.__name = name if name is not None else "unknown executor"
         self.__hold_device_lock: bool = False
         self.__used_device_memory = None
-        if ExecutorContext.device_lock is None:
-            ExecutorContext.device_lock = self.manager.RLock()
-        self.device_lock = ExecutorContext.device_lock
+        self.global_store.store_lock("device_lock")
 
     @property
-    def manager(self) -> Any:
-        if ExecutorContext.global_manager is None:
-            ExecutorContext.global_manager = TorchProcessContext().get_ctx().Manager()
-        assert ExecutorContext.global_manager is not None
-        return ExecutorContext.global_manager
+    def global_store(self) -> GlobalStore:
+        if ExecutorContext.__global_store is None:
+            ExecutorContext.__global_store = GlobalStore()
+        assert ExecutorContext.__global_store is not None
+        return ExecutorContext.__global_store
 
     @property
-    def thread_local_store(self) -> ThreadLocalStore:
+    def thread_local_store(self) -> ThreadStore:
         if ExecutorContext.__thread_store is None:
-            ExecutorContext.__thread_store = ThreadLocalStore()
+            ExecutorContext.__thread_store = ThreadStore()
         assert ExecutorContext.__thread_store is not None
         return ExecutorContext.__thread_store
 
@@ -120,12 +151,14 @@ class ExecutorContext:
         if ExecutorContext.coroutine_semaphore is not None:
             ExecutorContext.coroutine_semaphore.release()
 
+    @property
+    def device_lock(self) -> threading.RLock:
+        return self.global_store.get("device_lock")
+
     def get_device(self, lock_callback: None | Callable = None) -> torch.device:
         if not self.thread_local_store.has("device"):
             if not self.__hold_device_lock:
-                assert self.device_lock is not None
                 self.device_lock.acquire()
-                log_info("hold device_lock is %s", id(self.device_lock))
                 self.__hold_device_lock = True
                 if lock_callback is not None:
                     lock_callback()
@@ -164,18 +197,8 @@ class ClientEndpointInCoroutine(Decorator):
 
 
 class FederatedLearningContext(ExecutorContext):
-    dict_lock: None | Any = None
-    semaphores: None | Any = None
-
     def __init__(self, worker_num: int) -> None:
         super().__init__()
-        assert self.manager is not None
-        if FederatedLearningContext.dict_lock is None:
-            FederatedLearningContext.dict_lock = self.manager.RLock()
-        self._dict_lock = FederatedLearningContext.dict_lock
-        if FederatedLearningContext.semaphores is None:
-            FederatedLearningContext.semaphores = self.manager.dict()
-        self._semaphores: Any = FederatedLearningContext.semaphores
         self.__worker_num = worker_num
         topology_class = ProcessPipeCentralTopology
         if get_operating_system_type() == OSType.Windows or "no_pipe" in os.environ:
@@ -192,13 +215,11 @@ class FederatedLearningContext(ExecutorContext):
         return state
 
     def hold_semaphore(self, semaphore_name: str) -> bool:
-        semaphore = self._semaphores.get(semaphore_name, None)
+        semaphore = self.global_store.get_with_default(semaphore_name, None)
         if semaphore is None:
-            assert self._dict_lock is not None
-            with self._dict_lock:
-                semaphore = self._semaphores.setdefault(
-                    semaphore_name, self.manager.Semaphore()
-                )
+            semaphore = self.global_store.set_default_with_manager_object(
+                semaphore_name, "Semaphore"
+            )
         return semaphore.acquire(blocking=False)
 
     def create_client_endpoint(
