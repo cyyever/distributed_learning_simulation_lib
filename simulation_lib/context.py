@@ -154,7 +154,7 @@ class ExecutorContext:
         threading.current_thread().name = name
 
     def release(self) -> None:
-        log_error("release lock %s", self.coroutine_semaphore)
+        log_debug("release lock %s", self.coroutine_semaphore)
         self.release_device_lock()
         self.__set_proc_name("unknown executor")
         if ExecutorContext.coroutine_semaphore is not None:
@@ -168,7 +168,7 @@ class ExecutorContext:
         if not self.thread_local_store.has("device"):
             if not self.__hold_device_lock:
                 self.device_lock.acquire()
-                log_error(
+                log_debug(
                     "lock device for process %s",
                     os.getpid(),
                 )
