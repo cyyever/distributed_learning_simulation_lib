@@ -116,10 +116,9 @@ class ExecutorContext:
         self.__name = name if name is not None else "unknown executor"
         self.__hold_device_lock: bool = False
         self.__used_device_memory = None
-        if ExecutorContext._global_store is None:
-            ExecutorContext._global_store = GlobalStore()
-            ExecutorContext._global_store.store_lock("device_lock")
-        self.global_store = ExecutorContext._global_store
+        self.global_store = GlobalStore()
+        if self.global_store.get_with_default("device_lock", None) is None:
+            self.global_store.store_lock("device_lock")
 
     @property
     def thread_local_store(self) -> ThreadStore:
@@ -170,12 +169,16 @@ class ExecutorContext:
         if not self.thread_local_store.has("device"):
             if not self.__hold_device_lock:
                 self.device_lock.acquire()
+                log_error(
+                    "lock device  for process %s",
+                    os.getpid(),
+                )
                 self.__hold_device_lock = True
                 if lock_callback is not None:
                     lock_callback()
             device = get_device(max_needed_bytes=self.__used_device_memory)
             self.thread_local_store.store("device", device)
-            log_debug(
+            log_error(
                 "get device %s for process %s",
                 device,
                 os.getpid(),
@@ -190,9 +193,10 @@ class ExecutorContext:
                 stats = torch.cuda.memory_stats(device=device)
                 if "allocated_bytes.all.peak" in stats:
                     self.__used_device_memory = stats["allocated_bytes.all.peak"]
-            log_debug("release device_lock ")
+            log_error("release device_lock ")
             assert self.device_lock is not None
             self.device_lock.release()
+            log_error("finish release device_lock ")
             self.__hold_device_lock = False
 
 
