@@ -1,20 +1,20 @@
 import copy
 import os
-from typing import Any
 from collections.abc import Callable
+from typing import Any
 
 from cyy_naive_lib.log import add_file_handler, log_debug, log_info
 from cyy_naive_lib.time_counter import TimeCounter
 
-from .algorithm_repository import TaskConfig, get_task_config, create_server
+from .algorithm_repository import TaskConfig, create_server, get_task_config
 from .config import DistributedTrainingConfig
 from .context import (
     ConcurrentFederatedLearningContext,
     FederatedLearningContext,
 )
+from .server import AggregationServer
 from .task import OptionalTaskIDType, TaskIDType, get_task_id
 from .worker import Worker
-from .server import AggregationServer
 
 # we use these environment variables to save memory in large-scale training
 os.environ["CUDA_MODULE_LOADING"] = "LAZY"
