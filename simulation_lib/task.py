@@ -83,4 +83,6 @@ def get_task_config(
 
 
 def create_server(task_config: TaskConfig, **kwargs) -> Server:
+    if "context" not in kwargs:
+        kwargs["context"] = task_config["context"]
     return task_config["server"]["constructor"](**kwargs)
