@@ -12,13 +12,13 @@ from .context import (
     FederatedLearningContext,
 )
 from .server import AggregationServer
-from .task_type import TaskIDType
 from .task import (
     TaskConfig,
     create_server,
     get_task_config,
     get_task_id,
 )
+from .task_type import OptionalTaskIDType, TaskIDType
 from .worker import Worker
 
 # we use these environment variables to save memory in large-scale training
@@ -72,7 +72,7 @@ def train(
     config: DistributedTrainingConfig,
     practitioners: None | set = None,
     single_task: bool = False,
-) -> TaskIDType:
+) -> OptionalTaskIDType:
     # we need to deepcopy config for concurrent training
     config = copy.deepcopy(config)
     practitioners = copy.deepcopy(practitioners)

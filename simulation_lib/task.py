@@ -10,7 +10,6 @@ from .context import FederatedLearningContext
 from .server import Server
 from .task_type import TaskIDType
 
-
 type TaskConfig = dict
 
 
@@ -22,7 +21,6 @@ def get_task_config(
     config: DistributedTrainingConfig,
     practitioners: None | set = None,
 ) -> TaskConfig:
-
     task_id = get_task_id()
     if practitioners is None:
         practitioners = config.create_practitioners()

@@ -10,5 +10,6 @@ from .topology import *  # noqa: F401
 from .training import train
 from .util import *  # noqa: F401
 from .worker import *  # noqa: F401
+from .evaluation import create_server  # noqa: F401
 
 set_multiprocessing_ctx(TorchProcessContext().get_ctx())
