@@ -5,13 +5,13 @@ from cyy_naive_lib.topology import ClientEndpoint
 
 from ..executor import Executor
 from ..practitioner import Practitioner
-from ..task import OptionalTaskIDType
+from ..task_type import TaskIDType
 
 
 class WorkerBase(Executor):
     def __init__(
         self,
-        task_id: OptionalTaskIDType,
+        task_id: TaskIDType,
         endpoint: ClientEndpoint,
         practitioner: Practitioner,
         single_task: bool = False,

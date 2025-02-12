@@ -6,14 +6,19 @@ from typing import Any
 from cyy_naive_lib.log import add_file_handler, log_debug, log_info
 from cyy_naive_lib.time_counter import TimeCounter
 
-from .algorithm_repository import TaskConfig, create_server, get_task_config
 from .config import DistributedTrainingConfig
 from .context import (
     ConcurrentFederatedLearningContext,
     FederatedLearningContext,
 )
 from .server import AggregationServer
-from .task import OptionalTaskIDType, TaskIDType, get_task_id
+from .task_type import TaskIDType
+from .task import (
+    TaskConfig,
+    create_server,
+    get_task_config,
+    get_task_id,
+)
 from .worker import Worker
 
 # we use these environment variables to save memory in large-scale training
@@ -67,7 +72,7 @@ def train(
     config: DistributedTrainingConfig,
     practitioners: None | set = None,
     single_task: bool = False,
-) -> OptionalTaskIDType:
+) -> TaskIDType:
     # we need to deepcopy config for concurrent training
     config = copy.deepcopy(config)
     practitioners = copy.deepcopy(practitioners)
@@ -77,7 +82,7 @@ def train(
     task_id = get_task_id()
     if practitioners is None:
         add_file_handler(config.log_file)
-    task_config = get_task_config(config, task_id=task_id, practitioners=practitioners)
+    task_config = get_task_config(config, practitioners=practitioners)
     context = task_config.pop("context")
     assert isinstance(context, FederatedLearningContext)
     context.submit(start_server, task_config=task_config, single_task=single_task)

@@ -28,7 +28,7 @@ from cyy_torch_toolbox.concurrency import TorchProcessContext
 from cyy_torch_toolbox.device import get_device_memory_info, set_device
 
 from .concurrency import CoroutineExcutorPool
-from .task import TaskIDType
+from .task_type import TaskIDType
 
 
 class ThreadStore:

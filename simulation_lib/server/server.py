@@ -15,7 +15,7 @@ from cyy_torch_toolbox import (
 
 from ..executor import Executor
 from ..message import Message, ParameterMessage
-from ..task import TaskIDType
+from ..task_type import TaskIDType
 from .round_selection_mixin import RoundSelectionMixin
 
 

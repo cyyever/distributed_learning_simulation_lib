@@ -4,7 +4,7 @@ from functools import cached_property
 
 from .config import DistributedTrainingConfig
 from .context import FederatedLearningContext
-from .task import OptionalTaskIDType
+from .task_type import TaskIDType
 
 
 class Executor:
@@ -13,7 +13,7 @@ class Executor:
         config: DistributedTrainingConfig,
         context: FederatedLearningContext,
         name: str,
-        task_id: OptionalTaskIDType = None,
+        task_id: TaskIDType,
     ) -> None:
         self.__config: DistributedTrainingConfig = copy.deepcopy(config)
         self.__context: FederatedLearningContext = copy.copy(context)
