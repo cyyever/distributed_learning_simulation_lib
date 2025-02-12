@@ -90,7 +90,10 @@ class DistributedTrainingConfig(Config):
 
 
 def load_config(
-    conf_obj: Any, global_conf_path: str, import_libs: bool = True
+    conf_obj: Any,
+    global_conf_path: str,
+    import_libs: bool = True,
+    fix_path: bool = False,
 ) -> DistributedTrainingConfig:
     config: DistributedTrainingConfig = DistributedTrainingConfig()
     while "dataset_name" not in conf_obj and len(conf_obj) == 1:
@@ -98,6 +101,25 @@ def load_config(
     result_conf = omegaconf.OmegaConf.load(global_conf_path)
     result_conf.merge_with(conf_obj)
     config.load_config_and_process(result_conf, import_libs=import_libs)
+
+    if not fix_path:
+        return config
+    project_path = os.path.abspath(
+        os.path.join(os.path.dirname(global_conf_path), "..")
+    )
+    for k, v in config.dc_config.dataset_kwargs.items():
+        if not k.endswith("files"):
+            continue
+        files = v
+        if isinstance(v, str):
+            files = [v]
+        new_files = []
+        for file in files:
+            if not file.startswith("/"):
+                file = str(os.path.join(project_path, v))
+                assert os.path.isfile(file)
+            new_files.append(file)
+        config.dc_config.dataset_kwargs[k] = new_files
     return config
 
 
