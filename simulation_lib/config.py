@@ -1,3 +1,4 @@
+import contextlib
 import datetime
 import importlib
 import os
@@ -27,6 +28,7 @@ class DistributedTrainingConfig(Config):
         self.enable_training_log: bool = False
         self.use_validation: bool = False
         self.worker_number_per_process: int = 0
+        self.heavy_server: bool = False
 
     def load_config_and_process(
         self, conf: Any, import_libs: bool = True, conf_path: str | None = None
@@ -45,7 +47,7 @@ class DistributedTrainingConfig(Config):
     def get_worker_number_per_process(self) -> int:
         if self.worker_number_per_process == 0:
             self.worker_number_per_process = _get_worker_number_per_process(
-                worker_number=self.worker_number, count_server=True
+                worker_number=self.worker_number, count_server=self.heavy_server
             )
         return self.worker_number_per_process
 
@@ -119,7 +121,5 @@ def import_dependencies(dataset_type: str | None = None) -> None:
             case "text":
                 libs = ["cyy_torch_text"]
     for dependency in libs:
-        try:
+        with contextlib.suppress(ModuleNotFoundError):
             importlib.import_module(dependency)
-        except ModuleNotFoundError:
-            pass

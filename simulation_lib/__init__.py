@@ -5,9 +5,9 @@ from .algorithm import *  # noqa: F401
 from .algorithm_repository import AlgorithmRepository  # noqa: F401
 from .config import *  # noqa: F401
 from .message import *  # noqa: F401
-from .training import train
 from .server import *  # noqa: F401
 from .topology import *  # noqa: F401
+from .training import train
 from .util import *  # noqa: F401
 from .worker import *  # noqa: F401
 
