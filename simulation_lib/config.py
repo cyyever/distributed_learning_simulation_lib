@@ -6,7 +6,7 @@ from typing import Any
 
 import omegaconf
 from cyy_naive_lib.system_info import OSType, get_operating_system_type
-from cyy_torch_toolbox import Config, MachineLearningPhase
+from cyy_torch_toolbox import Config, MachineLearningPhase, load_config_from_hydra
 
 from .context import get_worker_number_per_process as _get_worker_number_per_process
 from .practitioner import Practitioner
@@ -89,24 +89,12 @@ class DistributedTrainingConfig(Config):
         return practitioners
 
 
-def load_config(
-    conf_obj: Any,
-    global_conf_path: str,
-    import_libs: bool = True,
-    fix_path: bool = False,
-) -> DistributedTrainingConfig:
-    config: DistributedTrainingConfig = DistributedTrainingConfig()
-    while "dataset_name" not in conf_obj and len(conf_obj) == 1:
-        conf_obj = next(iter(conf_obj.values()))
-    result_conf = omegaconf.OmegaConf.load(global_conf_path)
-    result_conf.merge_with(conf_obj)
-    config.load_config_and_process(result_conf, import_libs=import_libs)
-
+def __fix_config(
+    config: DistributedTrainingConfig, conf_path: str, fix_path: bool = False
+) -> None:
     if not fix_path:
-        return config
-    project_path = os.path.abspath(
-        os.path.join(os.path.dirname(global_conf_path), "..")
-    )
+        return
+    project_path = os.path.abspath(os.path.join(conf_path, ".."))
     for k, v in config.dc_config.dataset_kwargs.items():
         if not k.endswith("files"):
             continue
@@ -120,6 +108,22 @@ def load_config(
                 assert os.path.isfile(file)
             new_files.append(file)
         config.dc_config.dataset_kwargs[k] = new_files
+    return
+
+
+def load_config(
+    config_path: Any,
+    global_conf_path: str,
+    import_libs: bool = True,
+    fix_path: bool = False,
+) -> DistributedTrainingConfig:
+    result_conf = load_config_from_hydra(
+        config_path=config_path, other_config_files=[global_conf_path]
+    )
+    config: DistributedTrainingConfig = DistributedTrainingConfig()
+    config.load_config_and_process(result_conf, import_libs=import_libs)
+    if fix_path:
+        __fix_config(config, config_path, True)
     return config
 
 
@@ -129,12 +133,7 @@ def load_config_from_file(
     return load_config(omegaconf.OmegaConf.load(config_file), global_conf_path)
 
 
-import_result: dict = {}
-
-
 def import_dependencies(dataset_type: str | None = None) -> None:
-    if import_result:
-        return
     libs = ["cyy_torch_text", "cyy_torch_vision"]
     if dataset_type is not None:
         match dataset_type.lower():
@@ -145,6 +144,5 @@ def import_dependencies(dataset_type: str | None = None) -> None:
     for dependency in libs:
         try:
             importlib.import_module(dependency)
-            import_result[dependency] = True
         except ModuleNotFoundError:
             pass
