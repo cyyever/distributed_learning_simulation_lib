@@ -76,7 +76,7 @@ class AlgorithmRepository:
         return config["server_cls"](endpoint=endpoint, **kwargs, **extra_kwargs)
 
 
-def get_worker_config(
+def get_task_config(
     config: DistributedTrainingConfig,
     task_id: TaskIDType,
     practitioners: None | set = None,

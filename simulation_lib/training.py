@@ -5,7 +5,7 @@ from collections.abc import Callable
 from cyy_naive_lib.log import add_file_handler, log_debug, log_info
 from cyy_naive_lib.time_counter import TimeCounter
 
-from .algorithm_repository import get_worker_config
+from .algorithm_repository import get_task_config
 from .config import DistributedTrainingConfig
 from .context import (
     ConcurrentFederatedLearningContext,
@@ -72,7 +72,7 @@ def train(
     task_id = get_task_id()
     if practitioners is None:
         add_file_handler(config.log_file)
-    worker_config = get_worker_config(
+    worker_config = get_task_config(
         config, task_id=task_id, practitioners=practitioners
     )
     context = worker_config.pop("context")
