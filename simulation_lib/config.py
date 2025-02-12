@@ -116,7 +116,7 @@ def load_config(
         new_files = []
         for file in files:
             if not file.startswith("/"):
-                file = str(os.path.join(project_path, v))
+                file = str(os.path.join(project_path, file))
                 assert os.path.isfile(file)
             new_files.append(file)
         config.dc_config.dataset_kwargs[k] = new_files
