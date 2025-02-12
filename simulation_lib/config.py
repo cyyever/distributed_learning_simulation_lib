@@ -4,7 +4,6 @@ import os
 import uuid
 from typing import Any
 
-import omegaconf
 from cyy_naive_lib.system_info import OSType, get_operating_system_type
 from cyy_torch_toolbox import Config, MachineLearningPhase, load_config_from_hydra
 
@@ -29,8 +28,13 @@ class DistributedTrainingConfig(Config):
         self.use_validation: bool = False
         self.worker_number_per_process: int = 0
 
-    def load_config_and_process(self, conf: Any, import_libs: bool = True) -> None:
+    def load_config_and_process(
+        self, conf: Any, import_libs: bool = True, conf_path: str | None = None
+    ) -> None:
         self.load_config(conf)
+        if conf_path is not None:
+            project_path = os.path.abspath(os.path.join(conf_path, ".."))
+            self.fix_paths(project_path=project_path)
         self.reset_session()
         if not import_libs:
             return
@@ -89,48 +93,21 @@ class DistributedTrainingConfig(Config):
         return practitioners
 
 
-def __fix_config(
-    config: DistributedTrainingConfig, conf_path: str, fix_path: bool = False
-) -> None:
-    if not fix_path:
-        return
-    project_path = os.path.abspath(os.path.join(conf_path, ".."))
-    for k, v in config.dc_config.dataset_kwargs.items():
-        if not k.endswith("files"):
-            continue
-        files = v
-        if isinstance(v, str):
-            files = [v]
-        new_files = []
-        for file in files:
-            if not file.startswith("/"):
-                file = str(os.path.join(project_path, file))
-                assert os.path.isfile(file)
-            new_files.append(file)
-        config.dc_config.dataset_kwargs[k] = new_files
-    return
-
-
 def load_config(
-    config_path: Any,
+    config_path: str,
     global_conf_path: str,
+    *other_config_files: str,
     import_libs: bool = True,
-    fix_path: bool = False,
 ) -> DistributedTrainingConfig:
     result_conf = load_config_from_hydra(
-        config_path=config_path, other_config_files=[global_conf_path]
+        config_path=config_path,
+        other_config_files=[global_conf_path] + list(other_config_files),
     )
     config: DistributedTrainingConfig = DistributedTrainingConfig()
-    config.load_config_and_process(result_conf, import_libs=import_libs)
-    if fix_path:
-        __fix_config(config, config_path, True)
+    config.load_config_and_process(
+        result_conf, import_libs=import_libs, conf_path=config_path
+    )
     return config
-
-
-def load_config_from_file(
-    config_file: str, global_conf_path: str
-) -> DistributedTrainingConfig:
-    return load_config(omegaconf.OmegaConf.load(config_file), global_conf_path)
 
 
 def import_dependencies(dataset_type: str | None = None) -> None:
