@@ -7,6 +7,7 @@ from cyy_naive_lib.log import log_warning
 
 from .config import DistributedTrainingConfig
 from .context import FederatedLearningContext
+from .server import Server
 from .task import TaskIDType
 
 
@@ -76,11 +77,14 @@ class AlgorithmRepository:
         return config["server_cls"](endpoint=endpoint, **kwargs, **extra_kwargs)
 
 
+type TaskConfig = dict
+
+
 def get_task_config(
     config: DistributedTrainingConfig,
     task_id: TaskIDType,
     practitioners: None | set = None,
-) -> dict:
+) -> TaskConfig:
     if practitioners is None:
         practitioners = config.create_practitioners()
     else:
@@ -138,3 +142,7 @@ def get_task_config(
     assert client_config
     result["worker"] = client_config
     return result
+
+
+def create_server(task_config: TaskConfig, **kwargs) -> Server:
+    return task_config["server"]["constructor"](**kwargs)

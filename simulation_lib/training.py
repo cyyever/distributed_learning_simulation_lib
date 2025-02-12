@@ -1,11 +1,12 @@
 import copy
 import os
+from typing import Any
 from collections.abc import Callable
 
 from cyy_naive_lib.log import add_file_handler, log_debug, log_info
 from cyy_naive_lib.time_counter import TimeCounter
 
-from .algorithm_repository import get_task_config
+from .algorithm_repository import TaskConfig, get_task_config, create_server
 from .config import DistributedTrainingConfig
 from .context import (
     ConcurrentFederatedLearningContext,
@@ -13,6 +14,7 @@ from .context import (
 )
 from .task import OptionalTaskIDType, TaskIDType, get_task_id
 from .worker import Worker
+from .server import AggregationServer
 
 # we use these environment variables to save memory in large-scale training
 os.environ["CUDA_MODULE_LOADING"] = "LAZY"
@@ -20,18 +22,21 @@ os.environ["USE_THREAD_DATALOADER"] = "1"
 
 
 def start_server(
-    context: FederatedLearningContext, server_config: dict, single_task: bool
+    context: FederatedLearningContext, task_config: TaskConfig, **kwargs: Any
 ) -> dict:
-    server = server_config["constructor"](context=context, single_task=single_task)
+    server = create_server(task_config=task_config, context=context, **kwargs)
     log_debug("context id %d", id(context))
 
     server.start()
     log_info("stop server")
 
     res: dict = {}
-    if hasattr(server.algorithm, "shapley_values"):
-        res["sv"] = server.algorithm.shapley_values
-    res |= {"performance": server.performance_stat}
+
+    if isinstance(server, AggregationServer):
+        res["sv"] = getattr(server.algorithm, "shapley_values", {})
+        if not res["sv"]:
+            res.pop("sv")
+        res |= {"performance": server.performance_stat}
     return res
 
 
@@ -72,15 +77,11 @@ def train(
     task_id = get_task_id()
     if practitioners is None:
         add_file_handler(config.log_file)
-    worker_config = get_task_config(
-        config, task_id=task_id, practitioners=practitioners
-    )
-    context = worker_config.pop("context")
+    task_config = get_task_config(config, task_id=task_id, practitioners=practitioners)
+    context = task_config.pop("context")
     assert isinstance(context, FederatedLearningContext)
-    server_config = worker_config.get("server", None)
-    assert server_config is not None
-    context.submit(start_server, server_config=server_config, single_task=single_task)
-    for worker_configs in worker_config["worker"]:
+    context.submit(start_server, task_config=task_config, single_task=single_task)
+    for worker_configs in task_config["worker"]:
         for cfg in worker_configs:
             cfg["single_task"] = single_task
         start_workers(context=context, worker_configs=worker_configs)
