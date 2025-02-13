@@ -46,8 +46,8 @@ class AggregationServer(Server, PerformanceMixin, RoundSelectionMixin):
     def round_index(self) -> int:
         return self._round_index
 
-    def get_tester(self, copy_tester: bool = False) -> Inferencer:
-        tester = super().get_tester(copy_tester=copy_tester)
+    def get_tester(self) -> Inferencer:
+        tester = super().get_tester()
         tester.set_visualizer_prefix(f"round: {self.round_index},")
         return tester
 
