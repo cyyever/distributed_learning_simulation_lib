@@ -50,7 +50,12 @@ class AggregationWorker(Worker, ClientMixin):
         self.trainer.dataset_collection.remove_dataset(phase=MachineLearningPhase.Test)
         choose_model_by_validation = self.__choose_model_by_validation
         if choose_model_by_validation is None:
-            choose_model_by_validation = self.config.hyper_parameter_config.epoch > 1
+            choose_model_by_validation = (
+                self.config.hyper_parameter_config.epoch > 1
+                and self.trainer.dataset_collection.has_dataset(
+                    phase=MachineLearningPhase.Validation
+                )
+            )
         if choose_model_by_validation:
             self.enable_choosing_model_by_validation()
         else:
