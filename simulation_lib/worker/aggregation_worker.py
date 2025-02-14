@@ -9,6 +9,7 @@ from cyy_torch_toolbox import (
     ModelParameter,
     StopExecutingException,
     TensorDict,
+    lr_scheduler_step_after_batch,
     tensor_to,
 )
 from cyy_torch_toolbox.hook.keep_model import KeepModelHook
@@ -55,6 +56,8 @@ class AggregationWorker(Worker, ClientMixin):
     def _before_training(self) -> None:
         super()._before_training()
         self.trainer.dataset_collection.remove_dataset(phase=MachineLearningPhase.Test)
+        if self.reuse_learning_rate:
+            assert not lr_scheduler_step_after_batch(self.trainer.get_lr_scheduler())
         choose_model_by_validation = self.__choose_model_by_validation
         if choose_model_by_validation is None:
             choose_model_by_validation = (
