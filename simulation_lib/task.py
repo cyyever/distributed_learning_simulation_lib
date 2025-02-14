@@ -53,6 +53,8 @@ def get_task_config(
     assert practitioners
     assert AlgorithmRepository.has_algorithm(config.distributed_algorithm)
 
+    assert config.worker_number > 0
+    assert config.round > 0
     worker_number_per_process = config.get_worker_number_per_process()
     log_warning(
         "There are %s workers in total, and %s workers form a group",
