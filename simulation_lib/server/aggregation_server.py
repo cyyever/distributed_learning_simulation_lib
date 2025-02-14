@@ -170,5 +170,9 @@ class AggregationServer(Server, PerformanceMixin, RoundSelectionMixin):
             assert self.__model_cache.has_data
             self.__model_cache.save()
 
+    @property
+    def current_aggregated_model(self) -> ModelCache:
+        return self.__model_cache
+
     def _stopped(self) -> bool:
         return self.round_index > self.config.round or self._stop
