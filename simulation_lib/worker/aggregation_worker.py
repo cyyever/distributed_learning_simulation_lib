@@ -29,13 +29,20 @@ class AggregationWorker(Worker, ClientMixin):
         Worker.__init__(self, **kwargs)
         ClientMixin.__init__(self)
         self._aggregation_time: ExecutorHookPoint = ExecutorHookPoint.AFTER_EXECUTE
-        self._reuse_learning_rate: bool = False
+        self.__reuse_learning_rate: bool = False
         self.__choose_model_by_validation: bool | None = None
         self._send_parameter_diff: bool = False
         self._keep_model_cache: bool = False
         self._send_loss: bool = False
         self._model_cache: ModelCache = ModelCache()
         self._model_loading_fun = None
+
+    @property
+    def reuse_learning_rate(self) -> bool:
+        return self.__reuse_learning_rate
+
+    def set_reuse_learning_rate(self, reuse: bool) -> None:
+        self.__reuse_learning_rate = reuse
 
     @property
     def model_cache(self) -> ModelCache:
@@ -179,7 +186,7 @@ class AggregationWorker(Worker, ClientMixin):
         load_parameters(
             trainer=self.trainer,
             parameter=parameter,
-            reuse_learning_rate=self._reuse_learning_rate,
+            reuse_learning_rate=self.reuse_learning_rate,
             loading_fun=self._model_loading_fun,
         )
         if result.end_training:
@@ -195,7 +202,7 @@ class AggregationWorker(Worker, ClientMixin):
                     self._model_cache.discard()
             if self.best_model_hook is not None:
                 self.best_model_hook.clear()
-            self.trainer.remove_model(remove_optimizer=not self._reuse_learning_rate)
+            self.trainer.remove_model(remove_optimizer=not self.reuse_learning_rate)
         super().pause(in_round=in_round)
 
     def __get_result_from_server(self) -> None:
