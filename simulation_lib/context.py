@@ -61,6 +61,7 @@ class GlobalStore:
     def __init__(self) -> None:
         if GlobalStore.global_manager is None:
             GlobalStore.global_manager = TorchProcessContext().get_ctx().Manager()
+        self.objects: dict | None = None
         if GlobalStore._objects is None:
             assert GlobalStore.global_manager is not None
             GlobalStore._objects = GlobalStore.global_manager.dict()
@@ -328,14 +329,16 @@ class ConcurrentFederatedLearningContext:
 
 
 def get_worker_number_per_process(
-    worker_number: int, count_server: bool = False
+    worker_number: int, count_server: bool = False, least_memory_GB: int | None = None
 ) -> int:
     memory_info = get_device_memory_info()
     refined_memory_info: dict = {}
     MB = 1024 * 1024
     GB = MB * 1024
+    if least_memory_GB is None:
+        least_memory_GB = 5
     for device, info in memory_info.items():
-        if info.total / GB >= 20 and info.free / GB < 5:
+        if info.total / GB >= 20 and info.free / GB < least_memory_GB:
             continue
         if info.used / info.total > 0.9:
             continue
