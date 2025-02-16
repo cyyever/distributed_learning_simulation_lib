@@ -13,7 +13,5 @@ os.environ["USE_THREAD_DATALOADER"] = "1"
 def get_server(config: DistributedTrainingConfig) -> Server:
     # we need to deepcopy config for concurrent training
     config = copy.deepcopy(config)
-    config.reset_session()
-    config.apply_global_config()
     task_config = get_server_config(config)
     return create_server(task_config=task_config, context=task_config["context"])

@@ -2,6 +2,7 @@ import functools
 import json
 import os
 import dill
+from ..config import DistributedTrainingConfig
 
 
 class Session:
@@ -11,13 +12,29 @@ class Session:
         assert session_dir
         self.session_dir = session_dir
 
-        with open(os.path.join(session_dir, "round_record.json"), encoding="utf8") as f:
+        with open(
+            os.path.join(self.__server_dir, "round_record.json"), encoding="utf8"
+        ) as f:
             self.round_record = json.load(f)
         self.round_record = {int(k): v for k, v in self.round_record.items()}
-        with open(os.path.join(session_dir, "config.pkl"), "rb") as f:
-            self.config = dill.load(f)
+        with open(os.path.join(self.__server_dir, "config.pkl"), "rb") as f:
+            self.config: DistributedTrainingConfig = dill.load(f)
 
         self.__worker_data: dict = {}
+
+    @property
+    def last_model_path(self) -> str:
+        path = os.path.join(
+            self.session_dir, "aggregated_model", f"round_{self.config.round}.pk"
+        )
+        assert os.path.exists(path)
+        return path
+
+    @property
+    def __server_dir(self) -> str:
+        server_dir = os.path.join(self.session_dir, "server")
+        assert os.path.isdir(server_dir)
+        return server_dir
 
     @property
     def worker_data(self) -> dict:
