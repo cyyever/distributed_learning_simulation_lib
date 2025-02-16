@@ -37,7 +37,6 @@ class DistributedTrainingConfig(Config):
         if conf_path is not None:
             project_path = os.path.abspath(os.path.join(conf_path, ".."))
             self.fix_paths(project_path=project_path)
-        self.reset_session()
         if not import_libs:
             return
         import_dependencies(
