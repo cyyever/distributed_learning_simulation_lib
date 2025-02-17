@@ -134,14 +134,15 @@ class AggregationWorker(Worker, ClientMixin):
         else:
             parameter = self._get_parameters()
             best_epoch = self.trainer.hyper_parameter.epoch
-            log_debug(
-                "use best model best_epoch %s acc %s parameter size %s",
-                best_epoch,
-                self.trainer.performance_metric.get_epoch_metric(
-                    best_epoch, "accuracy"
-                ),
-                len(parameter),
-            )
+            if self.trainer.has_hook_obj("performance_metric"):
+                log_debug(
+                    "use best model best_epoch %s acc %s parameter size %s",
+                    best_epoch,
+                    self.trainer.performance_metric.get_epoch_metric(
+                        best_epoch, "accuracy"
+                    ),
+                    len(parameter),
+                )
         parameter = tensor_to(parameter, device="cpu", dtype=torch.float64)
         other_data = {}
         if self._send_loss:
