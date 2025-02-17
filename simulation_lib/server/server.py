@@ -65,11 +65,11 @@ class Server(Executor, RoundSelectionMixin):
     def load_parameter(self, tester: Inferencer, parameter: ModelParameter) -> None:
         tester.model_util.load_parameters(parameter)
 
-    def get_metric(
+    def setup_tester_for_performance(
         self,
         parameter: ModelParameter | ParameterMessage,
         log_performance_metric: bool = True,
-    ) -> dict:
+    ) -> Inferencer:
         if isinstance(parameter, ParameterMessage):
             parameter = parameter.parameter
         tester = self.get_tester()
@@ -92,6 +92,16 @@ class Server(Executor, RoundSelectionMixin):
             log_info("server uses batch_size %s", batch_size)
             tester.remove_dataloader_kwargs("batch_number")
             tester.update_dataloader_kwargs(batch_size=batch_size)
+        return tester
+
+    def get_metric(
+        self,
+        parameter: ModelParameter | ParameterMessage,
+        log_performance_metric: bool = True,
+    ) -> dict:
+        tester = self.setup_tester_for_performance(
+            parameter=parameter, log_performance_metric=log_performance_metric
+        )
         metric = self._get_metric(tester)
         tester.offload_from_device()
         return metric

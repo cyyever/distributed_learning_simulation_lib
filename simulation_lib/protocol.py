@@ -1,3 +1,4 @@
+from functools import cached_property
 from typing import Protocol
 
 from .config import DistributedTrainingConfig
@@ -15,3 +16,5 @@ class ExecutorProtocol(Protocol):
 
     @property
     def name(self) -> str: ...
+    @cached_property
+    def save_dir(self) -> str: ...

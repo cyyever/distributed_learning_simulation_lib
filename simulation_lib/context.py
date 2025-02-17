@@ -23,9 +23,11 @@ from cyy_naive_lib.topology import (
     ProcessQueueCentralTopology,
     ServerEndpoint,
 )
-from cyy_torch_toolbox import get_device
 from cyy_torch_toolbox.concurrency import TorchProcessContext
-from cyy_torch_toolbox.device import get_device_memory_info, set_device
+from cyy_torch_toolbox.device import (
+    DeviceGreedyAllocator,
+    get_device_memory_info,
+)
 
 from .concurrency import CoroutineExcutorPool
 from .task_type import TaskIDType
@@ -165,7 +167,9 @@ class ExecutorContext:
     def device_lock(self) -> threading.RLock:
         return self.global_store.get("device_lock")
 
-    def get_device(self, lock_callback: None | Callable = None) -> torch.device:
+    def get_device(
+        self, lock_callback: None | Callable = None, set_visible_device: bool = False
+    ) -> torch.device:
         if not self.thread_local_store.has("device"):
             if not self.__hold_device_lock:
                 self.device_lock.acquire()
@@ -176,14 +180,17 @@ class ExecutorContext:
                 self.__hold_device_lock = True
                 if lock_callback is not None:
                     lock_callback()
-            device = get_device(max_needed_bytes=self.__used_device_memory)
+            device = DeviceGreedyAllocator.get_device(
+                max_needed_bytes=self.__used_device_memory
+            )
             self.thread_local_store.store("device", device)
             log_debug(
                 "get device %s for process %s",
                 device,
                 os.getpid(),
             )
-            set_device(device)
+            if set_visible_device and "cuda" in device.type.lower():
+                os.environ["CUDA_VISIBLE_DEVICES"] = str(device.index)
         return self.thread_local_store.get("device")
 
     def release_device_lock(self) -> None:
