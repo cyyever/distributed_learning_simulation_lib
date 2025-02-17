@@ -1,6 +1,5 @@
 import functools
 import os
-from functools import cached_property
 
 import dill
 from cyy_torch_toolbox import ExecutorHookPoint, Trainer
@@ -9,9 +8,16 @@ from .worker_base import WorkerBase
 
 
 class Worker(WorkerBase):
-    @cached_property
+    __trainer: Trainer | None = None
+
+    @property
     def trainer(self) -> Trainer:
-        return self.__new_trainer()
+        if self.__trainer is None:
+            self.__trainer = self.__new_trainer()
+        return self.__trainer
+
+    def clear_trainer(self) -> None:
+        self.__trainer = None
 
     def __new_trainer(self) -> Trainer:
         if "server_batch_size" in self.config.trainer_config.dataloader_kwargs:
