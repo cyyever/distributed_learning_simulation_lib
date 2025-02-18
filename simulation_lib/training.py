@@ -36,7 +36,6 @@ def limit_device(device: torch.device) -> None:
 def start_server(
     context: FederatedLearningContext, task_config: TaskConfig, **kwargs: Any
 ) -> dict:
-    print(task_config)
     device = task_config["server"].pop("device")
     if device is not None:
         limit_device(device)
