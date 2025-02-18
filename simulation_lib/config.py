@@ -8,7 +8,11 @@ from typing import Any
 from cyy_naive_lib.system_info import OSType, get_operating_system_type
 from cyy_torch_toolbox import Config, MachineLearningPhase, load_config_from_hydra
 
-from .context import get_worker_number_per_process as _get_worker_number_per_process
+from .context import (
+    get_worker_number_per_process as _get_worker_number_per_process,
+    allocate_device as _allocate_device,
+)
+
 from .practitioner import Practitioner
 from .sampler import get_dataset_collection_split
 
@@ -29,6 +33,7 @@ class DistributedTrainingConfig(Config):
         self.use_validation: bool = False
         self.worker_number_per_process: int = 0
         self.heavy_server: bool = False
+        self.preallocate_device: bool = False
 
     def load_config_and_process(
         self, conf: Any, import_libs: bool = True, conf_path: str | None = None
@@ -43,12 +48,10 @@ class DistributedTrainingConfig(Config):
             dataset_type=self.dc_config.dataset_kwargs.get("dataset_type", None)
         )
 
-    def get_worker_number_per_process(self) -> int:
-        if self.worker_number_per_process == 0:
-            self.worker_number_per_process = _get_worker_number_per_process(
-                worker_number=self.worker_number, count_server=self.heavy_server
-            )
-        return self.worker_number_per_process
+    def allocate_device(self) -> dict:
+        return _allocate_device(
+            worker_number=self.worker_number, count_server=self.heavy_server
+        )
 
     def reset_session(self) -> None:
         task_time = datetime.datetime.now()

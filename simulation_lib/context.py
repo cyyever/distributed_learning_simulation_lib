@@ -360,17 +360,17 @@ def allocate_device(
     log_warning("Use devices %s", devices)
     free_bytes = sorted(list(refined_memory_info.values()))
     if count_server:
-        result = {"server": devices[0]}
+        result = {"server_device": devices[0]}
         free_bytes = free_bytes[1:]
         if not free_bytes:
             result |= {"worker_number_per_process": worker_number}
             result |= {"process_devices": devices}
             return result
     else:
-        result = {"server": devices[-1]}
+        result = {"server_device": devices[-1]}
     if worker_number <= len(free_bytes):
         result |= {"worker_number_per_process": 1}
-        result |= {"process_devices": devices[:worker_number]}
+        result |= {"process_devices": devices}
         return result
     # small scale training
     if worker_number <= 50:
@@ -389,6 +389,7 @@ def allocate_device(
     )
     worker_number_per_process = max(int(min(free_bytes) / MB / MB_per_worker), 1)
     result |= {"worker_number_per_process": worker_number_per_process}
+    result |= {"process_devices": devices}
     return result
 
 

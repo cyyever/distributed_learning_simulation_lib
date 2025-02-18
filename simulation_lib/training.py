@@ -1,4 +1,5 @@
 import copy
+import torch
 import os
 from collections.abc import Callable
 from typing import Any
@@ -26,9 +27,19 @@ os.environ["CUDA_MODULE_LOADING"] = "LAZY"
 os.environ["USE_THREAD_DATALOADER"] = "1"
 
 
+def limit_device(device: torch.device) -> None:
+    if device.type.lower() == "cuda":
+        log_info("limit device %s", device)
+        os.environ["CUDA_VISIBLE_DEVICES"] = str(device.index)
+
+
 def start_server(
     context: FederatedLearningContext, task_config: TaskConfig, **kwargs: Any
 ) -> dict:
+    print(task_config)
+    device = task_config["server"].pop("device")
+    if device is not None:
+        limit_device(device)
     server = create_server(task_config=task_config, context=context, **kwargs)
     log_debug("context id %d", id(context))
 
@@ -61,6 +72,12 @@ def start_workers(
         "run %s workers in the same process",
         len(worker_configs),
     )
+    device = worker_configs[0]["device"]
+    for cfg in worker_configs:
+        cfg.pop("device")
+    if device is not None:
+        limit_device(device)
+
     context.submit_batch(batch_fun=run_worker, kwargs_list=worker_configs)
 
 

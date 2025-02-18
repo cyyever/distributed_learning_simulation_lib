@@ -55,12 +55,15 @@ def get_task_config(
 
     assert config.worker_number > 0
     assert config.round > 0
-    worker_number_per_process = config.get_worker_number_per_process()
+    device_allocation = config.allocate_device()
+    worker_number_per_process = device_allocation["worker_number_per_process"]
     log_warning(
         "There are %s workers in total, and %s workers form a group",
         len(practitioners),
         worker_number_per_process,
     )
+    process_devices = device_allocation["process_devices"]
+    process_devices = process_devices + process_devices
     client_config: list[list[dict]] = []
     for batch in itertools.batched(list(practitioners), n=worker_number_per_process):
         client_config.append(
@@ -79,12 +82,15 @@ def get_task_config(
                             "practitioner": practitioner,
                         },
                     ),
+                    "device": process_devices[0] if config.preallocate_device else None,
                 }
                 for practitioner in batch
             ]
         )
+        process_devices = process_devices[1:]
     assert client_config
     result["worker"] = client_config
+    result["server"]["device"] = device_allocation["server_device"]
     return result
 
 
