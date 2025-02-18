@@ -20,7 +20,9 @@ def get_task_id() -> TaskIDType:
 
 def get_server_config(config: DistributedTrainingConfig) -> TaskServerConfig:
     assert AlgorithmRepository.has_algorithm(config.distributed_algorithm)
-    context = FederatedLearningContext(worker_num=config.worker_number)
+    context = FederatedLearningContext(
+        worker_num=config.worker_number, wait_job_launch=True
+    )
     task_id = get_task_id()
     result: dict = {"context": context, "task_id": task_id}
     result["server"] = {}

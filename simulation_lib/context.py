@@ -3,6 +3,8 @@ import functools
 import multiprocessing
 import os
 import threading
+import time
+import uuid
 from collections.abc import Callable
 from typing import Any, Self
 
@@ -105,6 +107,14 @@ class GlobalStore:
     def get(self, name: str) -> Any:
         assert self.objects is not None
         return self.objects[name]
+
+    def has(self, name: str) -> bool:
+        assert self.objects is not None
+        return name in self.objects
+
+    def remove(self, name: str) -> Any:
+        assert self.objects is not None
+        return self.objects.pop(name)
 
 
 class ExecutorContext:
@@ -216,9 +226,11 @@ class ClientEndpointInCoroutine(Decorator):
 
 
 class FederatedLearningContext(ExecutorContext):
-    def __init__(self, worker_num: int) -> None:
+    def __init__(self, worker_num: int, wait_job_launch: bool = False) -> None:
         super().__init__()
         self.__worker_num = worker_num
+        self.id = str(uuid.uuid4())
+        self.__wait_job_launch = wait_job_launch
         topology_class = ProcessPipeCentralTopology
         if get_operating_system_type() == OSType.Windows or "no_pipe" in os.environ:
             topology_class = ProcessQueueCentralTopology
@@ -263,15 +275,31 @@ class FederatedLearningContext(ExecutorContext):
             self.__executor_pool.catch_exception()
         return self.__executor_pool
 
-    @property
-    def submit(self):
-        return self.executor_pool.submit
+    def submit(
+        self, fn: Callable, *args: Any, **kwargs: Any
+    ) -> concurrent.futures.Future:
+        self.__wait_job()
+        return self.executor_pool.submit(fn, *args, **kwargs)
 
     @property
     def wait_results(self):
         return self.executor_pool.wait_results
 
+    @property
+    def name(self):
+        return f"FederatedLearningContext_{self.id}"
+
+    def mark_job_launched(self) -> None:
+        self.global_store.remove(f"{self.name}_pending")
+
+    def __wait_job(self) -> None:
+        if self.__wait_job_launch:
+            while self.global_store.has(f"{self.name}_pending"):
+                time.sleep(0.1)
+            self.global_store.store(f"{self.name}_pending", True)
+
     def submit_batch(self, batch_fun: Callable, kwargs_list: list):
+        self.__wait_job()
         return self.executor_pool.submit_batch(
             [
                 functools.partial(batch_fun, **kwargs_elem)
