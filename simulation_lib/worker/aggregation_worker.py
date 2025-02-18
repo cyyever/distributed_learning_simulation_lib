@@ -152,14 +152,14 @@ class AggregationWorker(Worker, ClientMixin):
             assert other_data["training_loss"] is not None
 
         message: ParameterMessageBase = ParameterMessage(
-            aggregation_weight=self.trainer.dataset_size,
+            aggregation_weight=self.get_aggregation_weight(),
             parameter=parameter,
             other_data=other_data,
         )
         if self._send_parameter_diff:
             assert self._model_cache.has_data
             message = DeltaParameterMessage(
-                aggregation_weight=self.trainer.dataset_size,
+                aggregation_weight=self.get_aggregation_weight(),
                 other_data=other_data,
                 # old_parameter=self._model_cache.parameter,
                 # new_parameter=parameter,
@@ -168,6 +168,9 @@ class AggregationWorker(Worker, ClientMixin):
         if not self._keep_model_cache:
             self._model_cache.discard()
         return message
+
+    def get_aggregation_weight(self) -> float:
+        return self.trainer.dataset_size
 
     def _load_result_from_server(self, result: Message) -> None:
         model_path = os.path.join(
