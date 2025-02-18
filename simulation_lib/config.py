@@ -8,11 +8,7 @@ from typing import Any
 from cyy_naive_lib.system_info import OSType, get_operating_system_type
 from cyy_torch_toolbox import Config, MachineLearningPhase, load_config_from_hydra
 
-from .context import (
-    get_worker_number_per_process as _get_worker_number_per_process,
-    allocate_device as _allocate_device,
-)
-
+from .context import allocate_device as _altlocate_device
 from .practitioner import Practitioner
 from .sampler import get_dataset_collection_split
 
