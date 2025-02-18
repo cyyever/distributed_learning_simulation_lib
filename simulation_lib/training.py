@@ -1,9 +1,9 @@
 import copy
-import torch
 import os
 from collections.abc import Callable
 from typing import Any
 
+import torch
 from cyy_naive_lib.log import add_file_handler, log_debug, log_info
 from cyy_naive_lib.time_counter import TimeCounter
 
