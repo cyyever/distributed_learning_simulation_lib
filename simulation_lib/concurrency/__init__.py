@@ -13,6 +13,9 @@ class CoroutineExcutorPool(TorchProcessPool):
     @classmethod
     def batch_fun(cls, funs, *args, **kwargs) -> list[Any]:
         assert funs
-        coroutines = [gevent.spawn(fun, *args, **kwargs) for fun in funs]
+        coroutines = [
+            gevent.spawn(fun, *args, **kwargs, coroutine_index=idx)
+            for idx, fun in enumerate(funs)
+        ]
         gevent.joinall(coroutines, raise_error=True)
         return [g.value for g in coroutines]

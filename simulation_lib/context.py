@@ -298,13 +298,10 @@ class FederatedLearningContext(ExecutorContext):
                 time.sleep(0.1)
             self.global_store.store(f"{self.name}_pending", True)
 
-    def submit_batch(self, batch_fun: Callable, kwargs_list: list):
+    def submit_batch(self, fun: Callable, kwargs_list: list):
         self.__wait_job()
         return self.executor_pool.submit_batch(
-            [
-                functools.partial(batch_fun, **kwargs_elem)
-                for kwargs_elem in kwargs_list
-            ],
+            [functools.partial(fun, **kwargs_elem) for kwargs_elem in kwargs_list],
         )
 
     def shutdown(self) -> None:
