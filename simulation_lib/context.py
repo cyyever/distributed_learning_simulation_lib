@@ -384,9 +384,13 @@ def allocate_device(
             continue
         refined_memory_info[device] = info.free
     assert refined_memory_info
-    devices = list(refined_memory_info.keys())
+    print(refined_memory_info)
+    refined_memory_info_list = sorted(
+        list(refined_memory_info.items()), key=lambda a: a[1], reverse=True
+    )
+    free_bytes = list(a[1] for a in refined_memory_info_list)
+    devices = list(a[0] for a in refined_memory_info_list)
     log_warning("Use devices %s", devices)
-    free_bytes = sorted(list(refined_memory_info.values()))
     if count_server:
         result = {"server_device": devices[0]}
         free_bytes = free_bytes[1:]
