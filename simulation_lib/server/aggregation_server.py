@@ -51,7 +51,7 @@ class AggregationServer(Server, PerformanceMixin, RoundSelectionMixin):
         tester.set_visualizer_prefix(f"round: {self.round_index},")
         return tester
 
-    def __get_init_model(self) -> ModelParameter:
+    def _get_init_model(self) -> ModelParameter:
         parameter: ModelParameter = {}
         init_global_model_path = self.config.algorithm_kwargs.get(
             "global_model_path", None
@@ -71,7 +71,7 @@ class AggregationServer(Server, PerformanceMixin, RoundSelectionMixin):
         if self.distribute_init_parameters:
             self._send_result(
                 ParameterMessage(
-                    in_round=True, parameter=self.__get_init_model(), is_initial=True
+                    in_round=True, parameter=self._get_init_model(), is_initial=True
                 )
             )
 
