@@ -272,7 +272,7 @@ class FederatedLearningContext(ExecutorContext):
                 },
                 pass_process_data=True,
             )
-            self.__executor_pool.catch_exception()
+            self.__executor_pool.catch_exception = True
         return self.__executor_pool
 
     def submit(
