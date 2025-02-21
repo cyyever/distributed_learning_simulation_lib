@@ -10,12 +10,14 @@ from typing import Any, Self
 
 import gevent.lock
 import torch
+from cyy_naive_lib.concurrency import ProcessPoolWithCouroutine
 from cyy_naive_lib.decorator import Decorator
 from cyy_naive_lib.log import (
     log_debug,
     log_error,
     log_warning,
 )
+from cyy_naive_lib.storage import GlobalStore
 from cyy_naive_lib.system_info import OSType, get_operating_system_type
 from cyy_naive_lib.time_counter import TimeCounter
 from cyy_naive_lib.topology import (
@@ -25,14 +27,12 @@ from cyy_naive_lib.topology import (
     ProcessQueueCentralTopology,
     ServerEndpoint,
 )
-from cyy_naive_lib.concurrency import ExecutorPool, ProcessPoolWithCouroutine
 from cyy_torch_toolbox.concurrency import TorchProcessContext
 from cyy_torch_toolbox.device import (
     DeviceGreedyAllocator,
     get_device_memory_info,
 )
 
-# from .concurrency import CoroutineExcutorPool
 from .task_type import TaskIDType
 
 
@@ -59,65 +59,6 @@ class ThreadStore:
         return getattr(self.__thread_local_data(), name)
 
 
-class GlobalStore:
-    global_manager: None | Any = None
-    _objects: None | dict = None
-
-    def __init__(self) -> None:
-        if GlobalStore.global_manager is None:
-            GlobalStore.global_manager = TorchProcessContext().get_ctx().Manager()
-        self.objects: dict | None = None
-        if GlobalStore._objects is None:
-            assert GlobalStore.global_manager is not None
-            GlobalStore._objects = GlobalStore.global_manager.dict()
-            self.objects = GlobalStore._objects
-            self.store_lock("default_lock")
-            self.store(
-                "free_semaphores",
-                GlobalStore.global_manager.list(
-                    [GlobalStore.global_manager.Semaphore() for _ in range(10)]
-                ),
-            )
-        self.objects = GlobalStore._objects
-        self.default_lock = self.get("default_lock")
-
-    def store_lock(self, name: str) -> None:
-        assert self.global_manager is not None
-        self.store(name, self.global_manager.RLock())
-
-    def store(self, name: str, obj: Any) -> None:
-        assert self.objects is not None
-        assert name not in self.objects
-        self.objects[name] = obj
-
-    def get_semaphore(self, name: str) -> Any:
-        assert self.objects is not None
-        result = self.get_with_default(name)
-        if result is None:
-            with self.default_lock:
-                result = self.get_with_default(name)
-                if result is None:
-                    free_semaphore = self.get("free_semaphores").pop()
-                    result = self.objects.setdefault(name, free_semaphore)
-        return result
-
-    def get_with_default(self, name: str, default: Any = None) -> Any:
-        assert self.objects is not None
-        return self.objects.get(name, default)
-
-    def get(self, name: str) -> Any:
-        assert self.objects is not None
-        return self.objects[name]
-
-    def has(self, name: str) -> bool:
-        assert self.objects is not None
-        return name in self.objects
-
-    def remove(self, name: str) -> Any:
-        assert self.objects is not None
-        return self.objects.pop(name)
-
-
 class ExecutorContext:
     __thread_store: None | ThreadStore = None
     coroutine_semaphore: None | gevent.lock.BoundedSemaphore = None
@@ -129,7 +70,9 @@ class ExecutorContext:
         self.__name = name if name is not None else "unknown executor"
         self.__hold_device_lock: bool = False
         self.__used_device_memory = None
-        self.global_store = GlobalStore()
+        self.global_store = GlobalStore(
+            manager=TorchProcessContext().get_ctx().Manager()
+        )
         if self.global_store.get_with_default("device_lock", None) is None:
             self.global_store.store_lock("device_lock")
 
