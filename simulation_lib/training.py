@@ -29,7 +29,7 @@ os.environ["USE_THREAD_DATALOADER"] = "1"
 
 def limit_device(device: torch.device) -> None:
     if device.type.lower() == "cuda":
-        log_info("limit device %s pid %s", device, os.getpid())
+        log_debug("limit device %s pid %s", device, os.getpid())
         os.environ["CUDA_VISIBLE_DEVICES"] = str(device.index)
 
 
