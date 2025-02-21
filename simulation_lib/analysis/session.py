@@ -12,6 +12,8 @@ class Session:
         if session_dir is None:
             session_dir = os.getenv("SESSION_DIR")
         assert session_dir
+        session_dir = os.path.abspath(session_dir)
+        assert os.path.isdir(session_dir)
         self.session_dir = session_dir
 
         with open(
