@@ -1,5 +1,6 @@
 import json
 import os
+from typing import Any
 
 import pandas as pd
 import torch
@@ -10,7 +11,7 @@ from .session import Session
 def dump_analysis() -> None:
     session = Session()
     config = session.config
-    res = {}
+    res: dict[str, Any] = {}
     res["exp_name"] = config.exp_name
     res["distributed_algorithm"] = config.distributed_algorithm
     res["dataset_name"] = config.dc_config.dataset_name
@@ -29,7 +30,7 @@ def dump_analysis() -> None:
     res["last_test_acc"] = session.last_test_acc
     res["mean_test_acc"] = session.mean_test_acc
 
-    total_worker_cnts = {
+    total_worker_cnts: dict[str, Any] = {
         "exp_name": config.exp_name,
         "dataset_name": config.dc_config.dataset_name,
     }
