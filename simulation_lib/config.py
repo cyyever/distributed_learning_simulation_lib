@@ -81,7 +81,10 @@ class DistributedTrainingConfig(Config):
             name=self.dataset_sampling,
             dataset_collection=dataset_collection,
             part_number=self.worker_number,
-            sample_phase=MachineLearningPhase.Training,
+            sample_phase=[
+                MachineLearningPhase.Training,
+                MachineLearningPhase.Validation,
+            ],
             **self.dataset_sampling_kwargs,
         )
         for practitioner_id in range(self.worker_number):
