@@ -15,11 +15,11 @@ class Session:
         self.session_dir = session_dir
 
         with open(
-            os.path.join(self.__server_dir, "round_record.json"), encoding="utf8"
+            os.path.join(self.server_dir, "round_record.json"), encoding="utf8"
         ) as f:
             self.round_record = json.load(f)
         self.round_record = {int(k): v for k, v in self.round_record.items()}
-        with open(os.path.join(self.__server_dir, "config.pkl"), "rb") as f:
+        with open(os.path.join(self.server_dir, "config.pkl"), "rb") as f:
             self.config: DistributedTrainingConfig = dill.load(f)
 
         self.__worker_data: dict = {}
@@ -33,10 +33,10 @@ class Session:
         return path
 
     @property
-    def __server_dir(self) -> str:
-        server_dir = os.path.join(self.session_dir, "server")
-        assert os.path.isdir(server_dir)
-        return server_dir
+    def server_dir(self) -> str:
+        _server_dir = os.path.join(self.session_dir, "server")
+        assert os.path.isdir(_server_dir)
+        return _server_dir
 
     @property
     def worker_data(self) -> dict:
