@@ -170,6 +170,8 @@ class ClientEndpointInCoroutine(Decorator):
 
 
 class FederatedLearningContext(ExecutorContext):
+    __thread_store: None | ThreadStore = None
+
     def __init__(self, worker_num: int, wait_job_launch: bool = False) -> None:
         super().__init__()
         self.__worker_num = worker_num
@@ -235,7 +237,11 @@ class FederatedLearningContext(ExecutorContext):
         return f"FederatedLearningContext_{self.id}"
 
     def mark_job_launched(self) -> None:
-        self.global_store.remove(f"{self.name}_pending")
+        if self.__thread_store is None:
+            self.__thread_store = ThreadStore()
+        if not self.__thread_store.has("job_flag"):
+            self.global_store.remove(f"{self.name}_pending")
+            self.__thread_store.store("job_flag", True)
 
     def __wait_job(self) -> None:
         if self.__wait_job_launch:
