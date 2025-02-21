@@ -45,7 +45,7 @@ class WorkerBase(Executor):
     def _after_training(self) -> None:
         pass
 
-    def _train(self, first_training: bool, training_kwargs: dict) -> None:
+    def _train(self, first_training: bool) -> None:
         raise NotImplementedError()
 
     def _stopped(self) -> bool:
@@ -54,7 +54,7 @@ class WorkerBase(Executor):
     def pause(self, in_round: bool = False) -> None:
         self.context.release_device_lock()
 
-    def start(self, **kwargs: Any) -> None:
+    def start(self) -> None:
         first_training: bool = True
         self._round_index = 1
         self._force_stop = False
@@ -65,7 +65,7 @@ class WorkerBase(Executor):
                     # in case the worker changes round number
                     if self._stopped():
                         break
-                self._train(first_training=first_training, training_kwargs=kwargs)
+                self._train(first_training=first_training)
                 first_training = False
                 self._round_index += 1
         with self.context:

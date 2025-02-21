@@ -52,7 +52,7 @@ class Worker(WorkerBase):
             )
         )
 
-    def _train(self, first_training: bool, training_kwargs: dict) -> None:
+    def _train(self, first_training: bool) -> None:
         if not first_training:
             self.trainer.hook_config.summarize_executor = False
         self.trainer.hook_config.log_performance_metric = (
@@ -61,6 +61,4 @@ class Worker(WorkerBase):
         self.trainer.hook_config.save_performance_metric = False
         self.trainer.disable_hook("batch_loss_logger")
         self.trainer.set_visualizer_prefix(prefix=f"round: {self._round_index},")
-        self.trainer.train(
-            **training_kwargs,
-        )
+        self.trainer.train()
