@@ -54,8 +54,7 @@ def start_server(
 
 
 def run_worker(constructor: Callable, coroutine_index, **kwargs) -> None:
-    if coroutine_index == 0:
-        kwargs["context"].mark_job_launched()
+    kwargs["context"].mark_job_launched()
     worker: Worker = constructor(**kwargs)
     worker.start()
 
