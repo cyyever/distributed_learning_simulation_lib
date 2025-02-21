@@ -25,13 +25,14 @@ from cyy_naive_lib.topology import (
     ProcessQueueCentralTopology,
     ServerEndpoint,
 )
+from cyy_naive_lib.concurrency import ExecutorPool, ProcessPoolWithCouroutine
 from cyy_torch_toolbox.concurrency import TorchProcessContext
 from cyy_torch_toolbox.device import (
     DeviceGreedyAllocator,
     get_device_memory_info,
 )
 
-from .concurrency import CoroutineExcutorPool
+# from .concurrency import CoroutineExcutorPool
 from .task_type import TaskIDType
 
 
@@ -238,7 +239,7 @@ class FederatedLearningContext(ExecutorContext):
         self.topology: CentralTopology = topology_class(
             mp_context=TorchProcessContext(), worker_num=self.__worker_num
         )
-        self.__executor_pool: CoroutineExcutorPool | None = None
+        self.__executor_pool: ProcessPoolWithCouroutine | None = None
 
     def __getstate__(self) -> dict[str, Any]:
         state = self.__dict__.copy()
@@ -262,9 +263,10 @@ class FederatedLearningContext(ExecutorContext):
         return endpoint_cls(topology=self.topology, **endpoint_kwargs)
 
     @property
-    def executor_pool(self) -> CoroutineExcutorPool:
+    def executor_pool(self) -> ProcessPoolWithCouroutine:
         if self.__executor_pool is None:
-            self.__executor_pool = CoroutineExcutorPool(
+            self.__executor_pool = ProcessPoolWithCouroutine(
+                mp_context=TorchProcessContext().get_ctx(),
                 initargs={
                     "process_data": {
                         "context": self,
