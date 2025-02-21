@@ -36,7 +36,6 @@ def limit_device(device: torch.device) -> None:
 def start_server(
     context: FederatedLearningContext, task_config: TaskConfig, **kwargs: Any
 ) -> dict:
-    context.mark_job_launched()
     server = create_server(task_config=task_config, context=context, **kwargs)
     log_debug("context id %d", id(context))
 
@@ -53,8 +52,7 @@ def start_server(
     return res
 
 
-def run_worker(constructor: Callable, coroutine_index, **kwargs) -> None:
-    kwargs["context"].mark_job_launched()
+def run_worker(constructor: Callable, **kwargs) -> None:
     worker: Worker = constructor(**kwargs)
     worker.start()
 
@@ -75,7 +73,9 @@ def start_workers(
         cfg.pop("device")
     if device is not None:
         limit_device(device)
-    context.submit_batch(fun=run_worker, kwargs_list=worker_configs)
+    context.submit_batch(
+        funs=[run_worker] * len(worker_configs), kwargs_list=worker_configs
+    )
 
 
 concurrent_context = ConcurrentFederatedLearningContext()
