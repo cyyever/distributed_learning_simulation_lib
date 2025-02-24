@@ -3,6 +3,7 @@ from typing import Any
 from cyy_naive_lib.log import log_debug
 from cyy_naive_lib.topology import ClientEndpoint
 
+from ..context import ClientEndpointInCoroutine
 from ..executor import Executor
 from ..practitioner import Practitioner
 from ..task_type import TaskIDType
@@ -24,6 +25,8 @@ class WorkerBase(Executor):
         super().__init__(name=name, task_id=task_id, **kwargs)
         self._practitioner: Practitioner = practitioner
         self._endpoint: ClientEndpoint = endpoint
+        if isinstance(self._endpoint,ClientEndpointInCoroutine):
+            self._endpoint.replace_context(context=self.context)
         self._round_index = 0
         self._force_stop = False
 

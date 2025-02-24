@@ -162,6 +162,9 @@ class ClientEndpointInCoroutine(Decorator):
         super().__init__(endpoint)
         self.__context = context
 
+    def replace_context(self, context: ExecutorContext) -> None:
+        self.__context = context
+
     def get(self) -> Any:
         self.__context.release()
         self.__context.acquire(cond_fun=self.has_data)
