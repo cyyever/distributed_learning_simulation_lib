@@ -14,6 +14,7 @@ from cyy_naive_lib.decorator import Decorator
 from cyy_naive_lib.log import (
     log_debug,
     log_error,
+    log_info,
     log_warning,
 )
 from cyy_naive_lib.storage import GlobalStore
@@ -300,6 +301,7 @@ def allocate_device(
     refined_memory_info: dict = {}
     MB = 1024 * 1024
     GB = MB * 1024
+    log_info("before refine memory info %s", memory_info)
     if least_memory_GB is None:
         least_memory_GB = 5
     for device, info in memory_info.items():
@@ -311,8 +313,8 @@ def allocate_device(
         if free_GB == 0:
             continue
         refined_memory_info[device] = info.free
-    assert refined_memory_info
-    print(refined_memory_info)
+    assert refined_memory_info, "No avaiable device"
+    log_info("refined memory info %s", refined_memory_info)
     refined_memory_info_list = sorted(
         list(refined_memory_info.items()), key=lambda a: a[1], reverse=True
     )
