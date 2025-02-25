@@ -304,9 +304,13 @@ def allocate_device(
     log_info("before refine memory info %s", memory_info)
     if least_memory_GB is None:
         value = os.getenv("LEAST_REQUIRED_DEVICE_MEMORY_IN_GB")
-        least_memory_GB = min(int(value), 1) if value is not None else 1
+        if value is not None:
+            least_memory_GB = min(int(value), 1)
     for device, info in memory_info.items():
-        if info.total / GB >= 20 and info.free / GB < least_memory_GB:
+        if least_memory_GB is None:
+            refined_memory_info[device] = info.free
+            continue
+        if info.free / GB < least_memory_GB:
             continue
         if info.used / info.total > 0.9:
             continue
