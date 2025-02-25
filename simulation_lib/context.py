@@ -219,6 +219,7 @@ class FederatedLearningContext(ExecutorContext):
                 },
             )
             self.__executor_pool.wrap_executor(BlockingSubmitExecutor)
+            assert isinstance(self.__executor_pool.executor, BlockingSubmitExecutor)
             self.__executor_pool.executor.set_global_store(self.global_store)
         return self.__executor_pool
 
