@@ -25,7 +25,7 @@ class WorkerBase(Executor):
         super().__init__(name=name, task_id=task_id, **kwargs)
         self._practitioner: Practitioner = practitioner
         self._endpoint: ClientEndpoint = endpoint
-        if isinstance(self._endpoint,ClientEndpointInCoroutine):
+        if isinstance(self._endpoint, ClientEndpointInCoroutine):
             self._endpoint.replace_context(context=self.context)
         self._round_index = 0
         self._force_stop = False

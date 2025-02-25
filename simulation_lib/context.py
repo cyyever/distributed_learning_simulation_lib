@@ -217,9 +217,7 @@ class FederatedLearningContext(ExecutorContext):
                         "context": self,
                     }
                 },
-                pass_process_data=True,
             )
-            self.__executor_pool.catch_exception = True
             self.__executor_pool.wrap_executor(BlockingSubmitExecutor)
             self.__executor_pool.executor.set_global_store(self.global_store)
         return self.__executor_pool
