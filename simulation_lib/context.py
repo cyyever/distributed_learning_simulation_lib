@@ -173,10 +173,11 @@ class ClientEndpointInCoroutine(Decorator):
 
 
 class FederatedLearningContext(ExecutorContext):
-    def __init__(self, worker_num: int) -> None:
+    def __init__(self, worker_num: int, blocking_launch: bool) -> None:
         super().__init__()
         self.__worker_num = worker_num
         self.id = str(uuid.uuid4())
+        self.blocking_launch = blocking_launch
         topology_class = ProcessPipeCentralTopology
         if get_operating_system_type() == OSType.Windows or "no_pipe" in os.environ:
             topology_class = ProcessQueueCentralTopology
@@ -218,9 +219,10 @@ class FederatedLearningContext(ExecutorContext):
                     }
                 },
             )
-            self.__executor_pool.wrap_executor(BlockingSubmitExecutor)
-            assert isinstance(self.__executor_pool.executor, BlockingSubmitExecutor)
-            self.__executor_pool.executor.set_global_store(self.global_store)
+            if self.blocking_launch:
+                self.__executor_pool.wrap_executor(BlockingSubmitExecutor)
+                assert isinstance(self.__executor_pool.executor, BlockingSubmitExecutor)
+                self.__executor_pool.executor.set_global_store(self.global_store)
         return self.__executor_pool
 
     @property
