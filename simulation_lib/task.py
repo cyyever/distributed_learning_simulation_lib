@@ -92,7 +92,8 @@ def get_task_config(
         process_devices = process_devices[1:]
     assert client_config
     result["worker"] = client_config
-    result["server"]["device"] = device_allocation["server_device"]
+    if config.preallocate_device:
+        result["server"]["device"] = device_allocation["server_device"]
     return result
 
 
