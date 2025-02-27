@@ -29,7 +29,7 @@ os.environ["USE_THREAD_DATALOADER"] = "1"
 
 def limit_device(device: torch.device) -> None:
     if device.type.lower() == "cuda":
-        log_debug("limit device %s pid %s", device, os.getpid())
+        log_info("limit device %s pid %s", device, os.getpid())
         os.environ["CUDA_VISIBLE_DEVICES"] = str(device.index)
 
 
@@ -99,7 +99,7 @@ def train(
     task_config = get_task_config(config, practitioners=practitioners)
     context = task_config.pop("context")
     assert isinstance(context, FederatedLearningContext)
-    device = task_config["server"].pop("device")
+    device = task_config["server"].pop("device", None)
     if device is not None:
         limit_device(device)
     context.submit(start_server, task_config=task_config, single_task=single_task)
