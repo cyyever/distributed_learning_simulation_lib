@@ -1,4 +1,3 @@
-import contextlib
 import datetime
 import importlib
 import os
@@ -121,7 +120,6 @@ def import_dependencies(dataset_type: str | None = None) -> None:
             case "vision":
                 libs = ["cyy_torch_vision"]
             case "text":
-                libs = ["cyy_torch_text"]
+                libs = ["cyy_torch_text", "cyy_huggingface_toolbox"]
     for dependency in libs:
-        with contextlib.suppress(ModuleNotFoundError):
-            importlib.import_module(dependency)
+        importlib.import_module(dependency)
