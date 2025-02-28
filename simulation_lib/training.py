@@ -102,7 +102,11 @@ def train(
     device = task_config["server"].pop("device", None)
     if device is not None:
         limit_device(device)
-    context.submit(start_server, task_config=task_config, single_task=single_task)
+    server_task_config = copy.copy(task_config)
+    server_task_config.pop("worker")
+    context.submit(
+        start_server, task_config=server_task_config, single_task=single_task
+    )
     for worker_configs in task_config["worker"]:
         for cfg in worker_configs:
             cfg["single_task"] = single_task
