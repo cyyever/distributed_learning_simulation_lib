@@ -77,7 +77,9 @@ class AggregationWorker(Worker, ClientMixin):
             )
         # load initial parameters
         if self.distribute_init_parameters:
+            log_debug("before get_result_from_server")
             self.__get_result_from_server()
+            log_debug("after get_result_from_server")
             if self._stopped():
                 return
         self._register_aggregation()
