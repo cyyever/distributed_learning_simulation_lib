@@ -65,7 +65,6 @@ def get_task_config(
         worker_number_per_process,
     )
     process_devices = device_allocation["process_devices"]
-    process_devices = process_devices + process_devices
     client_config: list[list[dict]] = []
     for batch in itertools.batched(list(practitioners), n=worker_number_per_process):
         client_config.append(

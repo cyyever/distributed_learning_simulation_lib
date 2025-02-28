@@ -44,9 +44,12 @@ class DistributedTrainingConfig(Config):
         )
 
     def allocate_device(self) -> dict:
-        return _allocate_device(
+        device_allocation = _allocate_device(
             worker_number=self.worker_number, count_server=self.heavy_server
         )
+        process_devices = device_allocation["process_devices"]
+        device_allocation["process_devices"] = process_devices + process_devices
+        return device_allocation
 
     def reset_session(self) -> None:
         task_time = datetime.datetime.now()

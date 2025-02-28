@@ -30,7 +30,9 @@ from cyy_naive_lib.topology import (
 from cyy_torch_toolbox.concurrency import TorchProcessContext
 from cyy_torch_toolbox.device import (
     DeviceGreedyAllocator,
-    get_device_memory_info,
+)
+from cyy_torch_toolbox.device import (
+    get_device_memory_info as _get_device_memory_info,
 )
 
 from .task_type import TaskIDType
@@ -293,15 +295,15 @@ class ConcurrentFederatedLearningContext:
         return res
 
 
-def allocate_device(
-    worker_number: int,
-    count_server: bool,
+MB = 1024 * 1024
+GB = MB * 1024
+
+
+def get_device_memory_info(
     least_memory_GB: int | None = None,
 ) -> dict:
-    memory_info = get_device_memory_info()
+    memory_info = _get_device_memory_info()
     refined_memory_info: dict = {}
-    MB = 1024 * 1024
-    GB = MB * 1024
     log_info("before refine memory info %s", memory_info)
     if least_memory_GB is None:
         value = os.getenv("LEAST_REQUIRED_DEVICE_MEMORY_IN_GB")
@@ -321,6 +323,15 @@ def allocate_device(
         refined_memory_info[device] = info.free
     assert refined_memory_info, "No avaiable device"
     log_info("refined memory info %s", refined_memory_info)
+    return refined_memory_info
+
+
+def allocate_device(
+    worker_number: int,
+    count_server: bool,
+    least_memory_GB: int | None = None,
+) -> dict:
+    refined_memory_info = get_device_memory_info(least_memory_GB=least_memory_GB)
     refined_memory_info_list = sorted(
         list(refined_memory_info.items()), key=lambda a: a[1], reverse=True
     )
