@@ -269,7 +269,8 @@ class ConcurrentFederatedLearningContext:
         timeout_ms: float | None = None
         if timeout is not None:
             timeout_ms = timeout * 1000
-        for task_id, context in list(self.__contexts.items()):
+        for task_id in list(self.__contexts.keys()):
+            context = self.__contexts[task_id]
             with TimeCounter() as counter:
                 task_results, unfinised_cnt = context.wait_results(
                     timeout=timeout_ms / 1000 if timeout_ms is not None else None,
