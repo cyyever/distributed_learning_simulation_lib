@@ -141,9 +141,10 @@ class ExecutorContext:
             )
             self.thread_local_store.store("device", device)
             log_debug(
-                "get device %s for process %s",
+                "get device %s for process %s, used_memory %s",
                 device,
                 os.getpid(),
+                self.__used_device_memory,
             )
             if set_visible_device and "cuda" in device.type.lower():
                 os.environ["CUDA_VISIBLE_DEVICES"] = str(device.index)
