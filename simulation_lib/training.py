@@ -107,6 +107,7 @@ def train(
     context.submit(
         start_server, task_config=server_task_config, single_task=single_task
     )
+    task_config.pop("server")
     for worker_configs in task_config["worker"]:
         for cfg in worker_configs:
             cfg["single_task"] = single_task
