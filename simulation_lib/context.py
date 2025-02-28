@@ -263,7 +263,6 @@ class ConcurrentFederatedLearningContext:
     def wait_results(
         self,
         timeout: float | None = None,
-        return_when=concurrent.futures.ALL_COMPLETED,
     ) -> tuple[dict, int]:
         res: dict = {}
         remaining_jobs: int = 0
@@ -274,7 +273,7 @@ class ConcurrentFederatedLearningContext:
             with TimeCounter() as counter:
                 task_results, unfinised_cnt = context.wait_results(
                     timeout=timeout_ms / 1000 if timeout_ms is not None else None,
-                    return_when=return_when,
+                    return_when=concurrent.futures.FIRST_EXCEPTION,
                 )
                 if timeout_ms is not None:
                     timeout_ms = max(timeout_ms - counter.elapsed_milliseconds(), 0)
