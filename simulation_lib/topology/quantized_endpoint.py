@@ -111,9 +111,9 @@ class NNADQClientEndpoint(QuantClientEndpoint):
 
 class NNADQServerEndpoint(QuantServerEndpoint):
     def __init__(self, weight: float | None = None, **kwargs: Any) -> None:
+        quant: Callable | None = None
         if weight is None:
-            quant = None
-            dequant = NeuralNetworkAdaptiveDeterministicDequant()
+            dequant: Callable = NeuralNetworkAdaptiveDeterministicDequant()
         else:
             quant, dequant = NNADQ(weight=weight)
         super().__init__(quant=quant, dequant=dequant, **kwargs)
