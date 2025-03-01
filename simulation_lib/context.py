@@ -338,7 +338,7 @@ def allocate_device(
     )
     free_bytes = list(a[1] for a in refined_memory_info_list)
     devices = list(a[0] for a in refined_memory_info_list)
-    devices = devices * 2
+    devices = devices * worker_number
     log_warning("Use devices %s", devices)
     if count_server:
         result = {"server_device": devices[0]}
