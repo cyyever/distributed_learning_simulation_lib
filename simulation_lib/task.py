@@ -1,17 +1,31 @@
+import copy
 import functools
 import itertools
+import os
 import uuid
+from collections.abc import Callable
+from typing import Any
 
-from cyy_naive_lib.log import log_warning
+import torch
+from cyy_naive_lib.log import log_debug, log_info, log_warning
 
 from .algorithm_repository import AlgorithmRepository
 from .config import DistributedTrainingConfig
-from .context import FederatedLearningContext
-from .server import Server
+from .context import (
+    FederatedLearningContext,
+)
+from .server import AggregationServer
 from .task_type import TaskIDType
+from .worker import Worker
 
 type TaskConfig = dict
 type TaskServerConfig = dict
+
+
+def limit_device(device: torch.device) -> None:
+    if device.type.lower() == "cuda":
+        log_info("limit device %s pid %s", device, os.getpid())
+        os.environ["CUDA_VISIBLE_DEVICES"] = str(device.index)
 
 
 def get_task_id() -> TaskIDType:
@@ -94,7 +108,68 @@ def get_task_config(
     return result
 
 
-def create_server(task_config: dict, **kwargs) -> Server:
-    if "context" not in kwargs:
-        kwargs["context"] = task_config["context"]
-    return task_config["server"]["constructor"](**kwargs)
+def start_server_impl(
+    context: FederatedLearningContext, task_config: TaskConfig, **kwargs: Any
+) -> dict:
+    server = task_config["server"]["constructor"](
+        task_config=task_config, context=context, **kwargs
+    )
+    log_debug("context id %d", id(context))
+
+    server.start()
+    log_info("stop server")
+
+    res: dict = {}
+
+    if isinstance(server, AggregationServer):
+        res["sv"] = getattr(server.algorithm, "shapley_values", {})
+        if not res["sv"]:
+            res.pop("sv")
+        res |= {"performance": server.performance_stat}
+    return res
+
+
+def start_server(
+    task_config: TaskConfig, single_task: bool
+) -> FederatedLearningContext:
+    context = task_config.get("context")
+    assert isinstance(context, FederatedLearningContext)
+    device = task_config["server"].pop("device", None)
+    if device is not None:
+        limit_device(device)
+    server_task_config = copy.copy(task_config)
+    server_task_config.pop("worker")
+    context.submit(
+        start_server_impl, task_config=server_task_config, single_task=single_task
+    )
+    return context
+
+
+def run_worker(constructor: Callable, **kwargs) -> None:
+    worker: Worker = constructor(**kwargs)
+    worker.start()
+
+
+def start_workers(
+    task_config: TaskConfig, single_task: bool
+) -> FederatedLearningContext:
+    context = task_config.get("context")
+    assert isinstance(context, FederatedLearningContext)
+    task_config = copy.copy(task_config)
+    task_config.pop("server")
+    for worker_configs in task_config["worker"]:
+        for cfg in worker_configs:
+            cfg["single_task"] = single_task
+        log_debug(
+            "run %s workers in the same process",
+            len(worker_configs),
+        )
+        device = worker_configs[0]["device"]
+        for cfg in worker_configs:
+            cfg.pop("device")
+        if device is not None:
+            limit_device(device)
+        context.submit_batch(
+            funs=[run_worker] * len(worker_configs), kwargs_list=worker_configs
+        )
+    return context

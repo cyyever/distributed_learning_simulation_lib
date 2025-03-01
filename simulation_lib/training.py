@@ -1,26 +1,19 @@
 import copy
 import os
-from collections.abc import Callable
-from typing import Any
 
 import torch
-from cyy_naive_lib.log import add_file_handler, log_debug, log_info
+from cyy_naive_lib.log import add_file_handler, log_info
 from cyy_naive_lib.time_counter import TimeCounter
 
 from .config import DistributedTrainingConfig
-from .context import (
-    ConcurrentFederatedLearningContext,
-    FederatedLearningContext,
-)
-from .server import AggregationServer
+from .context import ConcurrentFederatedLearningContext
 from .task import (
-    TaskConfig,
-    create_server,
     get_task_config,
     get_task_id,
+    start_server,
+    start_workers,
 )
-from .task_type import OptionalTaskIDType, TaskIDType
-from .worker import Worker
+from .task_type import TaskIDType
 
 # we use these environment variables to save memory in large-scale training
 os.environ["CUDA_MODULE_LOADING"] = "LAZY"
@@ -33,51 +26,6 @@ def limit_device(device: torch.device) -> None:
         os.environ["CUDA_VISIBLE_DEVICES"] = str(device.index)
 
 
-def start_server(
-    context: FederatedLearningContext, task_config: TaskConfig, **kwargs: Any
-) -> dict:
-    server = create_server(task_config=task_config, context=context, **kwargs)
-    log_debug("context id %d", id(context))
-
-    server.start()
-    log_info("stop server")
-
-    res: dict = {}
-
-    if isinstance(server, AggregationServer):
-        res["sv"] = getattr(server.algorithm, "shapley_values", {})
-        if not res["sv"]:
-            res.pop("sv")
-        res |= {"performance": server.performance_stat}
-    return res
-
-
-def run_worker(constructor: Callable, **kwargs) -> None:
-    worker: Worker = constructor(**kwargs)
-    worker.start()
-
-
-def start_workers(
-    context: FederatedLearningContext,
-    worker_configs: list[dict],
-) -> None:
-    assert isinstance(context, FederatedLearningContext)
-    assert worker_configs
-
-    log_debug(
-        "run %s workers in the same process",
-        len(worker_configs),
-    )
-    device = worker_configs[0]["device"]
-    for cfg in worker_configs:
-        cfg.pop("device")
-    if device is not None:
-        limit_device(device)
-    context.submit_batch(
-        funs=[run_worker] * len(worker_configs), kwargs_list=worker_configs
-    )
-
-
 concurrent_context = ConcurrentFederatedLearningContext()
 task_results: dict = {}
 
@@ -86,7 +34,7 @@ def train(
     config: DistributedTrainingConfig,
     practitioners: None | set = None,
     single_task: bool = False,
-) -> OptionalTaskIDType:
+) -> TaskIDType:
     # we need to deepcopy config for concurrent training
     config = copy.deepcopy(config)
     practitioners = copy.deepcopy(practitioners)
@@ -97,21 +45,8 @@ def train(
     if practitioners is None:
         add_file_handler(config.log_file)
     task_config = get_task_config(config, practitioners=practitioners)
-    context = task_config.pop("context")
-    assert isinstance(context, FederatedLearningContext)
-    device = task_config["server"].pop("device", None)
-    if device is not None:
-        limit_device(device)
-    server_task_config = copy.copy(task_config)
-    server_task_config.pop("worker")
-    context.submit(
-        start_server, task_config=server_task_config, single_task=single_task
-    )
-    task_config.pop("server")
-    for worker_configs in task_config["worker"]:
-        for cfg in worker_configs:
-            cfg["single_task"] = single_task
-        start_workers(context=context, worker_configs=worker_configs)
+    start_server(task_config=task_config, single_task=single_task)
+    context = start_workers(task_config=task_config, single_task=single_task)
     concurrent_context.add_context(
         task_id=task_id,
         context=context,
@@ -125,7 +60,7 @@ def train(
     concurrent_context.wait_results(timeout=None)
     concurrent_context.release()
     log_info("training took %s seconds", timer.elapsed_milliseconds() / 1000)
-    return None
+    return task_id
 
 
 def get_training_result(
