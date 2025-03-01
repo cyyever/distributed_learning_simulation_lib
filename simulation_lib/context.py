@@ -181,7 +181,7 @@ class FederatedLearningContext(ExecutorContext):
         self.__worker_num = worker_num
         self.id = str(uuid.uuid4())
         self._blocking_launch = True
-        topology_class = ProcessPipeCentralTopology
+        topology_class: type = ProcessPipeCentralTopology
         if get_operating_system_type() == OSType.Windows or "no_pipe" in os.environ:
             topology_class = ProcessQueueCentralTopology
             log_warning("use ProcessQueueCentralTopology")

@@ -1,8 +1,6 @@
 from collections.abc import Callable
 from typing import Any, Self
 
-from cyy_naive_lib.log import log_warning
-
 
 class AlgorithmRepository:
     config: dict[str, dict] = {}

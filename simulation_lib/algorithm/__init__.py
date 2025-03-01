@@ -20,5 +20,5 @@ try:
         "GraphNodeEmbeddingPassingAlgorithm",
         "GraphTopologyAlgorithm",
     ]
-except Exception:
+except ImportError:
     pass

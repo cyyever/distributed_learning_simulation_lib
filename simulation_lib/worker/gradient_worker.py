@@ -48,9 +48,9 @@ class GradientModelEvaluator:
         if not self.__aggregation_indicator_fun():
             return
         gradient_dict: ModelGradient = self.__gradient_fun(
-            self.evaluator.model_util.get_gradient_dict()
+            self.evaluator.model_util.get_gradients()
         )
-        self.evaluator.model_util.load_gradient_dict(
+        self.evaluator.model_util.load_gradients(
             tensor_to(gradient_dict, device=loss.device)
         )
 

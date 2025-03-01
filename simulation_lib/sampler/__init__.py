@@ -16,6 +16,7 @@ from cyy_torch_toolbox import (
     SplitBase,
 )
 from cyy_torch_toolbox.dataset import (  # noqa: F401
+    SampleInfo,
     get_dataset_collection_sampler,
     get_dataset_collection_split,
     global_sampler_factory,
@@ -42,21 +43,27 @@ class RandomLabelIIDSplit(SplitBase):
         # Assure that all labels are allocated
         assert len(labels) == len(set(sum(assigned_labels, start=[])))
 
-        for phase in MachineLearningPhase:
-            self._dataset_indices[phase] = dict(
-                enumerate(
-                    self._samplers[phase].split_indices(
-                        part_proportions=[
-                            {label: 1 for label in labels} for labels in assigned_labels
-                        ]
-                    )
+        for phase in self.get_phases():
+            if phase in self._dataset_indices:
+                continue
+            self._dataset_indices[phase] = {}
+            for worker_id, indices in enumerate(
+                self._samplers[phase].split_indices(
+                    part_proportions=[
+                        {label: 1 for label in labels} for labels in assigned_labels
+                    ]
                 )
+            ):
+                self._dataset_indices[phase][worker_id] = SampleInfo(indices=indices)
+        for worker_id, worker_labels in enumerate(assigned_labels):
+            log_info(
+                "worker %s has assigned worker_labels %s", worker_id, worker_labels
             )
-        for worker_id, labels in enumerate(assigned_labels):
-            log_info("worker %s has assigned labels %s", worker_id, labels)
-            training_set_size = len(
-                self._dataset_indices[MachineLearningPhase.Training][worker_id]
-            )
+            worker_indices = self._dataset_indices[MachineLearningPhase.Training][
+                worker_id
+            ].indices
+            assert worker_indices is not None
+            training_set_size = len(worker_indices)
             log_info("worker %s has training set size %s", worker_id, training_set_size)
 
 
