@@ -14,7 +14,7 @@ from .config import DistributedTrainingConfig
 from .context import (
     FederatedLearningContext,
 )
-from .server import AggregationServer
+from .server import AggregationServer, Server
 from .task_type import TaskIDType
 from .worker import Worker
 
@@ -108,12 +108,20 @@ def get_task_config(
     return result
 
 
-def start_server_impl(
+def get_server_impl(
     context: FederatedLearningContext, task_config: TaskConfig, **kwargs: Any
-) -> dict:
+) -> Server:
     server = task_config["server"]["constructor"](
         task_config=task_config, context=context, **kwargs
     )
+    log_debug("context id %d", id(context))
+    return server
+
+
+def start_server_impl(
+    context: FederatedLearningContext, task_config: TaskConfig, **kwargs: Any
+) -> dict:
+    server = get_server_impl(task_config=task_config, context=context, **kwargs)
     log_debug("context id %d", id(context))
 
     server.start()
