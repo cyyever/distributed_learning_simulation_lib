@@ -111,9 +111,7 @@ def get_task_config(
 def get_server_impl(
     context: FederatedLearningContext, task_config: TaskConfig, **kwargs: Any
 ) -> Server:
-    server = task_config["server"]["constructor"](
-        task_config=task_config, context=context, **kwargs
-    )
+    server = task_config["server"]["constructor"](context=context, **kwargs)
     log_debug("context id %d", id(context))
     return server
 
