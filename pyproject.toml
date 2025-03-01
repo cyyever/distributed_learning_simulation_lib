@@ -8,7 +8,7 @@ version = "0.2"
 requires-python = ">=3.11"
 readme = {file = "README.md", content-type = "text/markdown"}
 authors = [
-  {name = "cyy", email = "cyyever@outlook.com"},
+{name = "cyy", email = "cyyever@outlook.com"},
 ]
 license = {text = "BSD License"}
 classifiers = [
@@ -16,11 +16,13 @@ classifiers = [
 ]
 
 dependencies=[
-"gevent",
-"cyy_torch_toolbox@git+https://github.com/cyyever/torch_toolbox.git@main",
-"cyy_torch_algorithm@git+https://github.com/cyyever/torch_algorithm.git@main",
+  "gevent",
+  "cyy_torch_toolbox@git+https://github.com/cyyever/torch_toolbox.git@main",
+  "cyy_torch_algorithm@git+https://github.com/cyyever/torch_algorithm.git@main",
 ]
 
+[tool.setuptools.package-data]
+distributed_learning_simulation= ["py.typed"]
 
 [tool.setuptools.package-dir]
 distributed_learning_simulation= "simulation_lib"
@@ -38,17 +40,17 @@ src = ["simulation_lib"]
 
 [tool.ruff.lint]
 select = [
-    # pycodestyle
-    "E",
-    # Pyflakes
-    "F",
-    # pyupgrade
-    "UP",
-    # flake8-bugbear
-    "B",
-    # flake8-simplify
-    "SIM",
-    # isort
-    "I",
+  # pycodestyle
+  "E",
+  # Pyflakes
+  "F",
+  # pyupgrade
+  "UP",
+  # flake8-bugbear
+  "B",
+  # flake8-simplify
+  "SIM",
+  # isort
+  "I",
 ]
 ignore = ["F401","E501","F403"]
