@@ -121,7 +121,7 @@ def get_server_impl(
 def start_server_impl(
     context: FederatedLearningContext, task_config: TaskConfig, **kwargs: Any
 ) -> dict:
-    server = get_server_impl(task_config=task_config, context=context, **kwargs)
+    server = get_server_impl(context=context, task_config=task_config, **kwargs)
     log_debug("context id %d", id(context))
 
     server.start()
