@@ -1,4 +1,3 @@
-from functools import cached_property
 from typing import Protocol
 
 from cyy_naive_lib.topology import Endpoint
