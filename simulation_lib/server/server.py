@@ -56,8 +56,7 @@ class Server(Executor, RoundSelectionMixin):
                 ),
             )
         )
-        tester.dataset_collection.remove_dataset(phase=MachineLearningPhase.Training)
-        tester.dataset_collection.remove_dataset(phase=MachineLearningPhase.Validation)
+        tester.remove_unrelated_datasets()
         tester.hook_config.summarize_executor = False
         self.__tester = tester
         return tester
