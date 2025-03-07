@@ -309,7 +309,7 @@ def get_device_memory_info(
     if least_memory_GB is None:
         value = os.getenv("LEAST_REQUIRED_DEVICE_MEMORY_IN_GB")
         if value is not None:
-            least_memory_GB = min(int(value), 1)
+            least_memory_GB = max(int(value), 1)
     for device, info in memory_info.items():
         if least_memory_GB is None:
             refined_memory_info[device] = info.free
