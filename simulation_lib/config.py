@@ -98,13 +98,14 @@ class DistributedTrainingConfig(Config):
 
 def load_config(
     config_path: str,
-    global_conf_path: str,
-    *other_config_files: str,
+    global_conf_path: str | None = None,
     import_libs: bool = True,
 ) -> DistributedTrainingConfig:
+    other_config_files = []
+    if global_conf_path is not None:
+        other_config_files.append(global_conf_path)
     result_conf = load_config_from_hydra(
-        config_path=config_path,
-        other_config_files=[global_conf_path] + list(other_config_files),
+        config_path=config_path, other_config_files=other_config_files
     )
     config: DistributedTrainingConfig = DistributedTrainingConfig()
     config.load_config_and_process(
