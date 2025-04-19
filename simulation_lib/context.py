@@ -342,7 +342,7 @@ def allocate_device(
     log_warning("Use devices %s", devices)
     if count_server:
         result = {"server_device": devices[0]}
-        devices = devices[0:]
+        devices = devices[1:]
         free_bytes = free_bytes[1:]
         if not free_bytes:
             result |= {"worker_number_per_process": worker_number}
