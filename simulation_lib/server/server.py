@@ -140,6 +140,7 @@ class Server(Executor, RoundSelectionMixin):
             if worker_set and not self._stopped():
                 time.sleep(1)
 
+        log_debug("wait workers close channel signal")
         for worker_id in range(self.endpoint.worker_num):
             self.endpoint.get(worker_id=worker_id)
         self._server_exit()
