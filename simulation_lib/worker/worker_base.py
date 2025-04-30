@@ -29,6 +29,7 @@ class WorkerBase(Executor):
             self._endpoint.replace_context(context=self.context)
         self._round_index = 0
         self._force_stop = False
+        self._in_after_training: bool = False
 
     @property
     def endpoint(self) -> ClientEndpoint:
@@ -46,7 +47,7 @@ class WorkerBase(Executor):
         pass
 
     def _after_training(self) -> None:
-        pass
+        self._in_after_training = True
 
     def _train(self, first_training: bool) -> None:
         raise NotImplementedError()

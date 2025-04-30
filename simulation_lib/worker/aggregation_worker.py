@@ -199,7 +199,7 @@ class AggregationWorker(Worker, ClientMixin):
             reuse_learning_rate=self.reuse_learning_rate,
             loading_fun=self._model_loading_fun,
         )
-        if result.end_training:
+        if result.end_training and not self._in_after_training:
             self._force_stop = True
             raise StopExecutingException()
 
