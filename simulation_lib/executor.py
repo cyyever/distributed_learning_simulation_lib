@@ -19,6 +19,7 @@ class Executor:
         self.__context: FederatedLearningContext = copy.copy(context)
         self.__context.set_name(name)
         self.__name = name
+        self.__task_id = task_id
         self.__has_log_lock: bool | None = None
 
     @property
@@ -31,6 +32,10 @@ class Executor:
     @property
     def context(self) -> FederatedLearningContext:
         return self.__context
+
+    @property
+    def task_id(self) -> TaskIDType:
+        return self.__task_id
 
     @property
     def name(self) -> str:
