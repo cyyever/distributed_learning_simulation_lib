@@ -13,5 +13,10 @@ from .training import train
 from .util import *  # noqa: F401
 from .worker import *  # noqa: F401
 
-__all__ = ["AlgorithmRepository", "get_server", "train"]
+__all__ = [
+    "AlgorithmRepository",
+    "get_server",
+    "train",
+    "TorchProcessContext",
+]
 set_multiprocessing_ctx(TorchProcessContext().get_ctx())
