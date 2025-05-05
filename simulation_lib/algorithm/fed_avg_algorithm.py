@@ -74,25 +74,24 @@ class FedAVGAlgorithm(AggregationAlgorithm):
     ) -> torch.Tensor:
         return parameter / total_weight
 
-    def _aggregate_parameter(self, name: str, parameter: torch.Tensor) -> torch.Tensor:
-        return self._apply_total_weight(
-            name=name,
-            parameter=parameter,
-            total_weight=self.__total_weights[name],
-        )
+    def _aggregate_parameter(self) -> ModelParameter:
+        assert self.__parameter
+        parameter = self.__parameter
+        self.__parameter = {}
+        for k, v in parameter.items():
+            assert not v.isnan().any().cpu()
+            parameter[k] = self._apply_total_weight(
+                name=k, parameter=v, total_weight=self.__total_weights[k]
+            )
+            assert not parameter[k].isnan().any().cpu()
+        self.__total_weights = {}
+        return parameter
 
     def aggregate_worker_data(self) -> ParameterMessage:
         if not self.accumulate:
             parameter = self.aggregate_parameter(self._all_worker_data)
         else:
-            assert self.__parameter
-            parameter = self.__parameter
-            self.__parameter = {}
-            for k, v in parameter.items():
-                assert not v.isnan().any().cpu()
-                parameter[k] = self._aggregate_parameter(name=k, parameter=v)
-                assert not parameter[k].isnan().any().cpu()
-            self.__total_weights = {}
+            parameter = self._aggregate_parameter()
         other_data: dict[str, Any] = {}
         if self.aggregate_loss:
             other_data |= self.__aggregate_loss(self._all_worker_data)
