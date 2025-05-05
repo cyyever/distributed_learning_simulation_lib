@@ -1,7 +1,7 @@
 import random
 
 from cyy_naive_lib.log import log_info
-from cyy_torch_toolbox.tensor import cat_tensors_to_vector
+from cyy_torch_toolbox import ModelParameter, cat_tensors_to_vector
 
 
 class RandomDropoutAlgorithm:
@@ -9,7 +9,7 @@ class RandomDropoutAlgorithm:
         self.__dropout_rate = dropout_rate
         log_info("use dropout rate %s", self.__dropout_rate)
 
-    def drop_parameter(self, parameter_dict: dict) -> dict:
+    def drop_parameter(self, parameter_dict: ModelParameter) -> ModelParameter:
         parameter_num = cat_tensors_to_vector(parameter_dict.values()).nelement()
         threshold = (1 - self.__dropout_rate) * parameter_num
         partial_parameter_num = 0
