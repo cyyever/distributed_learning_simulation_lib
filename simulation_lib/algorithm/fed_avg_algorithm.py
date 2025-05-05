@@ -34,7 +34,9 @@ class FedAVGAlgorithm(AggregationAlgorithm):
             return True
         for k, v in worker_data.parameter.items():
             assert not v.isnan().any().cpu()
-            weight = self._get_weight(worker_data, name=k, parameter=v)
+            weight = self._get_weight(
+                worker_id=worker_id, worker_data=worker_data, name=k, parameter=v
+            )
             tmp = v.to(dtype=torch.float64) * weight
             if k not in self.__parameter:
                 self.__parameter[k] = tmp
@@ -49,7 +51,7 @@ class FedAVGAlgorithm(AggregationAlgorithm):
         return True
 
     def _get_weight(
-        self, worker_data: ParameterMessage, name: str, parameter: Any
+        self, worker_id: int, worker_data: ParameterMessage, name: str, parameter: Any
     ) -> Any:
         return worker_data.aggregation_weight
 
