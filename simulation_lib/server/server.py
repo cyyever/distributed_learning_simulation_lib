@@ -42,10 +42,12 @@ class Server(Executor, RoundSelectionMixin):
     def worker_number(self) -> int:
         return self.config.worker_number
 
-    def get_tester(self) -> Inferencer:
-        if self.__tester is not None:
+    def get_tester(
+        self, phase: MachineLearningPhase = MachineLearningPhase.Test
+    ) -> Inferencer:
+        if self.__tester is not None and phase == MachineLearningPhase.Test:
             return self.__tester
-        tester = self.config.create_inferencer(phase=MachineLearningPhase.Test)
+        tester = self.config.create_inferencer(phase=phase)
         tester.set_device_fun(
             functools.partial(
                 self.context.get_device,
@@ -58,7 +60,8 @@ class Server(Executor, RoundSelectionMixin):
         )
         tester.remove_unrelated_datasets()
         tester.hook_config.summarize_executor = False
-        self.__tester = tester
+        if self.__tester is None and phase == MachineLearningPhase.Test:
+            self.__tester = tester
         return tester
 
     def load_parameter(self, tester: Inferencer, parameter: ModelParameter) -> None:
