@@ -32,23 +32,37 @@ class FedAVGAlgorithm(AggregationAlgorithm):
             return True
         if not isinstance(worker_data, ParameterMessage):
             return True
-        for k, v in worker_data.parameter.items():
-            assert not v.isnan().any().cpu()
-            weight = self._get_weight(
-                worker_id=worker_id, worker_data=worker_data, name=k, parameter=v
+        for name, parameter in worker_data.parameter.items():
+            assert not parameter.isnan().any().cpu()
+            self._accumulate_parameter(
+                worker_id=worker_id,
+                worker_data=worker_data,
+                name=name,
+                parameter=parameter,
             )
-            tmp = v.to(dtype=torch.float64) * weight
-            if k not in self.__parameter:
-                self.__parameter[k] = tmp
-            else:
-                self.__parameter[k] += tmp
-            if k not in self.__total_weights:
-                self.__total_weights[k] = weight
-            else:
-                self.__total_weights[k] += weight
         # release to reduce memory pressure
         worker_data.parameter = {}
         return True
+
+    def _accumulate_parameter(
+        self,
+        worker_id: int,
+        worker_data: ParameterMessage,
+        name: str,
+        parameter: torch.Tensor,
+    ) -> None:
+        weight = self._get_weight(
+            worker_id=worker_id, worker_data=worker_data, name=name, parameter=parameter
+        )
+        tmp = parameter.to(dtype=torch.float64) * weight
+        if name not in self.__parameter:
+            self.__parameter[name] = tmp
+        else:
+            self.__parameter[name] += tmp
+        if name not in self.__total_weights:
+            self.__total_weights[name] = weight
+        else:
+            self.__total_weights[name] += weight
 
     def _get_weight(
         self, worker_id: int, worker_data: ParameterMessage, name: str, parameter: Any
@@ -60,6 +74,13 @@ class FedAVGAlgorithm(AggregationAlgorithm):
     ) -> torch.Tensor:
         return parameter / total_weight
 
+    def _aggregate_parameter(self, name: str, parameter: torch.Tensor) -> torch.Tensor:
+        return self._apply_total_weight(
+            name=name,
+            parameter=parameter,
+            total_weight=self.__total_weights[name],
+        )
+
     def aggregate_worker_data(self) -> ParameterMessage:
         if not self.accumulate:
             parameter = self.aggregate_parameter(self._all_worker_data)
@@ -69,9 +90,7 @@ class FedAVGAlgorithm(AggregationAlgorithm):
             self.__parameter = {}
             for k, v in parameter.items():
                 assert not v.isnan().any().cpu()
-                parameter[k] = self._apply_total_weight(
-                    name=k, parameter=v, total_weight=self.__total_weights[k]
-                )
+                parameter[k] = self._aggregate_parameter(name=k, parameter=v)
                 assert not parameter[k].isnan().any().cpu()
             self.__total_weights = {}
         other_data: dict[str, Any] = {}
