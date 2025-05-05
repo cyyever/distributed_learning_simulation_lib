@@ -52,7 +52,7 @@ class FedAVGAlgorithm(AggregationAlgorithm):
         parameter: torch.Tensor,
     ) -> None:
         weight = self._get_weight(
-            worker_id=worker_id, worker_data=worker_data, name=name, parameter=parameter
+            worker_data=worker_data, name=name, parameter=parameter
         )
         tmp = parameter.to(dtype=torch.float64) * weight
         if name not in self.__parameter:
@@ -65,7 +65,7 @@ class FedAVGAlgorithm(AggregationAlgorithm):
             self.__total_weights[name] += weight
 
     def _get_weight(
-        self, worker_id: int, worker_data: ParameterMessage, name: str, parameter: Any
+        self, worker_data: ParameterMessage, name: str, parameter: Any
     ) -> Any:
         return worker_data.aggregation_weight
 
