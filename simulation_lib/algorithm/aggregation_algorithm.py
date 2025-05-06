@@ -66,6 +66,7 @@ class AggregationAlgorithm:
                     avg_data[k] += d[k]
         for p in avg_data.values():
             assert not p.isnan().any().cpu()
+        assert avg_data
         return avg_data
 
     @classmethod
