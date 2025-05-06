@@ -37,8 +37,6 @@ class FedAVGAlgorithm(AggregationAlgorithm):
                 name=name,
                 parameter=parameter,
             )
-        # release to reduce memory pressure
-        worker_data.parameter = {}
         return True
 
     def _accumulate_parameter(
@@ -61,6 +59,8 @@ class FedAVGAlgorithm(AggregationAlgorithm):
             self.__total_weights[name] = weight
         else:
             self.__total_weights[name] += weight
+        # release to reduce memory pressure
+        worker_data.parameter = {}
 
     def _get_weight(
         self, worker_data: ParameterMessage, name: str, parameter: Any

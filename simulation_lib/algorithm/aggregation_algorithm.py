@@ -59,14 +59,15 @@ class AggregationAlgorithm:
                 k2: v2.to(dtype=torch.float64) * weight
                 for (k2, v2) in v.parameter.items()
             }
+            assert d
             if not avg_data:
                 avg_data = d
             else:
                 for k in avg_data:
                     avg_data[k] += d[k]
+        assert avg_data
         for p in avg_data.values():
             assert not p.isnan().any().cpu()
-        assert avg_data
         return avg_data
 
     @classmethod
