@@ -46,7 +46,7 @@ class AggregationAlgorithm:
     @classmethod
     def weighted_avg(
         cls,
-        data_dict: Mapping[int, ParameterMessage],
+        data_dict: Mapping[int, Message],
         weights: dict[int, float] | float,
     ) -> ModelParameter:
         assert data_dict

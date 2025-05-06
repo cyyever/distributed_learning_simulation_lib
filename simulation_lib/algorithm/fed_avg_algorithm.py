@@ -75,6 +75,11 @@ class FedAVGAlgorithm(AggregationAlgorithm):
         return parameter / total_weight
 
     def _aggregate_parameter(self) -> ModelParameter:
+        if not self.accumulate:
+            return AggregationAlgorithm.weighted_avg(
+                self._all_worker_data,
+                AggregationAlgorithm.get_ratios(self._all_worker_data),
+            )
         assert self.__parameter
         parameter = self.__parameter
         self.__parameter = {}
@@ -88,10 +93,7 @@ class FedAVGAlgorithm(AggregationAlgorithm):
         return parameter
 
     def aggregate_worker_data(self) -> ParameterMessage:
-        if not self.accumulate:
-            parameter = self.aggregate_parameter(self._all_worker_data)
-        else:
-            parameter = self._aggregate_parameter()
+        parameter = self._aggregate_parameter()
         other_data: dict[str, Any] = {}
         if self.aggregate_loss:
             other_data |= self.__aggregate_loss(self._all_worker_data)
@@ -102,22 +104,6 @@ class FedAVGAlgorithm(AggregationAlgorithm):
             in_round=next(iter(self._all_worker_data.values())).in_round,
             other_data=other_data,
         )
-
-    @classmethod
-    def aggregate_parameter(
-        cls, all_worker_data: MutableMapping[int, Any]
-    ) -> ModelParameter:
-        assert all_worker_data
-        assert all(
-            isinstance(parameter, ParameterMessage)
-            for parameter in all_worker_data.values()
-        )
-        parameter = AggregationAlgorithm.weighted_avg(
-            all_worker_data,
-            AggregationAlgorithm.get_ratios(all_worker_data),
-        )
-        assert parameter
-        return parameter
 
     @classmethod
     def __aggregate_loss(cls, all_worker_data: MutableMapping[int, Message]) -> dict:
