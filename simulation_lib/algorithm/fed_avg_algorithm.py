@@ -79,6 +79,7 @@ class FedAVGAlgorithm(AggregationAlgorithm):
             worker_data = self._all_worker_data
             if chosen_worker_ids is not None:
                 worker_data = {k: worker_data[k] for k in chosen_worker_ids}
+            assert worker_data
             return AggregationAlgorithm.weighted_avg(
                 worker_data,
                 AggregationAlgorithm.get_ratios(worker_data),
