@@ -30,8 +30,9 @@ class AggregationAlgorithm:
     def get_total_weight(cls, data_dict: Mapping[int, Message]) -> float:
         total_weight: float = 0
         for v in data_dict.values():
-            assert v.aggregation_weight is not None
+            assert v.aggregation_weight is not None and v.aggregation_weight >= 0
             total_weight += v.aggregation_weight
+        assert total_weight >= 0
         return total_weight
 
     @classmethod
@@ -39,7 +40,7 @@ class AggregationAlgorithm:
         total_weight: float = float(cls.get_total_weight(data_dict=data_dict))
         ratios = {}
         for k, v in data_dict.items():
-            assert v.aggregation_weight is not None
+            assert v.aggregation_weight is not None and v.aggregation_weight >= 0
             ratios[k] = float(v.aggregation_weight) / total_weight
         return ratios
 
