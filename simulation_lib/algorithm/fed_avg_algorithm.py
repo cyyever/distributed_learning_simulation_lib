@@ -25,8 +25,6 @@ class FedAVGAlgorithm(AggregationAlgorithm):
         res = super().process_worker_data(worker_id=worker_id, worker_data=worker_data)
         if not res:
             return False
-        if not self.accumulate:
-            return True
         worker_data = self._all_worker_data.get(worker_id, None)
         if worker_data is None:
             return True
@@ -35,7 +33,6 @@ class FedAVGAlgorithm(AggregationAlgorithm):
         for name, parameter in worker_data.parameter.items():
             assert not parameter.isnan().any().cpu()
             self._accumulate_parameter(
-                worker_id=worker_id,
                 worker_data=worker_data,
                 name=name,
                 parameter=parameter,
@@ -46,7 +43,6 @@ class FedAVGAlgorithm(AggregationAlgorithm):
 
     def _accumulate_parameter(
         self,
-        worker_id: int,
         worker_data: ParameterMessage,
         name: str,
         parameter: torch.Tensor,
@@ -54,6 +50,8 @@ class FedAVGAlgorithm(AggregationAlgorithm):
         weight = self._get_weight(
             worker_data=worker_data, name=name, parameter=parameter
         )
+        if not self.accumulate:
+            return
         tmp = parameter.to(dtype=torch.float64) * weight
         if name not in self.__parameter:
             self.__parameter[name] = tmp
@@ -74,13 +72,19 @@ class FedAVGAlgorithm(AggregationAlgorithm):
     ) -> torch.Tensor:
         return parameter / total_weight
 
-    def _aggregate_parameter(self) -> ModelParameter:
+    def _aggregate_parameter(
+        self, chosen_worker_ids: set | None = None
+    ) -> ModelParameter:
         if not self.accumulate:
+            worker_data = self._all_worker_data
+            if chosen_worker_ids is not None:
+                worker_data = {k: worker_data[k] for k in chosen_worker_ids}
             return AggregationAlgorithm.weighted_avg(
-                self._all_worker_data,
-                AggregationAlgorithm.get_ratios(self._all_worker_data),
+                worker_data,
+                AggregationAlgorithm.get_ratios(worker_data),
             )
         assert self.__parameter
+        assert chosen_worker_ids is None
         parameter = self.__parameter
         self.__parameter = {}
         for k, v in parameter.items():
