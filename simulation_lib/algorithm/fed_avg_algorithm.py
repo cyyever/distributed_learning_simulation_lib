@@ -45,11 +45,11 @@ class FedAVGAlgorithm(AggregationAlgorithm):
         name: str,
         parameter: torch.Tensor,
     ) -> None:
+        if not self.accumulate:
+            return
         weight = self._get_weight(
             worker_data=worker_data, name=name, parameter=parameter
         )
-        if not self.accumulate:
-            return
         tmp = parameter.to(dtype=torch.float64) * weight
         if name not in self.__parameter:
             self.__parameter[name] = tmp
@@ -79,6 +79,7 @@ class FedAVGAlgorithm(AggregationAlgorithm):
             worker_data = self._all_worker_data
             if chosen_worker_ids is not None:
                 worker_data = {k: worker_data[k] for k in chosen_worker_ids}
+            print("worker_data keys", worker_data.keys())
             return AggregationAlgorithm.weighted_avg(
                 worker_data,
                 AggregationAlgorithm.get_ratios(worker_data),
