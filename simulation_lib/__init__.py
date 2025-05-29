@@ -12,6 +12,7 @@ from .topology import *  # noqa: F401
 from .training import train
 from .util import *  # noqa: F401
 from .worker import *  # noqa: F401
+from .common_method import *  # noqa: F401
 
 __all__ = [
     "AlgorithmRepository",
