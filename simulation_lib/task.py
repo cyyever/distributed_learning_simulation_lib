@@ -22,9 +22,12 @@ type TaskConfig = dict
 type TaskServerConfig = dict
 
 
-def limit_device(device: torch.device) -> None:
+def limit_device(device: torch.device, is_server: bool) -> None:
     if device.type.lower() == "cuda":
-        log_info("limit device %s pid %s", device, os.getpid())
+        if is_server:
+            log_info("limit server device %s pid %s", device, os.getpid())
+        else:
+            log_info("limit worker device %s pid %s", device, os.getpid())
         os.environ["CUDA_VISIBLE_DEVICES"] = str(device.index)
 
 
@@ -142,7 +145,7 @@ def start_server(
     assert isinstance(context, FederatedLearningContext)
     device = task_config["server"].pop("device", None)
     if device is not None:
-        limit_device(device)
+        limit_device(device, is_server=True)
     server_task_config = copy.copy(task_config)
     server_task_config.pop("worker")
     context.submit(
@@ -174,7 +177,7 @@ def start_workers(
         for cfg in worker_configs:
             cfg.pop("device")
         if device is not None:
-            limit_device(device)
+            limit_device(device, is_server=False)
         context.submit_batch(
             funs=[run_worker] * len(worker_configs), kwargs_list=worker_configs
         )
