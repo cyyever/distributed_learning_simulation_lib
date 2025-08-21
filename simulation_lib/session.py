@@ -2,9 +2,10 @@ import functools
 import json
 import os
 
+from cyy_torch_toolbox import TensorDict
 import dill
 
-from ..config import DistributedTrainingConfig
+from .config import DistributedTrainingConfig
 
 
 class Session:
@@ -33,6 +34,10 @@ class Session:
         )
         assert os.path.exists(path)
         return path
+
+    def get_last_model_parameters(self) -> TensorDict:
+        with open(self.last_model_path, "rb") as f:
+            return dill.load(f)
 
     @property
     def server_dir(self) -> str:
