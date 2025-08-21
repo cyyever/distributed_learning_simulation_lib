@@ -5,7 +5,7 @@ from typing import Any
 import pandas as pd
 import torch
 
-from .session import Session
+from ..session import Session
 
 
 def dump_analysis() -> None:

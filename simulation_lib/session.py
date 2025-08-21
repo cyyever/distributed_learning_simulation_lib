@@ -2,8 +2,8 @@ import functools
 import json
 import os
 
-from cyy_torch_toolbox import TensorDict
 import dill
+from cyy_torch_toolbox import TensorDict
 
 from .config import DistributedTrainingConfig
 
