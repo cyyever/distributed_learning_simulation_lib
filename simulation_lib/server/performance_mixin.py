@@ -24,7 +24,7 @@ class PerformanceMixin(AggregationServerProtocol):
     def _set_plateau_limit(self, max_plateau: int) -> None:
         self.__max_plateau = max_plateau
 
-    def _set_accurary_difference(self, acc_diff: float) -> None:
+    def _set_accuracy_difference(self, acc_diff: float) -> None:
         self.__acc_diff = acc_diff
 
     def _get_stat_key(self, message: ParameterMessage) -> Any:

@@ -322,7 +322,7 @@ def get_device_memory_info(
         if free_GB == 0:
             continue
         refined_memory_info[device] = info.free
-    assert refined_memory_info, "No avaiable device"
+    assert refined_memory_info, "No available device"
     log_info("refined memory info %s", refined_memory_info)
     return refined_memory_info
 

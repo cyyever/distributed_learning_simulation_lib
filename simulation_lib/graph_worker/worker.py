@@ -278,7 +278,7 @@ class GraphWorker(AggregationWorker):
             node_indices,
         )
 
-    def _get_cross_deivce_embedding(
+    def _get_cross_device_embedding(
         self, embedding_indices, embedding, x
     ) -> torch.Tensor:
         if not embedding_indices:
@@ -365,7 +365,7 @@ class GraphWorker(AggregationWorker):
         res = self._get_data_from_server(in_round=True)
         assert isinstance(res, FeatureMessage)
 
-        new_x = self._get_cross_deivce_embedding(
+        new_x = self._get_cross_device_embedding(
             res.other_data["node_indices"], res.feature, x
         )
         return (new_x, self.__old_edge_index, *args[2:]), kwargs
