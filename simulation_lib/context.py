@@ -9,7 +9,7 @@ from typing import Any, Self
 
 import gevent.lock
 import torch
-from cyy_naive_lib.concurrency import BlockingSubmitExecutor, ProcessPoolWithCouroutine
+from cyy_naive_lib.concurrency import BlockingSubmitExecutor, ProcessPoolWithCoroutine
 from cyy_naive_lib.decorator import Decorator
 from cyy_naive_lib.log import (
     log_debug,
@@ -188,7 +188,7 @@ class FederatedLearningContext(ExecutorContext):
         self.topology: CentralTopology = topology_class(
             mp_context=TorchProcessContext(), worker_num=self.__worker_num
         )
-        self.__executor_pool: ProcessPoolWithCouroutine | None = None
+        self.__executor_pool: ProcessPoolWithCoroutine | None = None
 
     def __getstate__(self) -> dict[str, Any]:
         state = self.__dict__.copy()
@@ -212,9 +212,9 @@ class FederatedLearningContext(ExecutorContext):
         return endpoint_cls(topology=self.topology, **endpoint_kwargs)
 
     @property
-    def executor_pool(self) -> ProcessPoolWithCouroutine:
+    def executor_pool(self) -> ProcessPoolWithCoroutine:
         if self.__executor_pool is None:
-            self.__executor_pool = ProcessPoolWithCouroutine(
+            self.__executor_pool = ProcessPoolWithCoroutine(
                 mp_context=TorchProcessContext().get_ctx(),
                 initargs={
                     "process_data": {
