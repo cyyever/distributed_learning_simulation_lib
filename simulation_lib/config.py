@@ -5,7 +5,11 @@ import uuid
 from typing import Any
 
 from cyy_naive_lib.system_info import OSType, get_operating_system_type
-from cyy_torch_toolbox import Config, MachineLearningPhase, load_config_from_hydra
+from cyy_torch_toolbox import (
+    Config,
+    MachineLearningPhase,
+    load_combined_config_from_files,
+)
 
 from .context import allocate_device as _allocate_device
 from .practitioner import Practitioner
@@ -104,7 +108,7 @@ def load_config(
     other_config_files = []
     if global_conf_path is not None:
         other_config_files.append(global_conf_path)
-    result_conf = load_config_from_hydra(
+    result_conf = load_combined_config_from_files(
         config_path=config_path, other_config_files=other_config_files
     )
     config: DistributedTrainingConfig = DistributedTrainingConfig()
