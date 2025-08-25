@@ -51,5 +51,7 @@ select = [
   "SIM",
   # isort
   "I",
+  # Pylint
+  "PL"
 ]
 ignore = ["F401","E501","F403"]
