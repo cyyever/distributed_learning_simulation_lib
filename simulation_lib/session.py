@@ -45,6 +45,11 @@ class Session:
         assert os.path.isdir(_server_dir)
         return _server_dir
 
+    def worker_dir(self, worker_index: int) -> str:
+        _worker_dir = os.path.join(self.session_dir, f"worker_{worker_index}")
+        assert os.path.isdir(_worker_dir)
+        return _worker_dir
+
     @property
     def worker_data(self) -> dict:
         if self.__worker_data:
