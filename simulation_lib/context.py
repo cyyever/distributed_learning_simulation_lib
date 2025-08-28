@@ -10,7 +10,7 @@ from typing import Any, Self
 import gevent.lock
 import torch
 from cyy_naive_lib.concurrency import BlockingSubmitExecutor, ProcessPoolWithCoroutine
-from cyy_naive_lib.decorator import Decorator
+from cyy_naive_lib import Decorator
 from cyy_naive_lib.log import (
     log_debug,
     log_error,
