@@ -4,8 +4,8 @@ from dataclasses import dataclass, field, fields
 from typing import Any
 
 import torch
+from cyy_preprocessing_pipeline.tensor import recursive_tensor_op
 from cyy_torch_toolbox import ModelParameter
-from cyy_torch_toolbox.tensor import recursive_tensor_op
 
 
 @dataclass(kw_only=True)
