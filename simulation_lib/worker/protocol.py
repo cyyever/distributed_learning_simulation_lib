@@ -12,12 +12,9 @@ class TrainerProtocol(Protocol):
     def trainer(self) -> Trainer: ...
 
 
-class WorkerProtocol(ExecutorProtocol, Protocol):
+class WorkerProtocol(ExecutorProtocol, TrainerProtocol, Protocol):
     @property
     def endpoint(self) -> Endpoint: ...
-
-    @property
-    def trainer(self) -> Trainer: ...
 
     def pause(self, in_round: bool) -> None: ...
 

@@ -28,13 +28,18 @@ from .topology import (
 )
 from .training import train
 from .util import *  # noqa: F401
-from .worker import *  # noqa: F401
+from .worker import (
+    AggregationWorker,
+    AggregationWorkerProtocol,
+    ErrorFeedbackWorker,
+    GradientWorker,
+    Worker,
+)
 
 __all__ = [
     "AlgorithmRepository",
     "get_server",
     "train",
-    "TorchProcessContext",
     "Session",
     "DifferentialPrivacyEmbeddingEndpoint",
     "QuantServerEndpoint",
@@ -49,5 +54,10 @@ __all__ = [
     "DeltaParameterMessage",
     "FeatureMessage",
     "MultipleWorkerMessage",
+    "AggregationWorker",
+    "ErrorFeedbackWorker",
+    "GradientWorker",
+    "Worker",
+    "AggregationWorkerProtocol",
 ]
 set_multiprocessing_ctx(TorchProcessContext().get_ctx())
