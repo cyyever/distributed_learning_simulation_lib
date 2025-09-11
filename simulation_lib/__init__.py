@@ -20,6 +20,7 @@ from .message import (
     ParameterMessage,
     ParameterMessageBase,
 )
+from .protocol import ExecutorProtocol
 from .server import AggregationServer
 from .session import Session
 from .topology import (
@@ -43,6 +44,7 @@ from .worker import (
 
 __all__ = [
     "AlgorithmRepository",
+    "ExecutorProtocol",
     "get_server",
     "train",
     "Session",
