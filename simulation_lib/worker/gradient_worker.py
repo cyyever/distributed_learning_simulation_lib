@@ -2,8 +2,8 @@ from collections.abc import Callable
 from typing import Any
 
 import torch
+from cyy_preprocessing_pipeline import tensor_to
 from cyy_torch_toolbox import ExecutorHookPoint, ModelEvaluator, ModelGradient
-from cyy_torch_toolbox.tensor import tensor_to
 
 from ..message import Message, ParameterMessage
 from .client import ClientMixin

@@ -1,6 +1,7 @@
 import torch
 from cyy_naive_lib.storage import DataStorage
-from cyy_torch_toolbox import ModelParameter, tensor_to
+from cyy_preprocessing_pipeline import tensor_to
+from cyy_torch_toolbox import ModelParameter
 
 
 class ModelCache:

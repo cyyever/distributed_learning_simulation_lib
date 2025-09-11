@@ -3,8 +3,8 @@ import pickle
 from typing import Any
 
 from cyy_naive_lib.log import log_debug, log_info
+from cyy_preprocessing_pipeline import tensor_to
 from cyy_torch_toolbox import Inferencer, MachineLearningPhase, ModelParameter
-from cyy_torch_toolbox.tensor import tensor_to
 
 from ..algorithm.aggregation_algorithm import AggregationAlgorithm
 from ..message import (
