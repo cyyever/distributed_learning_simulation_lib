@@ -54,4 +54,4 @@ select = [
   # Pylint
   "PL"
 ]
-ignore = ["F401","E501","F403"]
+ignore = ["E501", "PLR2004", "PLR0912"]
