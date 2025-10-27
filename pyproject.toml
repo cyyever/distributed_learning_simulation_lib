@@ -1,37 +1,27 @@
-[build-system]
-requires = ["setuptools >= 63.0"]
-build-backend = "setuptools.build_meta"
-
 [project]
 name = "distributed_learning_simulation"
 version = "0.2"
+readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.12"
-readme = {file = "README.md", content-type = "text/markdown"}
+license = { text = "BSD License" }
 authors = [
-{name = "cyy", email = "cyyever@outlook.com"},
+  { name = "cyy", email = "cyyever@outlook.com" },
 ]
-license = {text = "BSD License"}
-classifiers = [
-  "Programming Language :: Python"
-]
-
-dependencies=[
-  "cyy_torch_toolbox@git+https://github.com/cyyever/torch_toolbox.git@main",
+classifiers = ["Programming Language :: Python"]
+dependencies = [
   "cyy_torch_algorithm@git+https://github.com/cyyever/torch_algorithm.git@main",
+  "cyy_torch_toolbox@git+https://github.com/cyyever/torch_toolbox.git@main",
 ]
-
-[tool.setuptools.package-data]
-distributed_learning_simulation= ["py.typed"]
-
-[tool.setuptools.package-dir]
-distributed_learning_simulation= "simulation_lib"
 
 [project.urls]
 Repository = "https://github.com/cyyever/distributed_learning_simulation_lib"
 
+[build-system]
+requires = ["setuptools >= 63.0"]
+build-backend = "setuptools.build_meta"
+
 [tool.pyright]
 include = ["simulation_lib"]
-
 
 [tool.ruff]
 target-version = "py312"
@@ -52,6 +42,14 @@ select = [
   # isort
   "I",
   # Pylint
-  "PL"
+  "PL",
+  "PIE",
+  "FURB",
 ]
 ignore = ["E501", "PLR2004", "PLR0912"]
+
+[tool.setuptools.package-data]
+distributed_learning_simulation = ["py.typed"]
+
+[tool.setuptools.package-dir]
+distributed_learning_simulation = "simulation_lib"
