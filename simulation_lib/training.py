@@ -91,5 +91,4 @@ def get_training_result(
             ):
                 sv_dict[round_number][practitioner_id] = tmp_sv_dict[worker_id]
         stats[k] = sv_dict
-    task_results.pop(task_id)
     return stats
