@@ -36,7 +36,7 @@ class AggregationWorker(Worker, ClientMixin):
         self._keep_model_cache: bool = False
         self._send_loss: bool = False
         self._model_cache: ModelCache = ModelCache()
-        self._model_loading_fun: None | Callable[..., None] = None
+        self._model_loading_fun: Callable[[ModelParameter], None] | None = None
 
     @property
     def reuse_learning_rate(self) -> bool:
@@ -176,9 +176,7 @@ class AggregationWorker(Worker, ClientMixin):
         return self.trainer.dataset_size
 
     def _load_result_from_server(self, result: Message) -> None:
-        model_path = (
-            self.save_dir / "aggregated_model" / f"round_{self.round_index}.pk"
-        )
+        model_path = self.save_dir / "aggregated_model" / f"round_{self.round_index}.pk"
         parameter: ModelParameter = {}
         match result:
             case ParameterMessage():

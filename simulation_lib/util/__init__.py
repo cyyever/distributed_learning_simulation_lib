@@ -23,7 +23,7 @@ def load_parameters(
     trainer: Trainer,
     parameter: ModelParameter,
     reuse_learning_rate: bool,
-    loading_fun: Callable | None = None,
+    loading_fun: Callable[[ModelParameter], None] | None = None,
 ) -> None:
     if loading_fun is not None:
         loading_fun(parameter)

@@ -1,5 +1,6 @@
-import torch
 from typing import override
+
+import torch
 
 from ..message import FeatureMessage, Message, MultipleWorkerMessage
 from .aggregation_algorithm import AggregationAlgorithm

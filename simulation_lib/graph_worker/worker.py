@@ -396,9 +396,7 @@ class GraphWorker(AggregationWorker):
     @override
     def _after_training(self) -> None:
         super()._after_training()
-        with open(
-            self.save_dir / "graph_worker_stat.json", "w", encoding="utf8"
-        ) as f:
+        with open(self.save_dir / "graph_worker_stat.json", "w", encoding="utf8") as f:
             stat = {
                 "original_in_client_training_edge_cnt": self._original_in_client_training_edge_cnt,
                 "in_client_training_edge_cnt": self._in_client_training_edge_cnt,

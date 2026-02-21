@@ -9,15 +9,21 @@ from cyy_torch_algorithm.quantization.deterministic import (
     NeuralNetworkAdaptiveDeterministicQuant,
 )
 from cyy_torch_algorithm.quantization.stochastic import stochastic_quantization
+from cyy_torch_toolbox import ModelParameter
 
 from ..message import DeltaParameterMessage, ParameterMessage, ParameterMessageBase
 
 
 class QuantClientEndpoint(ClientEndpoint):
-    def __init__(self, quant: Callable, dequant: Callable, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        quant: Callable[[ModelParameter], ModelParameter],
+        dequant: Callable[[ModelParameter], ModelParameter],
+        **kwargs: Any,
+    ) -> None:
         super().__init__(**kwargs)
-        self._quant: Callable = quant
-        self._dequant: Callable = dequant
+        self._quant: Callable[[ModelParameter], ModelParameter] = quant
+        self._dequant: Callable[[ModelParameter], ModelParameter] = dequant
         self.__dequant_server_data: bool = False
 
     def dequant_server_data(self) -> None:
@@ -47,11 +53,14 @@ class QuantClientEndpoint(ClientEndpoint):
 
 class QuantServerEndpoint(ServerEndpoint):
     def __init__(
-        self, quant: Callable | None, dequant: Callable, **kwargs: Any
+        self,
+        quant: Callable[[ModelParameter], ModelParameter] | None,
+        dequant: Callable[[ModelParameter], ModelParameter],
+        **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
-        self._quant: Callable | None = quant
-        self._dequant: Callable = dequant
+        self._quant: Callable[[ModelParameter], ModelParameter] | None = quant
+        self._dequant: Callable[[ModelParameter], ModelParameter] = dequant
         self.__use_quant: bool = False
 
     def use_quant(self) -> None:
@@ -117,9 +126,11 @@ class NNADQClientEndpoint(QuantClientEndpoint):
 
 class NNADQServerEndpoint(QuantServerEndpoint):
     def __init__(self, weight: float | None = None, **kwargs: Any) -> None:
-        quant: Callable | None = None
+        quant: Callable[[ModelParameter], ModelParameter] | None = None
         if weight is None:
-            dequant: Callable = NeuralNetworkAdaptiveDeterministicDequant()
+            dequant: Callable[[ModelParameter], ModelParameter] = (
+                NeuralNetworkAdaptiveDeterministicDequant()
+            )
         else:
             quant, dequant = NNADQ(weight=weight)
         super().__init__(quant=quant, dequant=dequant, **kwargs)

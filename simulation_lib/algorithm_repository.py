@@ -9,11 +9,11 @@ class AlgorithmRepository:
     def register_algorithm(
         cls: type[Self],
         algorithm_name: str,
-        client_cls: Callable,
-        server_cls: Callable,
-        client_endpoint_cls: None | Callable = None,
-        server_endpoint_cls: None | Callable = None,
-        algorithm_cls: None | Callable = None,
+        client_cls: Callable[..., Any],
+        server_cls: Callable[..., Any],
+        client_endpoint_cls: Callable[..., Any] | None = None,
+        server_endpoint_cls: Callable[..., Any] | None = None,
+        algorithm_cls: Callable[[], Any] | None = None,
     ) -> None:
         assert algorithm_name not in cls.config
         cls.config[algorithm_name] = {

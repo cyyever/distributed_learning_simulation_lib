@@ -32,7 +32,9 @@ class AggregationAlgorithm(ABC):
         for v in data_dict.values():
             assert v.aggregation_weight is not None and v.aggregation_weight >= 0
         total_weight: float = sum(
-            v.aggregation_weight for v in data_dict.values() if v.aggregation_weight is not None
+            v.aggregation_weight
+            for v in data_dict.values()
+            if v.aggregation_weight is not None
         )
         assert total_weight >= 0
         return total_weight

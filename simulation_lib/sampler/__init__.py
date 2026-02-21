@@ -92,7 +92,7 @@ class DirichletSplit(DatasetCollectionSplit):
             ).sample()
             part_proportions.append({})
             for (k, _), label_prob in zip(
-                get_mapping_items_by_key_order(worker_concentration), prob, strict=False
+                get_mapping_items_by_key_order(worker_concentration), prob, strict=True
             ):
                 part_proportions[-1][k] = label_prob
 

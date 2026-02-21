@@ -88,7 +88,7 @@ def get_training_result(
         for round_number, tmp_sv_dict in v.items():
             sv_dict[round_number] = {}
             for practitioner_id, worker_id in zip(
-                sorted(practitioner_ids), range(config.worker_number), strict=False
+                sorted(practitioner_ids), range(config.worker_number), strict=True
             ):
                 sv_dict[round_number][practitioner_id] = tmp_sv_dict[worker_id]
         stats[k] = sv_dict

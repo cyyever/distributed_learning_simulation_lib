@@ -98,7 +98,7 @@ class ExecutorContext:
     def set_name(self, name: str) -> None:
         self.__name = name
 
-    def acquire(self, cond_fun: Callable | None = None) -> None:
+    def acquire(self, cond_fun: Callable[[], bool] | None = None) -> None:
         if cond_fun is not None:
             while not cond_fun():
                 gevent.sleep(0.1)
@@ -314,7 +314,9 @@ def get_device_memory_info(
         if value is not None:
             least_memory_GB = max(int(value), 1)
     if least_memory_GB is None:
-        refined_memory_info = {device: info.free for device, info in memory_info.items()}
+        refined_memory_info = {
+            device: info.free for device, info in memory_info.items()
+        }
     else:
         refined_memory_info = {
             device: info.free
@@ -346,7 +348,10 @@ def allocate_device(
         devices = devices[1:]
         free_bytes = free_bytes[1:]
         if not free_bytes:
-            return result | {"worker_number_per_process": worker_number, "process_devices": devices}
+            return result | {
+                "worker_number_per_process": worker_number,
+                "process_devices": devices,
+            }
     else:
         result = {"server_device": devices[-1]}
     if worker_number <= len(free_bytes):
@@ -365,4 +370,7 @@ def allocate_device(
             min(free_bytes) / MB,
         )
         worker_number_per_process = max(int(min(free_bytes) / MB / MB_per_worker), 1)
-    return result | {"worker_number_per_process": worker_number_per_process, "process_devices": devices}
+    return result | {
+        "worker_number_per_process": worker_number_per_process,
+        "process_devices": devices,
+    }
