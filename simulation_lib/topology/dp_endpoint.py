@@ -1,4 +1,5 @@
 import math
+from typing import override
 
 import torch
 from cyy_naive_lib.topology.cs_endpoint import ClientEndpoint
@@ -15,6 +16,7 @@ class DifferentialPrivacyEmbeddingEndpoint(ClientEndpoint):
         self.C = C
         self.sigma = math.sqrt(2 * math.log(1.25 / delta)) / epsilon
 
+    @override
     def send(self, data) -> None:
         if isinstance(data, FeatureMessage) and data.feature is not None:
             for i in range(data.feature.shape[0]):

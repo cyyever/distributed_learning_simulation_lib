@@ -1,4 +1,5 @@
 import torch
+from typing import override
 
 from ..message import FeatureMessage, Message, MultipleWorkerMessage
 from .aggregation_algorithm import AggregationAlgorithm
@@ -11,6 +12,7 @@ class GraphNodeEmbeddingPassingAlgorithm(AggregationAlgorithm):
         self.__node_embedding_indices: dict[int, tuple[int, int]] = {}
         self.__boundaris: dict[int, set[int]] = {}
 
+    @override
     def process_worker_data(self, worker_id: int, worker_data: Message | None) -> bool:
         if isinstance(worker_data, FeatureMessage):
             node_embedding = worker_data.feature
@@ -32,6 +34,7 @@ class GraphNodeEmbeddingPassingAlgorithm(AggregationAlgorithm):
         list_idx, tensor_idx = self.__node_embedding_indices[node_idx]
         return self.__node_embeddings[list_idx][tensor_idx]
 
+    @override
     def aggregate_worker_data(self) -> Message:
         assert self.__node_embeddings or self.__boundaris
         worker_data: dict[int, FeatureMessage] = {}
@@ -54,6 +57,7 @@ class GraphNodeEmbeddingPassingAlgorithm(AggregationAlgorithm):
             )
         return MultipleWorkerMessage(in_round=True, worker_data=worker_data)
 
+    @override
     def clear_worker_data(self) -> None:
         self.__node_embeddings = []
         self.__node_embedding_indices = {}

@@ -1,4 +1,5 @@
 import copy
+from typing import override
 
 from ..message import Message, MultipleWorkerMessage, ParameterMessage
 from .aggregation_algorithm import AggregationAlgorithm
@@ -19,6 +20,7 @@ class PersonalizedFedAVGAlgorithm(AggregationAlgorithm):
             worker_id: FedAVGAlgorithm() for worker_id in self._worker_weights
         }
 
+    @override
     def process_worker_data(
         self,
         worker_id: int,
@@ -40,6 +42,7 @@ class PersonalizedFedAVGAlgorithm(AggregationAlgorithm):
             )
         return True
 
+    @override
     def aggregate_worker_data(self) -> Message:
         worker_data = {
             worker_id: algorithm.aggregate_worker_data()

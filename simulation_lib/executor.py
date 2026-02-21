@@ -1,5 +1,6 @@
 import copy
 import os
+from abc import ABC, abstractmethod
 from functools import cached_property
 
 from .config import DistributedTrainingConfig
@@ -7,7 +8,7 @@ from .context import FederatedLearningContext
 from .task_type import TaskIDType
 
 
-class Executor:
+class Executor(ABC):
     def __init__(
         self,
         config: DistributedTrainingConfig,
@@ -54,5 +55,5 @@ class Executor:
         os.makedirs(executor_save_dir, exist_ok=True)
         return executor_save_dir
 
-    def start(self) -> None:
-        raise NotImplementedError()
+    @abstractmethod
+    def start(self) -> None: ...

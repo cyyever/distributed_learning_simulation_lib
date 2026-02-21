@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from typing import Any
+from typing import Any, override
 
 from cyy_naive_lib.log import log_debug
 from cyy_naive_lib.topology import ClientEndpoint, ServerEndpoint
@@ -23,6 +23,7 @@ class QuantClientEndpoint(ClientEndpoint):
     def dequant_server_data(self) -> None:
         self.__dequant_server_data = True
 
+    @override
     def get(self) -> Any:
         data = super().get()
         if not self.__dequant_server_data or data is None:
@@ -32,6 +33,7 @@ class QuantClientEndpoint(ClientEndpoint):
         return data
         # return self._dequant(data)
 
+    @override
     def send(self, data: Any) -> None:
         if isinstance(data, ParameterMessage):
             data.parameter = self._quant(data.parameter)
@@ -55,6 +57,7 @@ class QuantServerEndpoint(ServerEndpoint):
     def use_quant(self) -> None:
         self.__use_quant = True
 
+    @override
     def get(self, worker_id) -> Any:
         data = super().get(worker_id=worker_id)
         match data:
@@ -64,6 +67,7 @@ class QuantServerEndpoint(ServerEndpoint):
                 data.delta_parameter = self._dequant(data.delta_parameter)
         return data
 
+    @override
     def send(self, worker_id: int, data: Any) -> None:
         if isinstance(data, ParameterMessageBase):
             quantized: bool = data.other_data.pop("quantized", False)
@@ -104,6 +108,7 @@ class NNADQClientEndpoint(QuantClientEndpoint):
         quant, dequant = NNADQ(weight=weight)
         super().__init__(quant=quant, dequant=dequant, **kwargs)
 
+    @override
     def _after_quant(self, data: Any) -> None:
         NeuralNetworkAdaptiveDeterministicQuant.check_compression_ratio(
             quantized_data=data, prefix="worker"
@@ -119,6 +124,7 @@ class NNADQServerEndpoint(QuantServerEndpoint):
             quant, dequant = NNADQ(weight=weight)
         super().__init__(quant=quant, dequant=dequant, **kwargs)
 
+    @override
     def _after_quant(self, data: Any) -> None:
         NeuralNetworkAdaptiveDeterministicQuant.check_compression_ratio(
             data, prefix="broadcast"

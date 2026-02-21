@@ -62,7 +62,7 @@ class GradientWorker(Worker, ClientMixin):
         self.__cnt = 0
         self.__aggregation_interval = self.config.algorithm_kwargs.get("interval", 1)
         self.trainer.replace_model_evaluator(
-            lambda evaluator: GradientModelEvaluator(
+            lambda evaluator: GradientModelEvaluator(  # type: ignore[arg-type]
                 evaluator=evaluator,
                 gradient_fun=self._process_gradient,
                 aggregation_indicator_fun=self._should_aggregate,
@@ -72,13 +72,13 @@ class GradientWorker(Worker, ClientMixin):
             ExecutorHookPoint.AFTER_EXECUTE, "end_training", self.__report_end
         )
 
-    def __report_end(self, **kwargs: Any) -> None:
+    def __report_end(self, **_kwargs: Any) -> None:
         self._send_data_to_server(Message(end_training=True))
 
     def _should_aggregate(self) -> bool:
         res = self.__cnt % self.__aggregation_interval
         self.__cnt += 1
-        return res
+        return res == 0
 
     def _process_gradient(self, gradient_dict: ModelGradient) -> ModelGradient:
         self._send_data_to_server(

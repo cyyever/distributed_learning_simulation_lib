@@ -1,6 +1,7 @@
 import functools
 import json
 import os
+from pathlib import Path
 from typing import Any
 
 import dill
@@ -14,26 +15,21 @@ class Session:
         if session_dir is None:
             session_dir = os.getenv("SESSION_DIR")
         assert session_dir
-        session_dir = os.path.abspath(session_dir)
-        assert os.path.isdir(session_dir)
-        self.session_dir = session_dir
+        self.session_dir = Path(session_dir).resolve()
+        assert self.session_dir.is_dir()
 
-        with open(
-            os.path.join(self.server_dir, "round_record.json"), encoding="utf8"
-        ) as f:
+        with open(self.server_dir / "round_record.json", encoding="utf8") as f:
             self.round_record = json.load(f)
         self.round_record = {int(k): v for k, v in self.round_record.items()}
-        with open(os.path.join(self.server_dir, "config.pkl"), "rb") as f:
+        with open(self.server_dir / "config.pkl", "rb") as f:
             self.config: DistributedTrainingConfig = dill.load(f)
 
         self.__worker_data: dict[str, dict[str, Any]] = {}
 
     @property
-    def last_model_path(self) -> str:
-        path = os.path.join(
-            self.session_dir, "aggregated_model", f"round_{self.config.round}.pk"
-        )
-        assert os.path.exists(path)
+    def last_model_path(self) -> Path:
+        path = self.session_dir / "aggregated_model" / f"round_{self.config.round}.pk"
+        assert path.exists()
         return path
 
     def get_last_model_parameters(self) -> TensorDict:
@@ -41,14 +37,14 @@ class Session:
             return dill.load(f)
 
     @property
-    def server_dir(self) -> str:
-        _server_dir = os.path.join(self.session_dir, "server")
-        assert os.path.isdir(_server_dir)
+    def server_dir(self) -> Path:
+        _server_dir = self.session_dir / "server"
+        assert _server_dir.is_dir()
         return _server_dir
 
-    def worker_dir(self, worker_index: int) -> str:
-        _worker_dir = os.path.join(self.session_dir, f"worker_{worker_index}")
-        assert os.path.isdir(_worker_dir)
+    def worker_dir(self, worker_index: int) -> Path:
+        _worker_dir = self.session_dir / f"worker_{worker_index}"
+        assert _worker_dir.is_dir()
         return _worker_dir
 
     @property
@@ -56,22 +52,15 @@ class Session:
         if self.__worker_data:
             return self.__worker_data
         worker_data: dict[str, dict[str, Any]] = {}
-        for root, dirs, __ in os.walk(self.session_dir):
+        for root, dirs, _ in self.session_dir.walk():
             for name in dirs:
                 if name.startswith("worker"):
                     worker_data[name] = {}
-                    if os.path.isfile(
-                        os.path.join(root, name, "graph_worker_stat.json")
-                    ):
-                        with open(
-                            os.path.join(root, name, "graph_worker_stat.json"),
-                            encoding="utf8",
-                        ) as f:
+                    stat_file = root / name / "graph_worker_stat.json"
+                    if stat_file.is_file():
+                        with open(stat_file, encoding="utf8") as f:
                             worker_data[name] = json.load(f)
-                    with open(
-                        os.path.join(root, name, "hyper_parameter.pk"),
-                        "rb",
-                    ) as f:
+                    with open(root / name / "hyper_parameter.pk", "rb") as f:
                         worker_data[name]["hyper_parameter"] = dill.load(f)
         assert worker_data
         self.__worker_data = worker_data

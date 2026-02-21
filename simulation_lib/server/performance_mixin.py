@@ -36,6 +36,7 @@ class PerformanceMixin(AggregationServerProtocol):
         stat_key = self._get_stat_key(message=message)
         if stat_key not in self.__keys:
             self.__keys.append(stat_key)
+            self.__stat[stat_key] = {}
         self.__stat[stat_key][key] = value
 
     def record_performance_statistics(

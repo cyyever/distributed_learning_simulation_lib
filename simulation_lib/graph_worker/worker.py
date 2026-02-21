@@ -2,7 +2,7 @@ import functools
 import json
 import os
 from collections.abc import Callable
-from typing import Any
+from typing import Any, override
 
 import torch
 import torch_geometric.nn
@@ -99,6 +99,7 @@ class GraphWorker(AggregationWorker):
         if not self._share_feature and self._remove_cross_edge:
             self._clear_cross_client_edges()
 
+    @override
     def _before_training(self) -> None:
         super()._before_training()
         if self.hold_log_lock:
@@ -383,6 +384,7 @@ class GraphWorker(AggregationWorker):
             if isinstance(module, torch_geometric.nn.MessagePassing)
         ]
 
+    @override
     def _get_sent_data(self) -> ParameterMessageBase:
         sent_data = super()._get_sent_data()
         self._aggregated_bytes += get_message_size(sent_data)
@@ -392,6 +394,7 @@ class GraphWorker(AggregationWorker):
         self._round_skipped_bytes[self._round_index] = self._skipped_embedding_bytes
         return sent_data
 
+    @override
     def _after_training(self) -> None:
         super()._after_training()
         with open(

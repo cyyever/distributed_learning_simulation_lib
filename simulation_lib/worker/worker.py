@@ -1,5 +1,6 @@
 import functools
 import os
+from typing import override
 
 import dill
 from cyy_torch_toolbox import ExecutorHookPoint, Trainer
@@ -24,11 +25,13 @@ class Worker(WorkerBase):
             self.config.trainer_config.dataloader_kwargs.pop("server_batch_size")
         return self._practitioner.create_trainer(self.config)
 
+    @override
     def pause(self, in_round: bool = False) -> None:
         if not in_round:
             self.trainer.offload_from_device()
         super().pause()
 
+    @override
     def _after_training(self) -> None:
         super()._after_training()
         with open(os.path.join(self.save_dir, "hyper_parameter.pk"), "wb") as f:
@@ -41,6 +44,7 @@ class Worker(WorkerBase):
         self.context.release_device_lock()
         self.trainer.remove_named_hook("_release_device_lock")
 
+    @override
     def _before_training(self) -> None:
         self.trainer.set_device_fun(
             functools.partial(
@@ -58,6 +62,7 @@ class Worker(WorkerBase):
         self.trainer.hook_config.save_performance_metric = False
         self.trainer.disable_hook("batch_loss_logger")
 
+    @override
     def _train(self, first_training: bool) -> None:
         if not first_training:
             self.trainer.hook_config.summarize_executor = False

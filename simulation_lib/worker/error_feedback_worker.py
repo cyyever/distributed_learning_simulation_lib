@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, override
 
 import torch
 from cyy_torch_toolbox import TensorDict
@@ -13,6 +13,7 @@ class ErrorFeedbackWorker(AggregationWorker):
         assert self._send_parameter_diff
         self.__error: TensorDict = {}
 
+    @override
     def _get_sent_data(self) -> ParameterMessageBase:
         return self._sparsify(super()._get_sent_data())
 

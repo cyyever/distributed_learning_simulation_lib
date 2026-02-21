@@ -1,4 +1,5 @@
-from typing import Any
+from abc import abstractmethod
+from typing import Any, override
 
 from cyy_naive_lib.log import log_debug
 from cyy_naive_lib.topology import ClientEndpoint
@@ -49,8 +50,8 @@ class WorkerBase(Executor):
     def _after_training(self) -> None:
         self._in_after_training = True
 
-    def _train(self, first_training: bool) -> None:
-        raise NotImplementedError()
+    @abstractmethod
+    def _train(self, first_training: bool) -> None: ...
 
     def _stopped(self) -> bool:
         return self._round_index > self.config.round or self._force_stop
@@ -58,6 +59,7 @@ class WorkerBase(Executor):
     def pause(self, in_round: bool = False) -> None:
         self.context.release_device_lock()
 
+    @override
     def start(self) -> None:
         first_training: bool = True
         self._round_index = 1

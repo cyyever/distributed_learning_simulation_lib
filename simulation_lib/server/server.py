@@ -2,7 +2,8 @@ import functools
 import os
 import pickle
 import time
-from typing import Any
+from abc import abstractmethod
+from typing import Any, override
 
 from cyy_naive_lib.log import log_debug, log_info
 from cyy_naive_lib.topology import ServerEndpoint
@@ -118,6 +119,7 @@ class Server(Executor, RoundSelectionMixin):
         assert metric
         return metric
 
+    @override
     def start(self) -> None:
         with open(os.path.join(self.save_dir, "config.pkl"), "wb") as f:
             pickle.dump(self.config, f)
@@ -155,8 +157,8 @@ class Server(Executor, RoundSelectionMixin):
     def _server_exit(self) -> None:
         pass
 
-    def _process_worker_data(self, worker_id: int, data: Message) -> None:
-        raise NotImplementedError()
+    @abstractmethod
+    def _process_worker_data(self, worker_id: int, data: Message) -> None: ...
 
-    def _stopped(self) -> bool:
-        raise NotImplementedError()
+    @abstractmethod
+    def _stopped(self) -> bool: ...

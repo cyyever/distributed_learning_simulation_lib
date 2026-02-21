@@ -1,6 +1,6 @@
 import os
 import pickle
-from typing import Any
+from typing import Any, override
 
 from cyy_naive_lib.log import log_debug, log_info
 from cyy_preprocessing_pipeline import tensor_to
@@ -46,6 +46,7 @@ class AggregationServer(Server, PerformanceMixin, RoundSelectionMixin):
     def round_index(self) -> int:
         return self._round_index
 
+    @override
     def get_tester(
         self, phase: MachineLearningPhase = MachineLearningPhase.Test
     ) -> Inferencer:
@@ -69,6 +70,7 @@ class AggregationServer(Server, PerformanceMixin, RoundSelectionMixin):
     def distribute_init_parameters(self) -> bool:
         return self.config.algorithm_kwargs.get("distribute_init_parameters", True)
 
+    @override
     def _before_start(self) -> None:
         if self.distribute_init_parameters:
             self._send_result(
@@ -103,9 +105,11 @@ class AggregationServer(Server, PerformanceMixin, RoundSelectionMixin):
 
         self._after_send_result(result=result)
 
+    @override
     def _server_exit(self) -> None:
         self.__algorithm.exit()
 
+    @override
     def _process_worker_data(self, worker_id: int, data: Message | None) -> None:
         assert 0 <= worker_id < self.worker_number
         log_debug("get data %s from worker %s", type(data), worker_id)
@@ -176,5 +180,6 @@ class AggregationServer(Server, PerformanceMixin, RoundSelectionMixin):
     def current_aggregated_model(self) -> ModelCache:
         return self.__model_cache
 
+    @override
     def _stopped(self) -> bool:
         return self.round_index > self.config.round or self._stop

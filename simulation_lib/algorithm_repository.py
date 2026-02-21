@@ -38,7 +38,7 @@ class AlgorithmRepository:
         kwargs: dict,
         endpoint_kwargs: dict,
         **extra_kwargs: Any,
-    ) -> None:
+    ) -> Any:
         config = cls.config[algorithm_name]
         if "client_endpoint_cls" in config:
             endpoint_kwargs["endpoint_cls"] = config["client_endpoint_cls"]
@@ -48,12 +48,12 @@ class AlgorithmRepository:
 
     @classmethod
     def create_server(
-        cls,
+        cls: type[Self],
         algorithm_name: str,
         kwargs: dict,
         endpoint_kwargs: dict,
         **extra_kwargs: Any,
-    ) -> None:
+    ) -> Any:
         config = cls.config[algorithm_name]
         context = extra_kwargs["context"]
         if "server_endpoint_cls" in config:

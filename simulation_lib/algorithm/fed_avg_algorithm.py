@@ -1,5 +1,5 @@
 from collections.abc import MutableMapping
-from typing import Any
+from typing import Any, override
 
 import torch
 from cyy_naive_lib.log import log_error
@@ -17,6 +17,7 @@ class FedAVGAlgorithm(AggregationAlgorithm):
         self.__total_weights: dict[str, float] = {}
         self.__parameter: ModelParameter = {}
 
+    @override
     def process_worker_data(
         self,
         worker_id: int,
@@ -97,6 +98,7 @@ class FedAVGAlgorithm(AggregationAlgorithm):
         self.__total_weights = {}
         return parameter
 
+    @override
     def aggregate_worker_data(self) -> ParameterMessage:
         parameter = self._aggregate_parameter()
         other_data: dict[str, Any] = {}

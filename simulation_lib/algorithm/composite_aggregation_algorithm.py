@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, override
 
 from cyy_torch_toolbox import ModelParameter
 
@@ -19,14 +19,17 @@ class CompositeAggregationAlgorithm(AggregationAlgorithm):
     def append_algorithm(self, algorithm: AggregationAlgorithm) -> None:
         self.__algorithms.append(algorithm)
 
+    @override
     def set_old_parameter(self, old_parameter: ModelParameter) -> None:
         for algorithm in self.__algorithms:
             algorithm.set_old_parameter(old_parameter=old_parameter)
 
+    @override
     def set_config(self, config: DistributedTrainingConfig) -> None:
         for algorithm in self.__algorithms:
             algorithm.set_config(config=config)
 
+    @override
     def process_worker_data(
         self,
         worker_id: int,
@@ -48,16 +51,19 @@ class CompositeAggregationAlgorithm(AggregationAlgorithm):
                 # print("worker_data", worker_data, "algorithm", type(algorithm))
         raise NotImplementedError("Failed to process_worker_data")
 
+    @override
     def aggregate_worker_data(self) -> Any:
         assert self.__used_algorithm is not None
         res = self.__used_algorithm.aggregate_worker_data()
         self.__used_algorithm = None
         return res
 
+    @override
     def clear_worker_data(self) -> None:
         for algorithm in self.__algorithms:
             algorithm.clear_worker_data()
 
+    @override
     def exit(self) -> None:
         for algorithm in self.__algorithms:
             algorithm.exit()

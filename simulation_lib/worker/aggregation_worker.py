@@ -1,6 +1,6 @@
 import os
 from collections.abc import Callable
-from typing import Any
+from typing import Any, override
 
 import torch
 from cyy_naive_lib.log import log_debug, log_info
@@ -54,6 +54,7 @@ class AggregationWorker(Worker, ClientMixin):
     def distribute_init_parameters(self) -> bool:
         return self.config.algorithm_kwargs.get("distribute_init_parameters", True)
 
+    @override
     def _before_training(self) -> None:
         super()._before_training()
         self.trainer.dataset_collection.remove_dataset(phase=MachineLearningPhase.Test)
@@ -203,6 +204,7 @@ class AggregationWorker(Worker, ClientMixin):
             self._force_stop = True
             raise StopExecutingException()
 
+    @override
     def pause(self, in_round: bool = False) -> None:
         if not in_round:
             if self._model_cache.has_data:

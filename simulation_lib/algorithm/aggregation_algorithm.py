@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from collections.abc import Mapping, MutableMapping
 from typing import Any
 
@@ -8,7 +9,7 @@ from ..config import DistributedTrainingConfig
 from ..message import Message, ParameterMessage
 
 
-class AggregationAlgorithm:
+class AggregationAlgorithm(ABC):
     def __init__(self) -> None:
         self._all_worker_data: MutableMapping[int, Message] = {}
         self.__skipped_workers: set[int] = set()
@@ -97,8 +98,8 @@ class AggregationAlgorithm:
         self._all_worker_data[worker_id] = worker_data
         return True
 
-    def aggregate_worker_data(self) -> Any:
-        raise NotImplementedError()
+    @abstractmethod
+    def aggregate_worker_data(self) -> Any: ...
 
     def clear_worker_data(self) -> None:
         self._all_worker_data.clear()

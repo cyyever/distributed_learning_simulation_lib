@@ -1,3 +1,5 @@
+from typing import override
+
 from ..message import Message
 from .aggregation_algorithm import AggregationAlgorithm
 
@@ -5,8 +7,9 @@ from .aggregation_algorithm import AggregationAlgorithm
 class GraphTopologyAlgorithm(AggregationAlgorithm):
     def __init__(self) -> None:
         super().__init__()
-        self._training_node_indices: dict[int, set] = {}
+        self._training_node_indices: dict[int, set[int]] = {}
 
+    @override
     def process_worker_data(self, worker_id: int, worker_data: Message | None) -> bool:
         if (
             worker_data is not None
@@ -19,6 +22,7 @@ class GraphTopologyAlgorithm(AggregationAlgorithm):
             return True
         return False
 
+    @override
     def aggregate_worker_data(self) -> Message:
         return Message(
             in_round=True,
