@@ -7,6 +7,8 @@ from cyy_torch_toolbox import ModelParameter
 
 
 class ModelCache:
+    __slots__ = ("__parameter",)
+
     def __init__(self) -> None:
         self.__parameter: DataStorage = DataStorage()
 

@@ -14,12 +14,12 @@ class GradientModelEvaluator:
     def __init__(
         self,
         evaluator: ModelEvaluator,
-        gradient_fun: Callable,
-        aggregation_indicator_fun: Callable,
+        gradient_fun: Callable[[ModelGradient], ModelGradient],
+        aggregation_indicator_fun: Callable[[], bool],
     ) -> None:
         self.evaluator: ModelEvaluator = evaluator
-        self.__gradient_fun: Callable = gradient_fun
-        self.__aggregation_indicator_fun: Callable = aggregation_indicator_fun
+        self.__gradient_fun: Callable[[ModelGradient], ModelGradient] = gradient_fun
+        self.__aggregation_indicator_fun: Callable[[], bool] = aggregation_indicator_fun
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         return self.evaluator.__call__(*args, **kwargs)

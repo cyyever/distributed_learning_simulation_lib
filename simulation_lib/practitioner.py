@@ -3,6 +3,8 @@ from cyy_torch_toolbox.dataset import SamplerBase, SplitBase
 
 
 class Practitioner:
+    __slots__ = ("__id", "__worker_id", "_dataset_sampler")
+
     def __init__(self, practitioner_id: int) -> None:
         self.__id: int = practitioner_id
         self.__worker_id = practitioner_id

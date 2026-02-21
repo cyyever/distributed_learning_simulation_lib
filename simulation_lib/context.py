@@ -39,6 +39,7 @@ from .task_type import TaskIDType
 
 
 class ThreadStore:
+    __slots__ = ()
     __thread_data: None | threading.local = None
 
     @classmethod
@@ -345,31 +346,23 @@ def allocate_device(
         devices = devices[1:]
         free_bytes = free_bytes[1:]
         if not free_bytes:
-            result |= {"worker_number_per_process": worker_number}
-            result |= {"process_devices": devices}
-            return result
+            return result | {"worker_number_per_process": worker_number, "process_devices": devices}
     else:
         result = {"server_device": devices[-1]}
     if worker_number <= len(free_bytes):
-        result |= {"worker_number_per_process": 1}
-        result |= {"process_devices": devices}
-        return result
+        return result | {"worker_number_per_process": 1, "process_devices": devices}
     # small scale training
     if worker_number <= 50:
         worker_number_per_process = max(int(worker_number / len(free_bytes) - 1), 1)
         while worker_number / worker_number_per_process > len(free_bytes):
             worker_number_per_process += 1
-        result |= {"worker_number_per_process": worker_number_per_process}
-        result |= {"process_devices": devices}
-        return result
-    total_bytes = sum(free_bytes)
-    MB_per_worker = min(total_bytes / MB / worker_number, 10 * GB / MB)
-    log_debug(
-        "MB_per_worker %s other %s",
-        MB_per_worker,
-        min(free_bytes) / MB,
-    )
-    worker_number_per_process = max(int(min(free_bytes) / MB / MB_per_worker), 1)
-    result |= {"worker_number_per_process": worker_number_per_process}
-    result |= {"process_devices": devices}
-    return result
+    else:
+        total_bytes = sum(free_bytes)
+        MB_per_worker = min(total_bytes / MB / worker_number, 10 * GB / MB)
+        log_debug(
+            "MB_per_worker %s other %s",
+            MB_per_worker,
+            min(free_bytes) / MB,
+        )
+        worker_number_per_process = max(int(min(free_bytes) / MB / MB_per_worker), 1)
+    return result | {"worker_number_per_process": worker_number_per_process, "process_devices": devices}
