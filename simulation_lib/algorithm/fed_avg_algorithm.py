@@ -111,7 +111,9 @@ class FedAVGAlgorithm(AggregationAlgorithm):
         )
 
     @classmethod
-    def __aggregate_loss(cls, all_worker_data: MutableMapping[int, Message]) -> dict[str, Any]:
+    def __aggregate_loss(
+        cls, all_worker_data: MutableMapping[int, Message]
+    ) -> dict[str, Any]:
         assert all_worker_data
         loss_dict = {}
         for worker_data in all_worker_data.values():

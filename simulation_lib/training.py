@@ -11,7 +11,6 @@ from .context import ConcurrentFederatedLearningContext
 from .practitioner import Practitioner
 from .task import (
     get_task_config,
-    get_task_id,
     start_server,
     start_workers,
 )
@@ -43,12 +42,12 @@ def train(
     config.reset_session()
     config.apply_global_config()
     timer = TimeCounter()
-    task_id = get_task_id()
     if practitioners is None:
         add_file_handler(config.log_file)
     task_config = get_task_config(config, practitioners=practitioners)
     start_server(task_config=task_config, single_task=single_task)
     context = start_workers(task_config=task_config, single_task=single_task)
+    task_id = task_config["task_id"]
     concurrent_context.add_context(
         task_id=task_id,
         context=context,
@@ -70,6 +69,8 @@ def get_training_result(
 ) -> None | dict[str, Any]:
     results, _ = concurrent_context.wait_results(timeout=timeout)
     for task_id2, result in results.items():
+        if task_id2 not in task_results:
+            task_results[task_id2] = {}
         task_results[task_id2] |= result
     if not concurrent_context.finished(task_id):
         return None

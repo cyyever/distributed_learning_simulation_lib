@@ -259,7 +259,9 @@ class GraphWorker(AggregationWorker):
 
         return tuple(args), kwargs
 
-    def training_boundary_feature(self, x: torch.Tensor) -> tuple[torch.Tensor, list[int]] | None:
+    def training_boundary_feature(
+        self, x: torch.Tensor
+    ) -> tuple[torch.Tensor, list[int]] | None:
         assert len(self.training_node_boundary) <= len(self.training_node_indices)
 
         assert x.shape[0] == self.n_id.shape[0]
@@ -288,7 +290,9 @@ class GraphWorker(AggregationWorker):
         mask2 = torch.zeros_like(x, dtype=torch.bool)
         embedding_mask = torch.zeros((embedding.shape[0]), dtype=torch.bool)
 
-        embedding_index_map: dict[int, int] = {b: a for a, b in enumerate(embedding_indices)}
+        embedding_index_map: dict[int, int] = {
+            b: a for a, b in enumerate(embedding_indices)
+        }
 
         for idx, node_idx in enumerate(self.n_id.tolist()):
             if node_idx not in self.training_node_indices:
@@ -327,7 +331,9 @@ class GraphWorker(AggregationWorker):
             )
         return None
 
-    def _pass_node_feature(self, module: torch.nn.Module, args: Any, kwargs: Any) -> tuple | None:
+    def _pass_node_feature(
+        self, module: torch.nn.Module, args: Any, kwargs: Any
+    ) -> tuple | None:
         if not module.training:
             return None
 

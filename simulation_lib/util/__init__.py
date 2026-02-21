@@ -14,7 +14,7 @@ def __reset_optimizer_parameters(trainer: Trainer) -> None:
     optimizer.state.clear()
     optimizer.add_param_group({"params": trainer.model.parameters()})
     for k, v in old_param_group.items():
-        if k not in "params":
+        if k != "params":
             optimizer.param_groups[0][k] = v
             log_debug("reuse parameter property %s", k)
 
