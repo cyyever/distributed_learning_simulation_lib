@@ -247,11 +247,11 @@ class FederatedLearningContext(ExecutorContext):
 class ConcurrentFederatedLearningContext:
     def __init__(self) -> None:
         self.__contexts: dict[TaskIDType, FederatedLearningContext] = {}
-        self.context_info: dict[TaskIDType, dict] = {}
+        self.context_info: dict[TaskIDType, dict[str, Any]] = {}
         self.__finished_tasks: set[TaskIDType] = set()
 
     def add_context(
-        self, task_id: TaskIDType, context: FederatedLearningContext, **other_info
+        self, task_id: TaskIDType, context: FederatedLearningContext, **other_info: Any
     ) -> None:
         assert task_id not in self.__contexts
         self.__contexts[task_id] = context
@@ -263,8 +263,8 @@ class ConcurrentFederatedLearningContext:
     def wait_results(
         self,
         timeout: float | None = None,
-    ) -> tuple[dict, int]:
-        res: dict = {}
+    ) -> tuple[dict[TaskIDType, Any], int]:
+        res: dict[TaskIDType, Any] = {}
         remaining_jobs: int = 0
         timeout_ms: float | None = None
         if timeout is not None:
@@ -288,7 +288,7 @@ class ConcurrentFederatedLearningContext:
                     self.__finished_tasks.add(task_id)
         return res, remaining_jobs
 
-    def release(self) -> dict:
+    def release(self) -> dict[TaskIDType, Any]:
         res, _ = self.wait_results()
         for context in self.__contexts.values():
             context.executor_pool.shutdown()
@@ -302,9 +302,9 @@ GB = MB * 1024
 
 def get_device_memory_info(
     least_memory_GB: int | None = None,
-) -> dict:
+) -> dict[torch.device, int]:
     memory_info = _get_device_memory_info()
-    refined_memory_info: dict = {}
+    refined_memory_info: dict[torch.device, int] = {}
     log_info("before refine memory info %s", memory_info)
     if least_memory_GB is None:
         value = os.getenv("LEAST_REQUIRED_DEVICE_MEMORY_IN_GB")
@@ -331,7 +331,7 @@ def allocate_device(
     worker_number: int,
     count_server: bool,
     least_memory_GB: int | None = None,
-) -> dict:
+) -> dict[str, Any]:
     refined_memory_info = get_device_memory_info(least_memory_GB=least_memory_GB)
     refined_memory_info_list = sorted(
         list(refined_memory_info.items()), key=lambda a: a[1], reverse=True

@@ -14,12 +14,13 @@ from .config import DistributedTrainingConfig
 from .context import (
     FederatedLearningContext,
 )
+from .practitioner import Practitioner
 from .server import AggregationServer, Server
 from .task_type import TaskIDType
 from .worker import Worker
 
-type TaskConfig = dict
-type TaskServerConfig = dict
+type TaskConfig = dict[str, Any]
+type TaskServerConfig = dict[str, Any]
 
 
 def limit_device(device: torch.device, is_server: bool) -> None:
@@ -39,7 +40,7 @@ def get_server_config(config: DistributedTrainingConfig) -> TaskServerConfig:
     assert AlgorithmRepository.has_algorithm(config.distributed_algorithm)
     context = FederatedLearningContext(worker_num=config.worker_number)
     task_id = get_task_id()
-    result: dict = {"context": context, "task_id": task_id}
+    result: TaskServerConfig = {"context": context, "task_id": task_id}
     result["server"] = {}
     result["server"]["constructor"] = functools.partial(
         AlgorithmRepository.create_server,
@@ -55,7 +56,7 @@ def get_server_config(config: DistributedTrainingConfig) -> TaskServerConfig:
 
 def get_task_config(
     config: DistributedTrainingConfig,
-    practitioners: None | set = None,
+    practitioners: None | set[Practitioner] = None,
 ) -> TaskConfig:
     result = get_server_config(config=config)
     if practitioners is None:
@@ -121,14 +122,14 @@ def get_server_impl(
 
 def start_server_impl(
     context: FederatedLearningContext, task_config: TaskConfig, **kwargs: Any
-) -> dict:
+) -> dict[str, Any]:
     server = get_server_impl(context=context, task_config=task_config, **kwargs)
     log_debug("context id %d", id(context))
 
     server.start()
     log_info("stop server")
 
-    res: dict = {}
+    res: dict[str, Any] = {}
 
     if isinstance(server, AggregationServer):
         res["sv"] = getattr(server.algorithm, "shapley_values", {})
@@ -154,7 +155,7 @@ def start_server(
     return context
 
 
-def run_worker(constructor: Callable, **kwargs) -> None:
+def run_worker(constructor: Callable[..., Worker], **kwargs: Any) -> None:
     worker: Worker = constructor(**kwargs)
     worker.start()
 

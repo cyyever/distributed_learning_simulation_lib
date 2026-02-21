@@ -73,7 +73,7 @@ class FedAVGAlgorithm(AggregationAlgorithm):
         return parameter / total_weight
 
     def _aggregate_parameter(
-        self, chosen_worker_ids: set | None = None
+        self, chosen_worker_ids: set[int] | None = None
     ) -> ModelParameter:
         if not self.accumulate:
             worker_data = self._all_worker_data
@@ -111,7 +111,7 @@ class FedAVGAlgorithm(AggregationAlgorithm):
         )
 
     @classmethod
-    def __aggregate_loss(cls, all_worker_data: MutableMapping[int, Message]) -> dict:
+    def __aggregate_loss(cls, all_worker_data: MutableMapping[int, Message]) -> dict[str, Any]:
         assert all_worker_data
         loss_dict = {}
         for worker_data in all_worker_data.values():
@@ -132,8 +132,8 @@ class FedAVGAlgorithm(AggregationAlgorithm):
     @classmethod
     def __check_and_reduce_other_data(
         cls, all_worker_data: MutableMapping[int, Message]
-    ) -> dict:
-        result: dict = {}
+    ) -> dict[str, Any]:
+        result: dict[str, Any] = {}
         for worker_data in all_worker_data.values():
             for k, v in worker_data.other_data.items():
                 if k not in result:

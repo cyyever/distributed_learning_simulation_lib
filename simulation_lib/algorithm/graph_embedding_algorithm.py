@@ -8,8 +8,8 @@ class GraphNodeEmbeddingPassingAlgorithm(AggregationAlgorithm):
     def __init__(self) -> None:
         super().__init__()
         self.__node_embeddings: list[torch.Tensor] = []
-        self.__node_embedding_indices: dict = {}
-        self.__boundaris: dict = {}
+        self.__node_embedding_indices: dict[int, tuple[int, int]] = {}
+        self.__boundaris: dict[int, set[int]] = {}
 
     def process_worker_data(self, worker_id: int, worker_data: Message | None) -> bool:
         if isinstance(worker_data, FeatureMessage):
@@ -28,7 +28,7 @@ class GraphNodeEmbeddingPassingAlgorithm(AggregationAlgorithm):
             return True
         return False
 
-    def __get_node_embedding(self, node_idx) -> torch.Tensor:
+    def __get_node_embedding(self, node_idx: int) -> torch.Tensor:
         list_idx, tensor_idx = self.__node_embedding_indices[node_idx]
         return self.__node_embeddings[list_idx][tensor_idx]
 

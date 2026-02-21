@@ -11,14 +11,14 @@ from .protocol import AggregationServerProtocol
 class PerformanceMixin(AggregationServerProtocol):
     def __init__(self) -> None:
         super().__init__()
-        self.__stat: dict = {}
-        self.__keys: list = []
+        self.__stat: dict[int, dict[str, Any]] = {}
+        self.__keys: list[int] = []
         self.__plateau: int = 0
         self.__acc_diff = 0.001
         self.__max_plateau: int = 5
 
     @property
-    def performance_stat(self) -> dict:
+    def performance_stat(self) -> dict[int, dict[str, Any]]:
         return self.__stat
 
     def _set_plateau_limit(self, max_plateau: int) -> None:
@@ -27,7 +27,7 @@ class PerformanceMixin(AggregationServerProtocol):
     def _set_accuracy_difference(self, acc_diff: float) -> None:
         self.__acc_diff = acc_diff
 
-    def _get_stat_key(self, message: ParameterMessage) -> Any:
+    def _get_stat_key(self, message: ParameterMessage) -> int:
         if message.is_initial:
             return 0
         return self.round_index

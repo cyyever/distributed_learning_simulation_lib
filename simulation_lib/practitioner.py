@@ -9,11 +9,11 @@ class Practitioner:
         self._dataset_sampler: dict[str, SamplerBase | SplitBase] = {}
 
     @property
-    def id(self):
+    def id(self) -> int:
         return self.__id
 
     @property
-    def worker_id(self):
+    def worker_id(self) -> int:
         return self.__worker_id
 
     def set_worker_id(self, worker_id: int) -> None:

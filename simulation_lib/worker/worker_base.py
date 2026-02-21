@@ -36,11 +36,11 @@ class WorkerBase(Executor):
         return self._endpoint
 
     @property
-    def round_index(self):
+    def round_index(self) -> int:
         return self._round_index
 
     @property
-    def worker_id(self):
+    def worker_id(self) -> int:
         return self._practitioner.worker_id
 
     def _before_training(self) -> None:

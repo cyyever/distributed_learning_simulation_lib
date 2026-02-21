@@ -29,7 +29,7 @@ class AggregationServer(Server, PerformanceMixin, RoundSelectionMixin):
         self._compute_stat: bool = True
         self._stop = False
         self.__model_cache: ModelCache = ModelCache()
-        self.__worker_flag: set = set()
+        self.__worker_flag: set[int] = set()
         algorithm.set_config(self.config)
         self.__algorithm: AggregationAlgorithm = algorithm
         self._need_init_performance = False
@@ -39,7 +39,7 @@ class AggregationServer(Server, PerformanceMixin, RoundSelectionMixin):
         return self.config.algorithm_kwargs.get("early_stop", False)
 
     @property
-    def algorithm(self):
+    def algorithm(self) -> AggregationAlgorithm:
         return self.__algorithm
 
     @property
@@ -137,7 +137,7 @@ class AggregationServer(Server, PerformanceMixin, RoundSelectionMixin):
                 self.worker_number,
             )
 
-    def _aggregate_worker_data(self) -> Any:
+    def _aggregate_worker_data(self) -> Message:
         self.__algorithm.set_old_parameter(self.__model_cache.parameter)
         return self.__algorithm.aggregate_worker_data()
 
@@ -164,7 +164,7 @@ class AggregationServer(Server, PerformanceMixin, RoundSelectionMixin):
         )
         self.__model_cache.cache_parameter(result.parameter, model_path)
 
-    def _after_send_result(self, result: Any) -> None:
+    def _after_send_result(self, result: Message) -> None:
         if not result.in_round:
             self._round_index += 1
         self.__algorithm.clear_worker_data()

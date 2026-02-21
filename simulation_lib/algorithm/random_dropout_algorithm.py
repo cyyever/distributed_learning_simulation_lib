@@ -5,7 +5,7 @@ from cyy_torch_toolbox import ModelParameter, cat_tensors_to_vector
 
 
 class RandomDropoutAlgorithm:
-    def __init__(self, dropout_rate) -> None:
+    def __init__(self, dropout_rate: float) -> None:
         self.__dropout_rate = dropout_rate
         log_info("use dropout rate %s", self.__dropout_rate)
 
@@ -15,7 +15,7 @@ class RandomDropoutAlgorithm:
         partial_parameter_num = 0
         parameter_names = list(parameter_dict.keys())
         random.shuffle(parameter_names)
-        new_parameter_dict: dict = {}
+        new_parameter_dict: ModelParameter = {}
         for k in parameter_names:
             if partial_parameter_num > threshold:
                 break

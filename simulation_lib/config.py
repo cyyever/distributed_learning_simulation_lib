@@ -20,12 +20,12 @@ class DistributedTrainingConfig(Config):
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.distributed_algorithm: str = ""
-        self.algorithm_kwargs: dict = {}
+        self.algorithm_kwargs: dict[str, Any] = {}
         self.worker_number: int = 0
         self.round: int = 0
         self.dataset_sampling: str = "iid"
         self.dataset_sampling_kwargs: dict[str, Any] = {}
-        self.endpoint_kwargs: dict = {}
+        self.endpoint_kwargs: dict[str, Any] = {}
         self.exp_name: str = ""
         self.log_file: str = ""
         self.enable_training_log: bool = False
@@ -47,7 +47,7 @@ class DistributedTrainingConfig(Config):
             dataset_type=self.dc_config.dataset_kwargs.get("dataset_type", None)
         )
 
-    def allocate_device(self) -> dict:
+    def allocate_device(self) -> dict[str, Any]:
         return _allocate_device(
             worker_number=self.worker_number, count_server=self.heavy_server
         )

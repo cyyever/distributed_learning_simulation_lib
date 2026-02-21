@@ -1,6 +1,7 @@
 import functools
 import json
 import os
+from typing import Any
 
 import dill
 from cyy_torch_toolbox import TensorDict
@@ -25,7 +26,7 @@ class Session:
         with open(os.path.join(self.server_dir, "config.pkl"), "rb") as f:
             self.config: DistributedTrainingConfig = dill.load(f)
 
-        self.__worker_data: dict = {}
+        self.__worker_data: dict[str, dict[str, Any]] = {}
 
     @property
     def last_model_path(self) -> str:
@@ -51,10 +52,10 @@ class Session:
         return _worker_dir
 
     @property
-    def worker_data(self) -> dict:
+    def worker_data(self) -> dict[str, dict[str, Any]]:
         if self.__worker_data:
             return self.__worker_data
-        worker_data: dict = {}
+        worker_data: dict[str, dict[str, Any]] = {}
         for root, dirs, __ in os.walk(self.session_dir):
             for name in dirs:
                 if name.startswith("worker"):
@@ -77,7 +78,7 @@ class Session:
         return self.__worker_data
 
     @functools.cached_property
-    def rounds(self) -> list:
+    def rounds(self) -> list[int]:
         return sorted(self.round_record.keys())
 
     @functools.cached_property

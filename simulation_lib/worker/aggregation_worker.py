@@ -37,7 +37,7 @@ class AggregationWorker(Worker, ClientMixin):
         self._keep_model_cache: bool = False
         self._send_loss: bool = False
         self._model_cache: ModelCache = ModelCache()
-        self._model_loading_fun: None | Callable = None
+        self._model_loading_fun: None | Callable[..., None] = None
 
     @property
     def reuse_learning_rate(self) -> bool:

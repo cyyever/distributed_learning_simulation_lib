@@ -10,7 +10,7 @@ from cyy_torch_toolbox import ModelParameter
 
 @dataclass(kw_only=True)
 class Message:
-    other_data: dict = field(default_factory=dict)
+    other_data: dict[str, Any] = field(default_factory=dict)
     in_round: bool = False
     end_training: bool = False
     aggregation_weight: float | None = None

@@ -24,26 +24,26 @@ class GradientModelEvaluator:
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         return self.evaluator.__call__(*args, **kwargs)
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> Any:
         if name in ("evaluator", "gradient_fun"):
             raise AttributeError()
         return getattr(self.evaluator, name)
 
     def backward_and_step(
         self,
-        loss,
+        loss: torch.Tensor,
         optimizer: torch.optim.Optimizer,
-        **backward_kwargs,
+        **backward_kwargs: Any,
     ) -> None:
         self.backward(loss=loss, optimizer=optimizer, **backward_kwargs)
         optimizer.step()
 
     def backward(
         self,
-        loss,
+        loss: torch.Tensor,
         optimizer: torch.optim.Optimizer,
-        **backward_kwargs,
-    ) -> Any:
+        **backward_kwargs: Any,
+    ) -> None:
         self.evaluator.backward(loss=loss, optimizer=optimizer, **backward_kwargs)
         if not self.__aggregation_indicator_fun():
             return
@@ -56,7 +56,7 @@ class GradientModelEvaluator:
 
 
 class GradientWorker(Worker, ClientMixin):
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         Worker.__init__(self, **kwargs)
         ClientMixin.__init__(self, **kwargs)
         self.__cnt = 0

@@ -1,5 +1,6 @@
 import copy
 import os
+from typing import Any
 
 import torch
 from cyy_naive_lib.log import add_file_handler, log_info
@@ -7,6 +8,7 @@ from cyy_naive_lib.time_counter import TimeCounter
 
 from .config import DistributedTrainingConfig
 from .context import ConcurrentFederatedLearningContext
+from .practitioner import Practitioner
 from .task import (
     get_task_config,
     get_task_id,
@@ -27,12 +29,12 @@ def limit_device(device: torch.device) -> None:
 
 
 concurrent_context = ConcurrentFederatedLearningContext()
-task_results: dict = {}
+task_results: dict[TaskIDType, dict[str, Any]] = {}
 
 
 def train(
     config: DistributedTrainingConfig,
-    practitioners: None | set = None,
+    practitioners: None | set[Practitioner] = None,
     single_task: bool = False,
 ) -> TaskIDType:
     # we need to deepcopy config for concurrent training
@@ -65,7 +67,7 @@ def train(
 
 def get_training_result(
     task_id: TaskIDType, timeout: None | float = None
-) -> None | dict:
+) -> None | dict[str, Any]:
     results, _ = concurrent_context.wait_results(timeout=timeout)
     for task_id2, result in results.items():
         task_results[task_id2] |= result
@@ -73,7 +75,7 @@ def get_training_result(
         return None
     task_result = task_results.pop(task_id)
     log_info("finish task %s", task_id)
-    stats: dict = {}
+    stats: dict[str, Any] = {}
     practitioner_ids = task_result["practitioner_ids"]
     config = task_result["config"]
     assert practitioner_ids is not None
@@ -81,7 +83,7 @@ def get_training_result(
         if k != "sv":
             stats[k] = v
             continue
-        sv_dict: dict = {}
+        sv_dict: dict[int, dict[int, Any]] = {}
         for round_number, tmp_sv_dict in v.items():
             sv_dict[round_number] = {}
             for practitioner_id, worker_id in zip(

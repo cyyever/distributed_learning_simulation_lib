@@ -21,20 +21,20 @@ class GraphWorker(AggregationWorker):
         assert not self.config.trainer_config.hook_config.use_amp
         self._share_feature = self.config.algorithm_kwargs.get("share_feature", True)
         self._remove_cross_edge: bool = True
-        self._other_training_node_indices: set = set()
+        self._other_training_node_indices: set[int] = set()
         self.__old_edge_index: None | torch.Tensor = None
         self.__local_node_mask: None | torch.Tensor = None
-        self._hook_handles: dict = {}
+        self._hook_handles: dict[int, Any] = {}
         self._comunicated_batch_cnt: int = 0
         self._skipped_embedding_bytes: int = 0
-        self._round_skipped_bytes: dict = {}
+        self._round_skipped_bytes: dict[int, int] = {}
         self._communicated_embedding_bytes: int = 0
         self._aggregated_bytes: int = 0
-        self._round_communicated_bytes: dict = {}
+        self._round_communicated_bytes: dict[int, int] = {}
         self._original_in_client_training_edge_cnt: int = 0
         self._in_client_training_edge_cnt: int = 0
         self._cross_client_training_edge_cnt: int = 0
-        self._recorded_model_size: dict = {}
+        self._recorded_model_size: dict[str, Any] = {}
         self._send_parameter_diff = False
 
     def get_dataset_util(
@@ -153,13 +153,13 @@ class GraphWorker(AggregationWorker):
         return mask[0]
 
     @functools.cached_property
-    def training_node_indices(self) -> set:
+    def training_node_indices(self) -> set[int]:
         return set(
             torch_geometric.utils.mask_to_index(self.training_node_mask).tolist()
         )
 
     @functools.cached_property
-    def training_node_boundary(self) -> set:
+    def training_node_boundary(self) -> set[int]:
         assert self._other_training_node_indices
         edge_index = self.edge_index
         edge_mask = self.training_node_mask[edge_index[0]]
@@ -259,11 +259,11 @@ class GraphWorker(AggregationWorker):
 
         return tuple(args), kwargs
 
-    def training_boundary_feature(self, x) -> tuple[torch.Tensor, list] | None:
+    def training_boundary_feature(self, x: torch.Tensor) -> tuple[torch.Tensor, list[int]] | None:
         assert len(self.training_node_boundary) <= len(self.training_node_indices)
 
         assert x.shape[0] == self.n_id.shape[0]
-        indices: list = []
+        indices: list[int] = []
         node_indices = []
         for idx, node_index in enumerate(self.n_id.tolist()):
             if node_index in self.training_node_boundary:
@@ -279,7 +279,7 @@ class GraphWorker(AggregationWorker):
         )
 
     def _get_cross_device_embedding(
-        self, embedding_indices, embedding, x
+        self, embedding_indices: list[int], embedding: torch.Tensor, x: torch.Tensor
     ) -> torch.Tensor:
         if not embedding_indices:
             return x
@@ -288,14 +288,14 @@ class GraphWorker(AggregationWorker):
         mask2 = torch.zeros_like(x, dtype=torch.bool)
         embedding_mask = torch.zeros((embedding.shape[0]), dtype=torch.bool)
 
-        embedding_indices = {b: a for a, b in enumerate(embedding_indices)}
+        embedding_index_map: dict[int, int] = {b: a for a, b in enumerate(embedding_indices)}
 
         for idx, node_idx in enumerate(self.n_id.tolist()):
             if node_idx not in self.training_node_indices:
-                if node_idx in embedding_indices:
+                if node_idx in embedding_index_map:
                     assert node_idx not in self.training_node_indices
                     mask1[idx] = True
-                    embedding_mask[embedding_indices[node_idx]] = True
+                    embedding_mask[embedding_index_map[node_idx]] = True
                 else:
                     mask2[idx] = True
         new_x[mask1[:, 0]] = embedding[embedding_mask].to(
@@ -307,9 +307,9 @@ class GraphWorker(AggregationWorker):
 
     def __record_embedding_size(
         self,
-        module,
-        args,
-        kwargs,
+        module: torch.nn.Module,
+        args: Any,
+        kwargs: Any,
     ) -> tuple | None:
         if "model_bytes" not in self._recorded_model_size:
             parameter = self.trainer.model_util.get_parameter_list()
@@ -327,7 +327,7 @@ class GraphWorker(AggregationWorker):
             )
         return None
 
-    def _pass_node_feature(self, module, args, kwargs) -> tuple | None:
+    def _pass_node_feature(self, module: torch.nn.Module, args: Any, kwargs: Any) -> tuple | None:
         if not module.training:
             return None
 
@@ -370,7 +370,7 @@ class GraphWorker(AggregationWorker):
         )
         return (new_x, self.__old_edge_index, *args[2:]), kwargs
 
-    def __get_message_passing_modules(self) -> list:
+    def __get_message_passing_modules(self) -> list[torch_geometric.nn.MessagePassing]:
         return [
             module
             for module in self.trainer.model.modules()

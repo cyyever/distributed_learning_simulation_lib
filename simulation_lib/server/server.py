@@ -100,7 +100,7 @@ class Server(Executor, RoundSelectionMixin):
         self,
         parameter: ModelParameter | ParameterMessage,
         log_performance_metric: bool = True,
-    ) -> dict:
+    ) -> dict[str, Any]:
         tester = self.setup_tester_for_performance(
             parameter=parameter, log_performance_metric=log_performance_metric
         )
@@ -108,10 +108,10 @@ class Server(Executor, RoundSelectionMixin):
         tester.offload_from_device()
         return metric
 
-    def _get_metric(self, tester: Inferencer) -> Any:
+    def _get_metric(self, tester: Inferencer) -> dict[str, Any]:
         if tester.has_hook_obj("performance_metric"):
             tester.performance_metric.clear_metric()
-            metric: dict = tester.performance_metric.get_epoch_metrics(1)
+            metric: dict[str, Any] = tester.performance_metric.get_epoch_metrics(1)
             assert not metric
         tester.inference()
         metric = tester.performance_metric.get_epoch_metrics(1)
@@ -123,7 +123,7 @@ class Server(Executor, RoundSelectionMixin):
             pickle.dump(self.config, f)
         self._before_start()
 
-        worker_set: set = set()
+        worker_set: set[int] = set()
         while not self._stopped():
             if not worker_set:
                 worker_set = set(range(self.endpoint.worker_num))

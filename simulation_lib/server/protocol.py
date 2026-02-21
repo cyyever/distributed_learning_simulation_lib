@@ -1,5 +1,5 @@
 from functools import cached_property
-from typing import Protocol
+from typing import Any, Protocol
 
 from cyy_torch_toolbox import ModelParameter
 
@@ -19,7 +19,7 @@ class AggregationServerProtocol(ExecutorProtocol, Protocol):
         self,
         parameter: ModelParameter | ParameterMessage,
         log_performance_metric: bool = True,
-    ) -> dict: ...
+    ) -> dict[str, Any]: ...
 
     @property
     def round_index(self) -> int: ...
