@@ -272,18 +272,18 @@ class ConcurrentFederatedLearningContext:
         for task_id in list(self.__contexts.keys()):
             context = self.__contexts[task_id]
             with TimeCounter() as counter:
-                task_results, unfinised_cnt = context.wait_results(
+                task_results, unfinished_cnt = context.wait_results(
                     timeout=timeout_ms / 1000 if timeout_ms is not None else None,
                     return_when=concurrent.futures.FIRST_EXCEPTION,
                 )
                 if timeout_ms is not None:
                     timeout_ms = max(timeout_ms - counter.elapsed_milliseconds(), 0)
-                remaining_jobs += unfinised_cnt
+                remaining_jobs += unfinished_cnt
                 if task_id not in res:
                     res[task_id] = {}
                 if task_results:
                     res[task_id] |= task_results
-                if unfinised_cnt == 0:
+                if unfinished_cnt == 0:
                     context = self.__contexts.pop(task_id)
                     context.shutdown()
                     res[task_id] |= self.context_info.pop(task_id)

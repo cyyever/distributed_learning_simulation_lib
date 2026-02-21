@@ -10,7 +10,7 @@ class GraphNodeEmbeddingPassingAlgorithm(AggregationAlgorithm):
         super().__init__()
         self.__node_embeddings: list[torch.Tensor] = []
         self.__node_embedding_indices: dict[int, tuple[int, int]] = {}
-        self.__boundaris: dict[int, set[int]] = {}
+        self.__boundaries: dict[int, set[int]] = {}
 
     @override
     def process_worker_data(self, worker_id: int, worker_data: Message | None) -> bool:
@@ -25,7 +25,7 @@ class GraphNodeEmbeddingPassingAlgorithm(AggregationAlgorithm):
                         tensor_idx,
                     )
                 self.__node_embeddings.append(node_embedding)
-            self.__boundaris[worker_id] = worker_data.other_data.pop("boundary")
+            self.__boundaries[worker_id] = worker_data.other_data.pop("boundary")
             assert not worker_data.other_data
             return True
         return False
@@ -36,10 +36,10 @@ class GraphNodeEmbeddingPassingAlgorithm(AggregationAlgorithm):
 
     @override
     def aggregate_worker_data(self) -> Message:
-        assert self.__node_embeddings or self.__boundaris
+        assert self.__node_embeddings or self.__boundaries
         worker_data: dict[int, FeatureMessage] = {}
         node_embedding_index_set = set(self.__node_embedding_indices.keys())
-        for worker_id, boundary in self.__boundaris.items():
+        for worker_id, boundary in self.__boundaries.items():
             node_indices = boundary.intersection(node_embedding_index_set)
             node_indices = tuple(sorted(node_indices))
             node_embedding = None
@@ -61,4 +61,4 @@ class GraphNodeEmbeddingPassingAlgorithm(AggregationAlgorithm):
     def clear_worker_data(self) -> None:
         self.__node_embeddings = []
         self.__node_embedding_indices = {}
-        self.__boundaris = {}
+        self.__boundaries = {}

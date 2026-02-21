@@ -24,7 +24,7 @@ class GraphWorker(AggregationWorker):
         self.__old_edge_index: None | torch.Tensor = None
         self.__local_node_mask: None | torch.Tensor = None
         self._hook_handles: dict[int, Any] = {}
-        self._comunicated_batch_cnt: int = 0
+        self._communicated_batch_cnt: int = 0
         self._skipped_embedding_bytes: int = 0
         self._round_skipped_bytes: dict[int, int] = {}
         self._communicated_embedding_bytes: int = 0
@@ -366,7 +366,7 @@ class GraphWorker(AggregationWorker):
                 },
                 in_round=True,
             )
-        self._comunicated_batch_cnt += 1
+        self._communicated_batch_cnt += 1
         self._send_data_to_server(sent_data)
         res = self._get_data_from_server(in_round=True)
         assert isinstance(res, FeatureMessage)

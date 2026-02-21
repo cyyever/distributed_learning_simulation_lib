@@ -28,7 +28,7 @@ class DistributedTrainingConfig(Config):
         self.dataset_sampling_kwargs: dict[str, Any] = {}
         self.endpoint_kwargs: dict[str, Any] = {}
         self.exp_name: str = ""
-        self.log_file: str | Path = ""
+        self.log_file: Path = Path()
         self.enable_training_log: bool = False
         self.use_validation: bool = False
         self.worker_number_per_process: int = 0

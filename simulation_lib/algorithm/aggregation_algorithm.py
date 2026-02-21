@@ -29,10 +29,11 @@ class AggregationAlgorithm(ABC):
 
     @classmethod
     def get_total_weight(cls, data_dict: Mapping[int, Message]) -> float:
-        total_weight: float = 0
         for v in data_dict.values():
             assert v.aggregation_weight is not None and v.aggregation_weight >= 0
-            total_weight += v.aggregation_weight
+        total_weight: float = sum(
+            v.aggregation_weight for v in data_dict.values() if v.aggregation_weight is not None
+        )
         assert total_weight >= 0
         return total_weight
 

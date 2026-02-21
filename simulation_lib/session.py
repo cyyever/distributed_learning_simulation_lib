@@ -82,7 +82,6 @@ class Session:
 
     @functools.cached_property
     def mean_test_acc(self) -> float:
-        total_acc = 0
-        for r in self.round_record.values():
-            total_acc += r["test_accuracy"]
-        return total_acc / len(self.round_record)
+        return sum(r["test_accuracy"] for r in self.round_record.values()) / len(
+            self.round_record
+        )
