@@ -29,7 +29,8 @@ class QuantClientEndpoint(ClientEndpoint):
             return data
         assert isinstance(data, ParameterMessage)
         data.parameter = self._dequant(data.parameter)
-        return self._dequant(data)
+        return data
+        # return self._dequant(data)
 
     def send(self, data: Any) -> None:
         if isinstance(data, ParameterMessage):

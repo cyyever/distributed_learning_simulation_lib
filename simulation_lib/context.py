@@ -279,8 +279,10 @@ class ConcurrentFederatedLearningContext:
                 if timeout_ms is not None:
                     timeout_ms = max(timeout_ms - counter.elapsed_milliseconds(), 0)
                 remaining_jobs += unfinised_cnt
+                if task_id not in res:
+                    res[task_id] = {}
                 if task_results:
-                    res[task_id] = task_results
+                    res[task_id] |= task_results
                 if unfinised_cnt == 0:
                     context = self.__contexts.pop(task_id)
                     context.shutdown()
@@ -363,7 +365,8 @@ def allocate_device(
         result |= {"process_devices": devices}
         return result
     total_bytes = sum(free_bytes)
-    MB_per_worker = min(total_bytes / MB / worker_number, 10 * GB)
+    # 10 * 1024 MB = 10 GB, matching the MB unit of the left side
+    MB_per_worker = min(total_bytes / MB / worker_number, 10 * 1024)
     log_debug(
         "MB_per_worker %s other %s",
         MB_per_worker,
