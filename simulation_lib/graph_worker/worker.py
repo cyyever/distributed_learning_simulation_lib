@@ -1,6 +1,5 @@
 import functools
 import json
-import os
 from collections.abc import Callable
 from typing import Any, override
 
@@ -398,7 +397,7 @@ class GraphWorker(AggregationWorker):
     def _after_training(self) -> None:
         super()._after_training()
         with open(
-            os.path.join(self.save_dir, "graph_worker_stat.json"), "w", encoding="utf8"
+            self.save_dir / "graph_worker_stat.json", "w", encoding="utf8"
         ) as f:
             stat = {
                 "original_in_client_training_edge_cnt": self._original_in_client_training_edge_cnt,

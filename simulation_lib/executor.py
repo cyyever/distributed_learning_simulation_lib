@@ -1,7 +1,7 @@
 import copy
-import os
 from abc import ABC, abstractmethod
 from functools import cached_property
+from pathlib import Path
 
 from .config import DistributedTrainingConfig
 from .context import FederatedLearningContext
@@ -47,12 +47,12 @@ class Executor(ABC):
         return self.__config
 
     @cached_property
-    def save_dir(self) -> str:
+    def save_dir(self) -> Path:
         assert self.config.get_save_dir()
-        executor_save_dir = os.path.abspath(
-            os.path.join(self.config.get_save_dir(), self.name.replace(" ", "_"))
-        )
-        os.makedirs(executor_save_dir, exist_ok=True)
+        executor_save_dir = (
+            Path(self.config.get_save_dir()) / self.name.replace(" ", "_")
+        ).resolve()
+        executor_save_dir.mkdir(parents=True, exist_ok=True)
         return executor_save_dir
 
     @abstractmethod

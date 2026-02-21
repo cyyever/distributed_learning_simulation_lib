@@ -1,5 +1,4 @@
 import functools
-import os
 import pickle
 import time
 from abc import abstractmethod
@@ -121,7 +120,7 @@ class Server(Executor, RoundSelectionMixin):
 
     @override
     def start(self) -> None:
-        with open(os.path.join(self.save_dir, "config.pkl"), "wb") as f:
+        with open(self.save_dir / "config.pkl", "wb") as f:
             pickle.dump(self.config, f)
         self._before_start()
 

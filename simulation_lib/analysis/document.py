@@ -1,5 +1,5 @@
 import json
-import os
+from pathlib import Path
 from typing import Any
 
 import pandas as pd
@@ -82,8 +82,8 @@ def dump_analysis() -> None:
     df = df[col_list]
     # df = df.drop_duplicates(ignore_index=True)
     # df = df.sort_values(by=col_list, ascending=False, ignore_index=True)
-    output_file = "exp.txt"
-    if os.path.isfile(output_file):
+    output_file = Path("exp.txt")
+    if output_file.is_file():
         old_df = pd.read_csv(output_file)
         df = pd.concat([old_df, df], ignore_index=True)
     df.to_csv(output_file, index=False)

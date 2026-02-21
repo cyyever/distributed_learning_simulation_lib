@@ -1,4 +1,3 @@
-import os
 from collections.abc import Callable
 from typing import Any, override
 
@@ -177,8 +176,8 @@ class AggregationWorker(Worker, ClientMixin):
         return self.trainer.dataset_size
 
     def _load_result_from_server(self, result: Message) -> None:
-        model_path = os.path.join(
-            self.save_dir, "aggregated_model", f"round_{self.round_index}.pk"
+        model_path = (
+            self.save_dir / "aggregated_model" / f"round_{self.round_index}.pk"
         )
         parameter: ModelParameter = {}
         match result:

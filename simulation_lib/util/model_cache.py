@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import torch
 from cyy_naive_lib.storage import DataStorage
 from cyy_preprocessing_pipeline import tensor_to
@@ -16,10 +18,10 @@ class ModelCache:
     def parameter(self) -> ModelParameter:
         return self.__parameter.data
 
-    def load_file(self, path: str) -> None:
+    def load_file(self, path: Path) -> None:
         self.__parameter = DataStorage(data_path=path)
 
-    def cache_parameter(self, parameter: ModelParameter, path: str) -> None:
+    def cache_parameter(self, parameter: ModelParameter, path: Path) -> None:
         self.__parameter.set_data(
             {
                 k: v.to(dtype=torch.float64)
@@ -39,7 +41,7 @@ class ModelCache:
         #         assert False
         return res
 
-    def add_parameter_diff(self, parameter_diff: ModelParameter, path: str) -> None:
+    def add_parameter_diff(self, parameter_diff: ModelParameter, path: Path) -> None:
         self.__parameter.set_data_path(path)
         for k, v in self.parameter.items():
             self.parameter[k] = v + tensor_to(parameter_diff[k], device="cpu")
@@ -51,7 +53,7 @@ class ModelCache:
     def save(self) -> None:
         self.__parameter.save()
 
-    def get_parameter_path(self) -> str:
+    def get_parameter_path(self) -> Path:
         self.__parameter.save()
         assert self.__parameter.data_path
-        return self.__parameter.data_path
+        return Path(self.__parameter.data_path)

@@ -1,5 +1,4 @@
 import json
-import os
 from typing import Any
 
 from cyy_naive_lib.log import log_info
@@ -52,7 +51,7 @@ class PerformanceMixin(AggregationServerProtocol):
         self.__keys.append(key)
         self.__stat[key] = round_stat
         with open(
-            os.path.join(self.save_dir, "round_record.json"),
+            self.save_dir / "round_record.json",
             "w",
             encoding="utf8",
         ) as f:

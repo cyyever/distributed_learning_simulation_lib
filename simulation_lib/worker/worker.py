@@ -1,5 +1,4 @@
 import functools
-import os
 from typing import override
 
 import dill
@@ -34,7 +33,7 @@ class Worker(WorkerBase):
     @override
     def _after_training(self) -> None:
         super()._after_training()
-        with open(os.path.join(self.save_dir, "hyper_parameter.pk"), "wb") as f:
+        with open(self.save_dir / "hyper_parameter.pk", "wb") as f:
             dill.dump(
                 self.trainer.hyper_parameter,
                 f,

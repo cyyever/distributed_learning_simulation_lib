@@ -1,4 +1,5 @@
 from functools import cached_property
+from pathlib import Path
 from typing import Any, Protocol
 
 from cyy_torch_toolbox import ModelParameter
@@ -25,4 +26,4 @@ class AggregationServerProtocol(ExecutorProtocol, Protocol):
     def round_index(self) -> int: ...
 
     @cached_property
-    def save_dir(self) -> str: ...
+    def save_dir(self) -> Path: ...

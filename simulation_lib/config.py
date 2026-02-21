@@ -2,6 +2,7 @@ import datetime
 import importlib
 import os
 import uuid
+from pathlib import Path
 from typing import Any
 
 from cyy_naive_lib.system_info import OSType, get_operating_system_type
@@ -27,7 +28,7 @@ class DistributedTrainingConfig(Config):
         self.dataset_sampling_kwargs: dict[str, Any] = {}
         self.endpoint_kwargs: dict[str, Any] = {}
         self.exp_name: str = ""
-        self.log_file: str = ""
+        self.log_file: str | Path = ""
         self.enable_training_log: bool = False
         self.use_validation: bool = False
         self.worker_number_per_process: int = 0
@@ -35,11 +36,11 @@ class DistributedTrainingConfig(Config):
         self.preallocate_device: bool = False
 
     def load_config_and_process(
-        self, conf: Any, import_libs: bool = True, conf_path: str | None = None
+        self, conf: Any, import_libs: bool = True, conf_path: Path | None = None
     ) -> None:
         self.load_config(conf)
         if conf_path is not None:
-            project_path = os.path.abspath(os.path.join(conf_path, ".."))
+            project_path = Path(conf_path).parent.resolve()
             self.fix_paths(project_path=project_path)
         if not import_libs:
             return
@@ -58,7 +59,7 @@ class DistributedTrainingConfig(Config):
         dataset_name = self.dc_config.dataset_kwargs.get(
             "name", self.dc_config.dataset_name
         )
-        dir_suffix = os.path.join(
+        dir_suffix = Path(
             self.distributed_algorithm,
             (
                 f"{dataset_name}_{self.dataset_sampling}"
@@ -70,11 +71,11 @@ class DistributedTrainingConfig(Config):
             str(uuid.uuid4().int + os.getpid()),
         )
         if self.exp_name:
-            dir_suffix = os.path.join(self.exp_name, dir_suffix)
+            dir_suffix = Path(self.exp_name) / dir_suffix
         if get_operating_system_type() == OSType.Windows:
-            dir_suffix = str(uuid.uuid4().int + os.getpid())
-        self.save_dir = os.path.join("session", dir_suffix)
-        self.log_file = str(os.path.join("log", dir_suffix)) + ".log"
+            dir_suffix = Path(str(uuid.uuid4().int + os.getpid()))
+        self.save_dir = Path("session") / dir_suffix
+        self.log_file = (Path("log") / dir_suffix).with_suffix(".log")
 
     def create_practitioners(self) -> set[Practitioner]:
         practitioners: set[Practitioner] = set()
@@ -101,8 +102,8 @@ class DistributedTrainingConfig(Config):
 
 
 def load_config(
-    config_path: str,
-    global_conf_path: str | None = None,
+    config_path: Path,
+    global_conf_path: Path | None = None,
     import_libs: bool = True,
 ) -> DistributedTrainingConfig:
     other_config_files = []
