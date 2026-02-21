@@ -60,11 +60,6 @@ class Session:
             for name in dirs:
                 if name.startswith("worker"):
                     worker_data[name] = {}
-                    with open(
-                        os.path.join(root, name, "hyper_parameter.pk"),
-                        "rb",
-                    ) as f:
-                        worker_data[name]["hyper_parameter"] = dill.load(f)
                     if os.path.isfile(
                         os.path.join(root, name, "graph_worker_stat.json")
                     ):
@@ -73,6 +68,11 @@ class Session:
                             encoding="utf8",
                         ) as f:
                             worker_data[name] = json.load(f)
+                    with open(
+                        os.path.join(root, name, "hyper_parameter.pk"),
+                        "rb",
+                    ) as f:
+                        worker_data[name]["hyper_parameter"] = dill.load(f)
         assert worker_data
         self.__worker_data = worker_data
         return self.__worker_data

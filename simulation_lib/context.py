@@ -365,8 +365,7 @@ def allocate_device(
         result |= {"process_devices": devices}
         return result
     total_bytes = sum(free_bytes)
-    # 10 * 1024 MB = 10 GB, matching the MB unit of the left side
-    MB_per_worker = min(total_bytes / MB / worker_number, 10 * 1024)
+    MB_per_worker = min(total_bytes / MB / worker_number, 10 * GB / MB)
     log_debug(
         "MB_per_worker %s other %s",
         MB_per_worker,
