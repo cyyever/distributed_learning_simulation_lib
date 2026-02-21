@@ -312,18 +312,16 @@ def get_device_memory_info(
         value = os.getenv("LEAST_REQUIRED_DEVICE_MEMORY_IN_GB")
         if value is not None:
             least_memory_GB = max(int(value), 1)
-    for device, info in memory_info.items():
-        if least_memory_GB is None:
-            refined_memory_info[device] = info.free
-            continue
-        if info.free / GB < least_memory_GB:
-            continue
-        if info.used / info.total > 0.9:
-            continue
-        free_GB = int(info.free / GB)
-        if free_GB == 0:
-            continue
-        refined_memory_info[device] = info.free
+    if least_memory_GB is None:
+        refined_memory_info = {device: info.free for device, info in memory_info.items()}
+    else:
+        refined_memory_info = {
+            device: info.free
+            for device, info in memory_info.items()
+            if info.free / GB >= least_memory_GB
+            and info.used / info.total <= 0.9
+            and int(info.free / GB) > 0
+        }
     assert refined_memory_info, "No available device"
     log_info("refined memory info %s", refined_memory_info)
     return refined_memory_info
@@ -336,7 +334,7 @@ def allocate_device(
 ) -> dict[str, Any]:
     refined_memory_info = get_device_memory_info(least_memory_GB=least_memory_GB)
     refined_memory_info_list = sorted(
-        list(refined_memory_info.items()), key=lambda a: a[1], reverse=True
+        refined_memory_info.items(), key=lambda a: a[1], reverse=True
     )
     free_bytes = list(a[1] for a in refined_memory_info_list)
     devices = list(a[0] for a in refined_memory_info_list)
