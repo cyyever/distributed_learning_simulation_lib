@@ -79,7 +79,7 @@ def get_training_result(
     practitioner_ids = task_result["practitioner_ids"]
     config = task_result["config"]
     assert practitioner_ids is not None
-    for k, v in task_results[task_id].items():
+    for k, v in task_result.items():
         if k != "sv":
             stats[k] = v
             continue

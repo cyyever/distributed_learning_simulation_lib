@@ -22,6 +22,7 @@ class RandomDropoutAlgorithm:
             parameter = parameter_dict[k]
             if partial_parameter_num + parameter.nelement() > threshold:
                 continue
+            partial_parameter_num += parameter.nelement()
             new_parameter_dict[k] = parameter
         log_info(
             "partial_parameter_num %s threshold %s",
