@@ -60,7 +60,7 @@ class AggregationServer(Server, PerformanceMixin, RoundSelectionMixin):
             "global_model_path", None
         )
         if init_global_model_path is not None:
-            with open(os.path.join(init_global_model_path), "rb") as f:
+            with open(init_global_model_path, "rb") as f:
                 parameter = pickle.load(f)
         else:
             parameter = self.get_tester().model_util.get_parameters()

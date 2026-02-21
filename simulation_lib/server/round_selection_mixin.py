@@ -4,7 +4,9 @@ from .protocol import AggregationServerProtocol
 
 
 class RoundSelectionMixin(AggregationServerProtocol):
-    selection_result: dict[int, set[int]] = {}
+    def __init__(self) -> None:
+        super().__init__()
+        self.selection_result: dict[int, set[int]] = {}
 
     def select_workers(self) -> set[int]:
         if self.round_index in self.selection_result:

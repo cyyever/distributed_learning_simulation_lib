@@ -55,7 +55,7 @@ class Server(Executor, RoundSelectionMixin):
                 lock_callback=lambda: tester.append_named_hook(
                     ExecutorHookPoint.AFTER_BATCH,
                     "_release_device_lock",
-                    lambda *args, **kwagrs: self.context.release_device_lock(),
+                    lambda *args, **kwargs: self.context.release_device_lock(),
                 ),
             )
         )

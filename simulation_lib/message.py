@@ -8,7 +8,7 @@ from cyy_preprocessing_pipeline.tensor import recursive_tensor_op
 from cyy_torch_toolbox import ModelParameter
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class Message:
     other_data: dict[str, Any] = field(default_factory=dict)
     in_round: bool = False
@@ -16,12 +16,12 @@ class Message:
     aggregation_weight: float | None = None
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class ParameterMessageBase(Message):
     is_initial: bool = False
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class ParameterMessage(ParameterMessageBase):
     parameter: ModelParameter
 
@@ -31,7 +31,7 @@ class ParameterMessage(ParameterMessageBase):
                 self.parameter[k] = v
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class DeltaParameterMessage(ParameterMessageBase):
     delta_parameter: ModelParameter
     old_parameter: ModelParameter | None = None
@@ -49,26 +49,24 @@ class DeltaParameterMessage(ParameterMessageBase):
             restored_parameter[k] = restored_parameter[k].to(dtype=torch.float64) + v
             if self.new_parameter is not None:
                 v2 = self.new_parameter[k].to(dtype=torch.float64, device="cpu")
-                if not torch.allclose(v2, restored_parameter[k]):
-                    print("key is", k)
-                    print("delta is", v)
-                    print("result", restored_parameter[k])
-                    print("gt", v2)
-                assert torch.allclose(v2, restored_parameter[k])
+                assert torch.allclose(v2, restored_parameter[k]), (
+                    f"Restoration mismatch for key {k}: "
+                    f"delta={v}, result={restored_parameter[k]}, expected={v2}"
+                )
 
         msg = ParameterMessage(parameter=restored_parameter)
-        for f in fields(self):
-            setattr(msg, f.name, getattr(self, f.name))
-        msg.parameter = restored_parameter
+        for f in fields(msg):
+            if f.name != "parameter" and hasattr(self, f.name):
+                setattr(msg, f.name, getattr(self, f.name))
         return msg
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class FeatureMessage(Message):
     feature: torch.Tensor | None
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class MultipleWorkerMessage(Message):
     worker_data: Mapping[int, Message]
 
