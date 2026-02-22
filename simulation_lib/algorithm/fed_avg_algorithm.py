@@ -2,7 +2,7 @@ from collections.abc import MutableMapping
 from typing import Any, override
 
 import torch
-from cyy_naive_lib.log import log_error
+from cyy_naive_lib.log import log_debug, log_error
 from cyy_torch_toolbox import ModelParameter
 
 from ..message import Message, ParameterMessage
@@ -80,7 +80,7 @@ class FedAVGAlgorithm(AggregationAlgorithm):
             worker_data = self._all_worker_data
             if chosen_worker_ids is not None:
                 worker_data = {k: worker_data[k] for k in chosen_worker_ids}
-            log_error("worker_data keys %s", worker_data.keys())
+            log_debug("worker_data keys %s", worker_data.keys())
             return AggregationAlgorithm.weighted_avg(
                 worker_data,
                 AggregationAlgorithm.get_ratios(worker_data),

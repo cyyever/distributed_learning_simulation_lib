@@ -31,7 +31,7 @@ class PersonalizedFedAVGAlgorithm(AggregationAlgorithm):
         for other_worker_id in self._worker_weights:
             if other_worker_id == worker_id:
                 continue
-            weight = self._worker_weights[other_worker_id].get(worker_id, 1000000)
+            weight = self._worker_weights[other_worker_id].get(worker_id, 0)
             worker_data_copy = worker_data
             if worker_data_copy is not None:
                 worker_data_copy = copy.deepcopy(worker_data)

@@ -8,7 +8,9 @@ from .worker_base import WorkerBase
 
 
 class Worker(WorkerBase):
-    __trainer: Trainer | None = None
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.__trainer: Trainer | None = None
 
     @property
     def trainer(self) -> Trainer:
