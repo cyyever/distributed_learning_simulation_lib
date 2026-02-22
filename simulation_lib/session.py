@@ -14,7 +14,8 @@ class Session:
     def __init__(self, session_dir: Path | None = None) -> None:
         if session_dir is None:
             env_dir = os.getenv("SESSION_DIR")
-            assert env_dir
+            if not env_dir:
+                raise ValueError("session_dir not provided and SESSION_DIR environment variable is not set")
             self.session_dir = Path(env_dir).resolve()
         else:
             self.session_dir = session_dir.resolve()

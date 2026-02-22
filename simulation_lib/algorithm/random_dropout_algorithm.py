@@ -17,11 +17,9 @@ class RandomDropoutAlgorithm:
         random.shuffle(parameter_names)
         new_parameter_dict: ModelParameter = {}
         for k in parameter_names:
-            if partial_parameter_num > threshold:
-                break
             parameter = parameter_dict[k]
             if partial_parameter_num + parameter.nelement() > threshold:
-                continue
+                break
             partial_parameter_num += parameter.nelement()
             new_parameter_dict[k] = parameter
         log_info(
