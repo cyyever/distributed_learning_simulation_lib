@@ -1,7 +1,8 @@
 import random
 
+from cyy_naive_lib import cat_tensors_to_vector
 from cyy_naive_lib.log import log_info
-from cyy_torch_toolbox import ModelParameter, cat_tensors_to_vector
+from cyy_torch_toolbox import ModelParameter
 
 
 class RandomDropoutAlgorithm:
