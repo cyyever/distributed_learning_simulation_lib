@@ -3,6 +3,7 @@ from typing import Any, override
 
 import torch
 from cyy_naive_lib.log import log_debug, log_info
+from cyy_preprocessing_pipeline import tensor_to
 from cyy_torch_toolbox import (
     ExecutorHookPoint,
     MachineLearningPhase,
@@ -10,7 +11,6 @@ from cyy_torch_toolbox import (
     StopExecutingException,
     TensorDict,
     lr_scheduler_step_after_batch,
-    tensor_to,
 )
 from cyy_torch_toolbox.hook.keep_model import KeepModelHook
 
