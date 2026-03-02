@@ -130,9 +130,12 @@ class AggregationWorker(Worker, ClientMixin):
 
     def _get_sent_data(self) -> ParameterMessageBase:
         if self.__choose_model_by_validation:
-            assert self.best_model_hook is not None
-            parameter = self.best_model_hook.best_model["parameter"]
-            best_epoch = self.best_model_hook.best_model["epoch"]
+            hook = self.best_model_hook
+            assert hook is not None
+            best_model = hook.best_model
+            assert best_model is not None
+            parameter = best_model["parameter"]
+            best_epoch = best_model["epoch"]
             log_debug("use best model best_epoch %s", best_epoch)
         else:
             parameter = self._get_parameters()

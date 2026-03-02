@@ -371,6 +371,7 @@ class GraphWorker(AggregationWorker):
         res = self._get_data_from_server(in_round=True)
         assert isinstance(res, FeatureMessage)
 
+        assert res.feature is not None
         new_x = self._get_cross_device_embedding(
             res.other_data["node_indices"], res.feature, x
         )
