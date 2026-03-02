@@ -1,4 +1,3 @@
-from cyy_naive_lib.log import set_multiprocessing_ctx
 from cyy_torch_toolbox import TorchProcessContext
 
 from .algorithm import (
@@ -89,4 +88,3 @@ try:
     ]
 except ImportError:
     pass
-set_multiprocessing_ctx(TorchProcessContext().get_ctx())
