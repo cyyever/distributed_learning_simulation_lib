@@ -1,5 +1,4 @@
 import pickle
-from pathlib import Path
 from typing import Any, override
 
 from cyy_naive_lib.log import log_debug, log_info
@@ -24,7 +23,6 @@ class AggregationServer(Server, PerformanceMixin, RoundSelectionMixin):
     def __init__(self, algorithm: AggregationAlgorithm, **kwargs: Any) -> None:
         Server.__init__(self, **kwargs)
         PerformanceMixin.__init__(self)
-        RoundSelectionMixin.__init__(self)
         self._round_index: int = 1
         self._compute_stat: bool = True
         self._stop = False
@@ -161,8 +159,9 @@ class AggregationServer(Server, PerformanceMixin, RoundSelectionMixin):
                 result.end_training = True
         elif result.end_training:
             self.record_performance_statistics(result)
+        assert self.config.save_dir is not None
         model_path = (
-            Path(self.config.save_dir)
+            self.config.save_dir
             / "aggregated_model"
             / f"round_{self.round_index}.pk"
         )
