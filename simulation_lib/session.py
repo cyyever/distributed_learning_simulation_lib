@@ -11,14 +11,14 @@ from .config import DistributedTrainingConfig
 
 
 class Session:
-    def __init__(self, session_dir: Path | None = None) -> None:
+    def __init__(self, session_dir: Path | str | None = None) -> None:
         if session_dir is None:
             env_dir = os.getenv("SESSION_DIR")
             if not env_dir:
                 raise ValueError("session_dir not provided and SESSION_DIR environment variable is not set")
             self.session_dir = Path(env_dir).resolve()
         else:
-            self.session_dir = session_dir.resolve()
+            self.session_dir = Path(session_dir).resolve()
         assert self.session_dir.is_dir()
 
         with open(self.server_dir / "round_record.json", encoding="utf8") as f:
