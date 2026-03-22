@@ -12,14 +12,14 @@ class TrainerProtocol(Protocol):
     def trainer(self) -> Trainer: ...
 
 
-class WorkerProtocol(ExecutorProtocol, TrainerProtocol, Protocol):
+class WorkerProtocol(ExecutorProtocol, Protocol):
     @property
     def endpoint(self) -> Endpoint: ...
 
     def pause(self, in_round: bool) -> None: ...
 
 
-class AggregationWorkerProtocol(WorkerProtocol, Protocol):
+class AggregationWorkerProtocol(WorkerProtocol, TrainerProtocol, Protocol):
     @property
     def round_index(self) -> int: ...
 

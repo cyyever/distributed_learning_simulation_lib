@@ -46,7 +46,7 @@ select = [
   "PIE",
   "FURB",
 ]
-ignore = ["E501", "PLR2004", "PLR0912"]
+ignore = ["E501", "PLR2004", "PLR0912", "PLR0913", "PLR0915"]
 
 [tool.setuptools.package-data]
 distributed_learning_simulation = ["py.typed"]

@@ -299,13 +299,10 @@ class ConcurrentFederatedLearningContext:
         return res
 
 
-MB = 1024 * 1024
-GB = MB * 1024
-
-
 def get_device_memory_info(
     least_memory_GB: int | None = None,
 ) -> dict[torch.device, int]:
+    GB = 1024 * 1024 * 1024
     memory_info = _get_device_memory_info()
     refined_memory_info: dict[torch.device, int] = {}
     log_info("before refine memory info %s", memory_info)
@@ -335,6 +332,8 @@ def allocate_device(
     count_server: bool,
     least_memory_GB: int | None = None,
 ) -> dict[str, Any]:
+    MB = 1024 * 1024
+    GB = MB * 1024
     refined_memory_info = get_device_memory_info(least_memory_GB=least_memory_GB)
     refined_memory_info_list = sorted(
         refined_memory_info.items(), key=lambda a: a[1], reverse=True

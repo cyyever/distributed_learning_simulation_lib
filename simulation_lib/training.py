@@ -2,7 +2,6 @@ import copy
 import os
 from typing import Any
 
-import torch
 from cyy_naive_lib.log import add_file_handler, log_info
 from cyy_naive_lib.time_counter import TimeCounter
 
@@ -16,15 +15,8 @@ from .task import (
 )
 from .task_type import TaskIDType
 
-# we use these environment variables to save memory in large-scale training
-os.environ["CUDA_MODULE_LOADING"] = "LAZY"
+# we use this environment variable to save memory in large-scale training
 os.environ["USE_THREAD_DATALOADER"] = "1"
-
-
-def limit_device(device: torch.device) -> None:
-    if device.type.lower() == "cuda":
-        log_info("limit device %s pid %s", device, os.getpid())
-        os.environ["CUDA_VISIBLE_DEVICES"] = str(device.index)
 
 
 concurrent_context = ConcurrentFederatedLearningContext()
