@@ -15,11 +15,10 @@ from ..message import (
 )
 from ..util.model_cache import ModelCache
 from .performance_mixin import PerformanceMixin
-from .round_selection_mixin import RoundSelectionMixin
 from .server import Server
 
 
-class AggregationServer(Server, PerformanceMixin, RoundSelectionMixin):
+class AggregationServer(Server, PerformanceMixin):
     def __init__(self, algorithm: AggregationAlgorithm, **kwargs: Any) -> None:
         Server.__init__(self, **kwargs)
         PerformanceMixin.__init__(self)
