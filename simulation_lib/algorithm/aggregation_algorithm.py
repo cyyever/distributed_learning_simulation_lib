@@ -108,5 +108,5 @@ class AggregationAlgorithm(ABC):
         self._all_worker_data.clear()
         self.__skipped_workers.clear()
 
-    def exit(self) -> None:
+    def exit(self) -> None:  # noqa: B027
         pass

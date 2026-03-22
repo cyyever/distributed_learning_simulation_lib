@@ -160,9 +160,7 @@ class AggregationServer(Server, PerformanceMixin):
             self.record_performance_statistics(result)
         assert self.config.save_dir is not None
         model_path = (
-            self.config.save_dir
-            / "aggregated_model"
-            / f"round_{self.round_index}.pk"
+            self.config.save_dir / "aggregated_model" / f"round_{self.round_index}.pk"
         )
         self.__model_cache.cache_parameter(result.parameter, model_path)
 

@@ -1,5 +1,4 @@
-from cyy_torch_toolbox import TorchProcessContext
-
+from . import common_method as _common_method  # noqa: F401
 from .algorithm import (
     AggregationAlgorithm,
     CompositeAggregationAlgorithm,
@@ -7,8 +6,7 @@ from .algorithm import (
     PersonalizedFedAVGAlgorithm,
 )
 from .algorithm_repository import AlgorithmRepository
-from .analysis import *  # noqa: F401
-from .common_method import *  # noqa: F401
+from .analysis import dump_analysis  # noqa: F401
 from .config import DistributedTrainingConfig, load_config
 from .evaluation import get_server
 from .message import (
