@@ -15,8 +15,7 @@ from .task import (
 )
 from .task_type import TaskIDType
 
-# we use these environment variables to save memory in large-scale training
-os.environ["CUDA_MODULE_LOADING"] = "LAZY"
+# we use this environment variable to save memory in large-scale training
 os.environ["USE_THREAD_DATALOADER"] = "1"
 
 

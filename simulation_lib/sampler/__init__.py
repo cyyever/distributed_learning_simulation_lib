@@ -101,7 +101,6 @@ class DirichletSplit(DatasetCollectionSplit):
         )
 
 
-global_sampler_factory.register("random_label_iid", RandomLabelIIDSplit)
 global_sampler_factory.register("random_label_iid_split", RandomLabelIIDSplit)
 global_sampler_factory.register("dirichlet_split", DirichletSplit)
 global_sampler_factory.register("random_split", RandomSplit)
