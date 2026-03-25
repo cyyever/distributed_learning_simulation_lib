@@ -101,3 +101,39 @@ def add_dp_noise_to_parameter(
         )
         offset += numel
     return result
+
+
+@torch.no_grad()
+def dp_clip_and_noise_gradients(
+    parameters: list[torch.nn.Parameter],
+    C: float | None = None,
+    sigma: float | None = None,
+) -> None:
+    """Clip total gradient norm to C and add Gaussian noise in-place.
+
+    Batch-level DP: clips the total gradient L2 norm across all parameters,
+    then adds calibrated Gaussian noise to each gradient tensor.
+
+    Args:
+        parameters: List of model parameters (only those with .grad).
+        C: Max gradient L2 norm. If None, uses the current gradient norm
+            (no clipping, only noise).
+        sigma: Noise multiplier (without C).
+    """
+    if sigma is None:
+        sigma = compute_dp_sigma()
+    params_with_grad = [p for p in parameters if p.grad is not None]
+    if not params_with_grad:
+        return
+    total_norm = torch.linalg.vector_norm(
+        torch.stack(
+            [torch.linalg.vector_norm(p.grad) for p in params_with_grad]
+        )
+    )
+    if C is None:
+        C = total_norm.item()
+    assert C > 0, f"C must be positive, got {C}"
+    scale = torch.clamp(total_norm / C, min=1)
+    for p in params_with_grad:
+        p.grad.div_(scale)
+        p.grad.add_(torch.randn_like(p.grad) * (sigma * C))
