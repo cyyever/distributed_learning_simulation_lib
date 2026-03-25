@@ -21,6 +21,7 @@ from .protocol import ExecutorProtocol
 from .server import AggregationServer
 from .session import Session
 from .topology import (
+    add_dp_noise,
     DifferentialPrivacyEmbeddingEndpoint,
     NNADQClientEndpoint,
     NNADQServerEndpoint,
@@ -45,6 +46,7 @@ __all__ = [
     "get_server",
     "train",
     "Session",
+    "add_dp_noise",
     "DifferentialPrivacyEmbeddingEndpoint",
     "QuantServerEndpoint",
     "QuantClientEndpoint",
