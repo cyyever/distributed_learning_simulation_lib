@@ -23,7 +23,7 @@ def add_dp_noise(
     """
     original_shape = tensor.shape
     flat = tensor.reshape(-1) if tensor.dim() <= 1 else tensor.reshape(tensor.shape[0], -1)
-    norms = flat.norm(dim=-1, keepdim=True)
+    norms = torch.linalg.vector_norm(flat, dim=-1, keepdim=True)
     clipped = flat / torch.clamp(norms / C, min=1)
     result = clipped + torch.randn_like(clipped) * (sigma * C)
     return result.reshape(original_shape)
