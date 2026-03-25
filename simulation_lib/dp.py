@@ -1,6 +1,7 @@
 import math
 
 import torch
+from cyy_torch_toolbox import ModelParameter
 
 
 def _flatten_per_sample(tensor: torch.Tensor) -> torch.Tensor:
@@ -66,3 +67,37 @@ def add_dp_noise(
     clipped = flat / torch.clamp(norms / C, min=1)
     result = clipped + torch.randn_like(clipped) * (sigma * C)
     return result.reshape(original_shape)
+
+
+@torch.no_grad()
+def add_dp_noise_to_parameter(
+    parameter: ModelParameter, C: float = 1.0, sigma: float | None = None
+) -> ModelParameter:
+    """Apply differential privacy to model parameters.
+
+    Flattens all parameter tensors into one vector, clips the total L2 norm
+    to C, adds Gaussian noise, then restores original shapes.
+
+    Args:
+        parameter: Dict mapping parameter names to tensors.
+        C: L2 norm clipping threshold for the full parameter vector.
+        sigma: Noise multiplier (without C).
+
+    Returns:
+        New ModelParameter dict with clipped and noised tensors.
+    """
+    assert parameter, "parameter must not be empty"
+    keys = list(parameter.keys())
+    devices = {parameter[k].device for k in keys}
+    assert len(devices) == 1, f"all parameters must be on the same device, got {devices}"
+    flat = torch.cat([parameter[k].reshape(-1).to(dtype=torch.float64) for k in keys])
+    noised = add_dp_noise(flat, C=C, sigma=sigma)
+    result: ModelParameter = {}
+    offset = 0
+    for k in keys:
+        numel = parameter[k].numel()
+        result[k] = noised[offset : offset + numel].reshape(parameter[k].shape).to(
+            dtype=parameter[k].dtype
+        )
+        offset += numel
+    return result

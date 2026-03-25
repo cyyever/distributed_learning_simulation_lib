@@ -1,4 +1,7 @@
-from .dp_endpoint import DifferentialPrivacyEmbeddingEndpoint
+from .dp_endpoint import (
+    DifferentialPrivacyEmbeddingEndpoint,
+    DifferentialPrivacyParameterEndpoint,
+)
 from .quantized_endpoint import (
     NNADQClientEndpoint,
     NNADQServerEndpoint,
@@ -10,6 +13,7 @@ from .quantized_endpoint import (
 
 __all__ = [
     "DifferentialPrivacyEmbeddingEndpoint",
+    "DifferentialPrivacyParameterEndpoint",
     "QuantServerEndpoint",
     "QuantClientEndpoint",
     "StochasticQuantClientEndpoint",

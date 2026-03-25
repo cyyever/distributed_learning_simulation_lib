@@ -23,6 +23,7 @@ from .server import AggregationServer
 from .session import Session
 from .topology import (
     DifferentialPrivacyEmbeddingEndpoint,
+    DifferentialPrivacyParameterEndpoint,
     NNADQClientEndpoint,
     NNADQServerEndpoint,
     QuantClientEndpoint,
@@ -48,6 +49,7 @@ __all__ = [
     "Session",
     "add_dp_noise",
     "DifferentialPrivacyEmbeddingEndpoint",
+    "DifferentialPrivacyParameterEndpoint",
     "QuantServerEndpoint",
     "QuantClientEndpoint",
     "StochasticQuantClientEndpoint",
