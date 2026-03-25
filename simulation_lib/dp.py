@@ -3,6 +3,11 @@ import math
 import torch
 
 
+def _flatten_per_sample(tensor: torch.Tensor) -> torch.Tensor:
+    """Flatten tensor to 2D (batch, features) or 1D."""
+    return tensor.reshape(-1) if tensor.dim() <= 1 else tensor.reshape(tensor.shape[0], -1)
+
+
 def compute_dp_sigma(epsilon: float = 4.0, delta: float = 1e-5) -> float:
     """Compute the noise multiplier for the Gaussian mechanism.
 
@@ -31,7 +36,7 @@ def compute_dp_clipping_threshold(tensor: torch.Tensor) -> float:
     Returns:
         Median L2 norm as the recommended C value.
     """
-    flat = tensor.reshape(-1) if tensor.dim() <= 1 else tensor.reshape(tensor.shape[0], -1)
+    flat = _flatten_per_sample(tensor)
     norms = torch.linalg.vector_norm(flat, dim=-1)
     return norms.median().item()
 
@@ -56,7 +61,7 @@ def add_dp_noise(
     if sigma is None:
         sigma = compute_dp_sigma()
     original_shape = tensor.shape
-    flat = tensor.reshape(-1) if tensor.dim() <= 1 else tensor.reshape(tensor.shape[0], -1)
+    flat = _flatten_per_sample(tensor)
     norms = torch.linalg.vector_norm(flat, dim=-1, keepdim=True)
     clipped = flat / torch.clamp(norms / C, min=1)
     result = clipped + torch.randn_like(clipped) * (sigma * C)
