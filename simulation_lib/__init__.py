@@ -8,6 +8,7 @@ from .algorithm import (
 from .algorithm_repository import AlgorithmRepository
 from .analysis import dump_analysis  # noqa: F401
 from .config import DistributedTrainingConfig, load_config
+from .dp import add_dp_noise
 from .evaluation import get_server
 from .message import (
     DeltaParameterMessage,
@@ -21,7 +22,6 @@ from .protocol import ExecutorProtocol
 from .server import AggregationServer
 from .session import Session
 from .topology import (
-    add_dp_noise,
     DifferentialPrivacyEmbeddingEndpoint,
     NNADQClientEndpoint,
     NNADQServerEndpoint,

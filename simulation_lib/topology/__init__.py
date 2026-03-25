@@ -1,4 +1,4 @@
-from .dp_endpoint import DifferentialPrivacyEmbeddingEndpoint, add_dp_noise
+from .dp_endpoint import DifferentialPrivacyEmbeddingEndpoint
 from .quantized_endpoint import (
     NNADQClientEndpoint,
     NNADQServerEndpoint,
@@ -9,7 +9,6 @@ from .quantized_endpoint import (
 )
 
 __all__ = [
-    "add_dp_noise",
     "DifferentialPrivacyEmbeddingEndpoint",
     "QuantServerEndpoint",
     "QuantClientEndpoint",
