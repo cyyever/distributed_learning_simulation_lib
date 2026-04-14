@@ -51,7 +51,9 @@ class DifferentialPrivacyParameterEndpoint(_DifferentialPrivacyEndpointBase):
     ) -> None:
         n = _num_params(parameter)
         expected_noise_norm = self.sigma * self.C * math.sqrt(n)
-        snr = pre_norm / expected_noise_norm if expected_noise_norm > 0 else float("inf")
+        snr = (
+            pre_norm / expected_noise_norm if expected_noise_norm > 0 else float("inf")
+        )
         log_info(
             "DP endpoint%s: pre_noise_norm=%.6f, post_noise_norm=%.6f, "
             "expected_noise_norm=%.2f, SNR=%.4f, C=%.4f, sigma=%.4f, "

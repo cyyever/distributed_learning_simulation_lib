@@ -23,7 +23,9 @@ class AggregationServer(Server, PerformanceMixin):
         Server.__init__(self, **kwargs)
         PerformanceMixin.__init__(self)
         self._round_index: int = 1
-        self._compute_stat: bool = True
+        self._compute_stat: bool = not self.config.algorithm_kwargs.get(
+            "skip_server_evaluation", False
+        )
         self._stop = False
         self.__model_cache: ModelCache = ModelCache()
         self.__worker_flag: set[int] = set()
@@ -156,7 +158,7 @@ class AggregationServer(Server, PerformanceMixin):
                 log_info("stop early")
                 self._stop = True
                 result.end_training = True
-        elif result.end_training:
+        elif result.end_training and self._compute_stat:
             self.record_performance_statistics(result)
         assert self.config.save_dir is not None
         model_path = (
